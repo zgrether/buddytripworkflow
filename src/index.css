@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── BuddyTrip Design Tokens ── */
+:root {
+  --bt-base:        #0d1117;
+  --bt-card:        #161b22;
+  --bt-card-hover:  #1c2128;
+  --bt-input:       #0d1117;
+  --bt-border:      #21262d;
+  --bt-border-input:#30363d;
+  --bt-accent:      #00d4aa;
+  --bt-accent-dim:  #009e80;
+  --bt-tag-bg:      #0d2a22;
+  --bt-blue-bg:     #161e35;
+  --bt-text-1:      #e6edf3;
+  --bt-text-2:      #8b949e;
+  --bt-text-3:      #6e7681;
+  --bt-danger:      #f85149;
+  --bt-danger-bg:   #2d1517;
+  --bt-danger-border:#6e2020;
+  --bt-live:        #00d4aa;
+  --bt-planning:    #7c93d4;
+  --bt-idea:        #00d4aa;
+  --bt-owner:       #f0a84a;
+  --bt-owner-bg:    #2a1f0d;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { font-size: 16px; }
+  body {
+    background: var(--bt-base);
+    color: var(--bt-text-1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  input, button, select, textarea { font-family: inherit; }
+}
+
+@layer utilities {
+  /* Scrollbar hide for tab bars */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* Animations */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.animate-slide-up  { animation: slide-up 0.25s ease; }
