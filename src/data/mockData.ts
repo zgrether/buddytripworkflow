@@ -6,7 +6,7 @@ function standardHoles(pars: number[]) {
 
 export const BBMI_EVENT = {
   _id: 'bbmi-2025',
-  tripId: 'trip-bbmi',
+  tripId: 'trip-bbmi-live',
   title: 'BBMI 2025',
   subtitle: 'Buddy Banks Memorial Invitational',
   motto: '"If You\'re Not First, You\'re Last"',
@@ -15,8 +15,8 @@ export const BBMI_EVENT = {
   status: 'active' as const,
 
   teams: [
-    { _id: 'team-a', name: 'Team Hammer', shortName: 'Hammer', color: '#16a34a', colorDim: '#14532d' },
-    { _id: 'team-b', name: 'Team Anvil',  shortName: 'Anvil',  color: '#dc2626', colorDim: '#7f1d1d' },
+    { _id: 'team-a', name: 'Team Hammer', shortName: 'Hammer', color: '#00d4aa', colorDim: '#0d2a22' },
+    { _id: 'team-b', name: 'Team Anvil',  shortName: 'Anvil',  color: '#f97316', colorDim: '#2a1200' },
   ],
 
   players: [
@@ -97,8 +97,6 @@ export const BBMI_EVENT = {
   ],
 }
 
-// Live scores for Round 3 (Sabotage) — in progress
-// Index = hole-1, null = not yet played
 export const LIVE_SCORES: Record<string, (number | null)[]> = {
   'p-brad':    [4,3,4,5,5,4,4,3,5, 4,3,5,4,4, null,null,null,null],
   'p-merling': [4,4,5,4,6,3,4,4,5, 5,4,5,5,3, null,null,null,null],
@@ -118,7 +116,6 @@ export const LIVE_SCORES: Record<string, (number | null)[]> = {
   'p-taj':     [5,5,4,6,6, null,null,null,null,null,null,null,null,null,null,null,null,null],
 }
 
-// Sabotage usage tracker for current user's group
 export const SABOTAGE_USED: Record<string, { type: 'misdemeanor'|'felony'|'capital'; targetId: string; hole: number }[]> = {
   'p-brad':    [{ type: 'capital',     targetId: 'p-jrob',    hole: 3 }],
   'p-merling': [],
@@ -126,29 +123,65 @@ export const SABOTAGE_USED: Record<string, { type: 'misdemeanor'|'felony'|'capit
   'p-jrob':    [{ type: 'capital',     targetId: 'p-brad',    hole: 5 }],
 }
 
-// Completed round results
 export const ROUND_RESULTS: Record<string, Record<string, number>> = {
   'r1': { 'team-a': 2.5, 'team-b': 1.5 },
   'r2': { 'team-a': 1.5, 'team-b': 2.5 },
 }
 
-// ─── Trip / Planning data ─────────────────────────────────────────────────────
+// ─── Trips ────────────────────────────────────────────────────────────────────
 
 export const MOCK_TRIPS = [
+  // LIVE trip — BBMI 2025 in progress at Bandon Dunes
   {
-    _id: 'trip-bbmi', title: 'BBMI 2026', location: 'Scottsdale, AZ', status: 'planning',
-    costTier: '$$$', imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
-    description: 'Annual BBMI. Destination TBD.', startDate: '2026-03-09', endDate: '2026-03-12',
-    activities: ['Golf', 'Poker', 'Hammerschlagen'], golfCourses: [],
+    _id: 'trip-bbmi-live',
+    title: 'BBMI 2025',
+    location: 'Bandon Dunes, OR',
+    status: 'active' as const,
+    costTier: '$$$$',
+    imageUrl: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80',
+    description: 'The Buddy Banks Memorial Invitational. 16 players, 4 days, Ryder Cup format. Day 3 underway — Sabotage round at Pacific Dunes.',
+    startDate: '2025-03-11',
+    endDate: '2025-03-14',
+    accommodation: 'Bandon Dunes Lodge — Door code: 4892',
+    notes: 'Caddies confirmed for all rounds. Walking only, no carts. Proper attire required on course.',
+    activities: ['Golf', 'Hammerschlagen', 'Poker', 'Cards'],
+    golfCourses: ['Bandon Dunes', 'Bandon Trails', 'Pacific Dunes', 'Old Macdonald'],
+    attendees: BBMI_EVENT.players.map(p => ({
+      name: p.name,
+      userId: p._id,
+      status: 'in' as const,
+      role: p._id === 'p-brad' ? 'Owner' : p._id === 'p-zach' ? 'Planner' : 'Member',
+    })),
+    comparisonMode: false,
+    ideas: [],
+    proposedDates: [],
+    eventId: 'bbmi-2025',
+    createdAt: new Date('2024-06-01'),
+  },
+  // UPCOMING trip — BBMI 2026 planning
+  {
+    _id: 'trip-bbmi',
+    title: 'BBMI 2026',
+    location: 'Scottsdale, AZ',
+    status: 'planning' as const,
+    costTier: '$$$',
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+    description: 'Annual BBMI. Destination still being voted on — Scottsdale vs Bandon return.',
+    startDate: '2026-03-09',
+    endDate: '2026-03-12',
+    accommodation: 'TBD — voting on destination first',
+    notes: 'Need 6 firm commitments before booking anything.',
+    activities: ['Golf', 'Poker', 'Hammerschlagen'],
+    golfCourses: [],
     attendees: [
-      { name: 'Brad Giesler',  userId: 'brad',    status: 'in',     role: 'Owner'   },
-      { name: 'Zach Grether',  userId: 'zach',    status: 'in',     role: 'Planner' },
-      { name: 'JD Shumpert',   userId: 'jd',      status: 'in',     role: 'Planner' },
-      { name: 'Rob Drupp',     userId: 'rob',      status: 'in',     role: 'Member'  },
-      { name: 'Charlie Piper', userId: 'charlie',  status: 'likely', role: 'Member'  },
-      { name: 'Tyler Larson',  userId: 'tyler',    status: 'in',     role: 'Member'  },
-      { name: 'Ben Bartkus',   userId: 'ben',      status: 'maybe',  role: 'Member'  },
-      { name: 'BJ Dames',      userId: 'bj',       status: 'in',     role: 'Member'  },
+      { name: 'Brad Giesler',  userId: 'brad',    status: 'in'     as const, role: 'Owner'   },
+      { name: 'Zach Grether',  userId: 'zach',    status: 'in'     as const, role: 'Planner' },
+      { name: 'JD Shumpert',   userId: 'jd',      status: 'in'     as const, role: 'Planner' },
+      { name: 'Rob Drupp',     userId: 'rob',      status: 'in'     as const, role: 'Member'  },
+      { name: 'Charlie Piper', userId: 'charlie',  status: 'likely' as const, role: 'Member'  },
+      { name: 'Tyler Larson',  userId: 'tyler',    status: 'in'     as const, role: 'Member'  },
+      { name: 'Ben Bartkus',   userId: 'ben',      status: 'maybe'  as const, role: 'Member'  },
+      { name: 'BJ Dames',      userId: 'bj',       status: 'in'     as const, role: 'Member'  },
     ],
     comparisonMode: true,
     ideas: [
@@ -179,7 +212,8 @@ export const MOCK_TRIPS = [
       { start: '2026-03-09', end: '2026-03-12' },
       { start: '2026-10-05', end: '2026-10-08' },
     ],
-    eventId: 'bbmi-2025', createdAt: new Date('2025-01-15'),
+    eventId: null,
+    createdAt: new Date('2025-01-15'),
   },
 ]
 
@@ -202,13 +236,39 @@ export const DATE_VOTES = [
 ]
 
 export const TRIP_COMMENTS = [
-  { _id: 'c1', tripId: 'trip-bbmi', userId: 'brad',    userName: 'Brad',    text: "Scottsdale in March is perfect. TPC is a must.", createdAt: new Date('2025-02-01T09:00:00') },
-  { _id: 'c2', tripId: 'trip-bbmi', userId: 'jd',      userName: 'JD',      text: "Bandon > everything. We said we'd go back.", createdAt: new Date('2025-02-03T14:22:00') },
-  { _id: 'c3', tripId: 'trip-bbmi', userId: 'zach',    userName: 'Grether', text: "Vote above. Need 6 firm before I book anything.", createdAt: new Date('2025-02-10T08:15:00') },
-  { _id: 'c4', tripId: 'trip-bbmi', userId: 'charlie', userName: 'Charlie', text: "Either works. Scottsdale easier for flights.", createdAt: new Date('2025-02-11T11:30:00') },
+  { _id: 'c1', tripId: 'trip-bbmi-live', userId: 'p-brad',  userName: 'Brad',    text: "Pacific Dunes is playing tough. Wind off the ocean all morning.", createdAt: new Date('2025-03-13T09:15:00') },
+  { _id: 'c2', tripId: 'trip-bbmi-live', userId: 'p-jd',    userName: 'JD',      text: "Door code for the lodge is 4892 if anyone forgot.", createdAt: new Date('2025-03-11T14:00:00') },
+  { _id: 'c3', tripId: 'trip-bbmi-live', userId: 'p-zach',  userName: 'Grether', text: "Dinner res at 7pm. Everyone be back by 6:30.", createdAt: new Date('2025-03-13T11:30:00') },
+  { _id: 'c4', tripId: 'trip-bbmi-live', userId: 'p-buddy', userName: 'Buddy',   text: "Hammer better enjoy the lead while it lasts 😤", createdAt: new Date('2025-03-13T12:45:00') },
+  { _id: 'c5', tripId: 'trip-bbmi',      userId: 'brad',    userName: 'Brad',    text: "Scottsdale in March is perfect. TPC is a must.", createdAt: new Date('2025-02-01T09:00:00') },
+  { _id: 'c6', tripId: 'trip-bbmi',      userId: 'jd',      userName: 'JD',      text: "Bandon > everything. We said we'd go back.", createdAt: new Date('2025-02-03T14:22:00') },
+  { _id: 'c7', tripId: 'trip-bbmi',      userId: 'zach',    userName: 'Grether', text: "Vote above. Need 6 firm before I book anything.", createdAt: new Date('2025-02-10T08:15:00') },
 ]
 
-export const RESERVATIONS: any[] = []
-export const EXPENSES: any[] = []
+export const RESERVATIONS = [
+  { _id: 'res-1', tripId: 'trip-bbmi-live', type: 'accommodation', title: 'Bandon Dunes Lodge', date: '2025-03-11', startTime: '3:00 PM', confirmationNumber: 'BD-8821', cost: 6400, notes: '4 nights, 8 rooms. Check-out Mar 15.' },
+  { _id: 'res-2', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Bandon Dunes — Round 1 Scramble', date: '2025-03-11', startTime: '8:00 AM', confirmationNumber: 'TT-1101', cost: 1800, notes: '4 groups of 4. Caddies included.' },
+  { _id: 'res-3', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Bandon Trails — Round 2 Stableford', date: '2025-03-12', startTime: '8:00 AM', confirmationNumber: 'TT-1102', cost: 1800, notes: '' },
+  { _id: 'res-4', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Pacific Dunes — Round 3 Sabotage', date: '2025-03-13', startTime: '8:00 AM', confirmationNumber: 'TT-1103', cost: 1800, notes: 'Best course on property.' },
+  { _id: 'res-5', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Old Macdonald — Round 4 Skins', date: '2025-03-14', startTime: '8:00 AM', confirmationNumber: 'TT-1104', cost: 1600, notes: 'Final round. Stakes doubled on 16–18.' },
+  { _id: 'res-6', tripId: 'trip-bbmi-live', type: 'restaurant',    title: 'Gallery Restaurant — Night 1 Dinner', date: '2025-03-11', startTime: '7:00 PM', confirmationNumber: 'GAL-449', cost: 0, notes: 'Pre-paid with lodge package.' },
+]
+
+export const EXPENSES = [
+  { _id: 'exp-1', tripId: 'trip-bbmi-live', title: 'Lodge & Rooms', amount: 6400, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
+  { _id: 'exp-2', tripId: 'trip-bbmi-live', title: 'Round 1 Greens Fees', amount: 1800, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
+  { _id: 'exp-3', tripId: 'trip-bbmi-live', title: 'Round 2 Greens Fees', amount: 1800, paidByName: 'JD', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
+  { _id: 'exp-4', tripId: 'trip-bbmi-live', title: 'Van Rental (airport)', amount: 420, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
+  { _id: 'exp-5', tripId: 'trip-bbmi-live', title: 'Night 2 Bar Tab', amount: 680, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
+]
 
 export const MOCK_EVENT = BBMI_EVENT
+
+// ─── Idea comments (contextual, per-destination) ──────────────────────────────
+export const IDEA_COMMENTS = [
+  { _id: 'ic-1', tripId: 'trip-bbmi', ideaIndex: 0, userId: 'brad',    userName: 'Brad',    text: "TPC Scottsdale is bucket list. We do this.", createdAt: new Date('2025-02-02T10:00:00') },
+  { _id: 'ic-2', tripId: 'trip-bbmi', ideaIndex: 0, userId: 'tyler',   userName: 'Tyler',   text: "We-Ko-Pa Saguaro is world class. Second vote for Scottsdale.", createdAt: new Date('2025-02-04T09:00:00') },
+  { _id: 'ic-3', tripId: 'trip-bbmi', ideaIndex: 0, userId: 'charlie', userName: 'Charlie', text: "Flights are way easier from my end. +1", createdAt: new Date('2025-02-11T11:30:00') },
+  { _id: 'ic-4', tripId: 'trip-bbmi', ideaIndex: 1, userId: 'jd',      userName: 'JD',      text: "We literally said we'd go back. Nothing compares.", createdAt: new Date('2025-02-03T14:22:00') },
+  { _id: 'ic-5', tripId: 'trip-bbmi', ideaIndex: 1, userId: 'rob',     userName: 'Rob',     text: "Old Macdonald for the final round. That's the one.", createdAt: new Date('2025-02-05T16:00:00') },
+]

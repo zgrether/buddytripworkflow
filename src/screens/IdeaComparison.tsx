@@ -1,12 +1,14 @@
 import { useState } from 'react'
+import { MessageSquare, Send } from 'lucide-react'
 import { Screen } from '../App'
-import { MOCK_TRIPS, IDEA_VOTES } from '../data/mockData'
-import { TopNav, Breadcrumb, Card, Btn, Avatar, CostBadge, BottomNav, LiveDot } from '../components/ui'
+import { MOCK_TRIPS, IDEA_VOTES, IDEA_COMMENTS, CURRENT_USER } from '../data/mockData'
+import { TopNav, Breadcrumb, Card, Btn, Avatar, CostBadge, BottomNav } from '../components/ui'
 
-export default function IdeaComparison({ navigate, showToast, tripId }: {
+export default function IdeaComparison({ navigate, showToast, tripId, viewerRole }: {
   navigate: (s: Screen, e?: any) => void
   showToast: (m: string) => void
   tripId?: string
+  viewerRole?: string
 }) {
   const trip: any = MOCK_TRIPS.find(t => t._id === (tripId || 'trip-1')) || MOCK_TRIPS[0]
   const ideas = trip.ideas.filter(i => !i.archived)
@@ -15,6 +17,25 @@ export default function IdeaComparison({ navigate, showToast, tripId }: {
   const [expanded, setExpanded] = useState<number | null>(null)
   // Mobile: which card is active in swipe view
   const [mobileIdx, setMobileIdx] = useState(0)
+  // Auto-open comment threads that already have comments (runs after trip is resolved)
+  const initialOpen = new Set(IDEA_COMMENTS.filter(c => c.tripId === (MOCK_TRIPS.find(t => t._id === (tripId || 'trip-bbmi')) || MOCK_TRIPS[0])._id).map(c => c.ideaIndex))
+  const [openComments, setOpenComments] = useState<Set<number>>(initialOpen)
+  const [commentTexts, setCommentTexts] = useState<Record<number, string>>({})
+  const [allComments, setAllComments] = useState(IDEA_COMMENTS)
+
+  const addComment = (ideaIndex: number) => {
+    const text = commentTexts[ideaIndex]?.trim()
+    if (!text) return
+    setAllComments(c => [...c, {
+      _id: `ic-${Date.now()}`, tripId: trip._id, ideaIndex,
+      userId: CURRENT_USER._id, userName: CURRENT_USER.firstName,
+      text, createdAt: new Date()
+    }])
+    setCommentTexts(t => ({ ...t, [ideaIndex]: '' }))
+  }
+
+  const getComments = (ideaIndex: number) =>
+    allComments.filter(c => c.tripId === trip._id && c.ideaIndex === ideaIndex)
 
   const getCount = (idx: number) => votes.filter(v => v.tripId === trip._id && v.ideaIndex === idx).length
   const getVoters = (idx: number) => votes.filter(v => v.tripId === trip._id && v.ideaIndex === idx).map(v => v.userName)
@@ -146,6 +167,59 @@ export default function IdeaComparison({ navigate, showToast, tripId }: {
               </span>
             </div>
           )}
+
+          {/* Comment thread */}
+          <div className="border-t pt-2" style={{ borderColor: 'var(--bt-border)' }}>
+            <button
+              onClick={() => setOpenComments(prev => {
+                const next = new Set(prev)
+                next.has(idx) ? next.delete(idx) : next.add(idx)
+                return next
+              })}
+              className="flex items-center gap-1.5 text-xs py-1"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bt-text-3)' }}
+            >
+              <MessageSquare size={12} />
+              {getComments(idx).length > 0
+                ? `${getComments(idx).length} comment${getComments(idx).length !== 1 ? 's' : ''}`
+                : 'Add a comment'}
+            </button>
+            {openComments.has(idx) && (
+              <div className="mt-2 flex flex-col gap-2">
+                {getComments(idx).map(c => (
+                  <div key={c._id} className="flex gap-2 items-start">
+                    <Avatar name={c.userName} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-semibold mr-1.5" style={{ color: 'var(--bt-text-2)' }}>{c.userName}</span>
+                      <span className="text-xs" style={{ color: 'var(--bt-text-1)' }}>{c.text}</span>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--bt-text-3)' }}>
+                        {c.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex gap-2 mt-1">
+                  <input
+                    value={commentTexts[idx] || ''}
+                    onChange={e => setCommentTexts(t => ({ ...t, [idx]: e.target.value }))}
+                    onKeyDown={e => e.key === 'Enter' && addComment(idx)}
+                    placeholder="Add a comment..."
+                    className="flex-1 text-xs px-2.5 py-1.5 rounded-lg outline-none"
+                    style={{ background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)' }}
+                    onFocus={e => (e.target.style.borderColor = 'var(--bt-accent)')}
+                    onBlur={e => (e.target.style.borderColor = 'var(--bt-border-input)')}
+                  />
+                  <button
+                    onClick={() => addComment(idx)}
+                    className="p-1.5 rounded-lg flex-shrink-0"
+                    style={{ background: 'var(--bt-accent)', border: 'none', cursor: 'pointer' }}
+                  >
+                    <Send size={12} color="#0d1117" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Actions — push to bottom */}
           <div className="flex gap-2 mt-auto pt-1">
