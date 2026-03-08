@@ -1,9 +1,10 @@
 # BuddyTrip
 
-A mobile-first group trip planning and golf competition app. Built for the BBMI (Buddy Banks Memorial Invitational) as a real-world prototype, but designed to generalize to any recurring friend group trip.
+A mobile-first group trip planning and competition app. Built around BBMI (Buddy Banks Memorial Invitational) as a real-world prototype, but designed to generalize to any recurring friend group trip — golf, wine country, Disney, bachelor party, etc.
 
-**Stack:** React + TypeScript + Vite + Tailwind + Lucide React  
-**Status:** Active prototype — screens functional, mock data only, no backend yet
+**Stack:** Single-file HTML prototype (`buddytrip.html`) — React via CDN, inline CSS variables, no build step  
+**Repo also contains:** React + TypeScript + Vite scaffold in `src/` (partially synced, prototype is source of truth)  
+**Status:** Active prototype — all screens functional, mock data only, no backend
 
 ---
 
@@ -11,121 +12,162 @@ A mobile-first group trip planning and golf competition app. Built for the BBMI 
 
 BuddyTrip solves the coordination problem for recurring group trips:
 
-- **Planning phase** — propose destinations, vote on dates, build a crew roster
-- **Booking phase** — centralize reservations, tee times, confirmations, expenses
-- **Competition** — Ryder Cup-style team scoring across multiple round formats (Scramble, Stableford, Sabotage, Skins)
+- **Planning phase** — propose destinations, vote on ideas, poll dates, build a crew roster
+- **Booking phase** — centralize reservations, confirmations, expenses
+- **Competition** — Ryder Cup-style team scoring across multiple round formats
 - **Live event** — real-time leaderboard, score entry by group, live standings
+- **Communication** — trip-wide chat + private team chat thread
 
 ---
 
-## Screens
+## Single-File Prototype
 
-| Screen | File | Status |
+All active development happens in **`buddytrip.html`**. Open it directly in a browser — no server needed.
+
+### Mock Trips
+
+| Trip | ID | Status | Notes |
+|---|---|---|------|
+| BBMI 2025 | `trip-bbmi-live` | `active` (Live) | Bandon Dunes — scoring in progress |
+| BBMI 2026 | `trip-bbmi` | `ready` | Scottsdale AZ — all locked, countdown showing |
+| BBMI 2027 | `trip-new-deciding` | `planning` | No destination, comparison mode active |
+
+### Mock Users / Dev Switcher
+
+Role switcher always visible bottom-right during development:
+
+| Role | User | Can Do |
 |---|---|---|
-| Dashboard | `screens/Dashboard.tsx` | ✅ Complete |
-| Trip Detail (4 tabs) | `screens/TripDetail.tsx` | ✅ Complete |
-| Idea Comparison | `screens/IdeaComparison.tsx` | ✅ Complete |
-| Live Leaderboard | `screens/LiveLeaderboard.tsx` | ✅ Complete |
-| Live Score Entry | `screens/LiveScoreEntry.tsx` | ✅ Complete |
-| Round Builder | `screens/RoundBuilder.tsx` | ✅ Complete |
-| Trip New | `screens/TripNew.tsx` | 🟡 Stub — needs simplification |
-| Scoreboard | `screens/Scoreboard.tsx` | 🟡 Redundant (superseded by LiveLeaderboard) |
+| `owner` | Brad | Everything — settings, lock destination, transfer, delete |
+| `planner` | Grether | Add/edit content, invite crew, competition setup |
+| `member` | Buddy | Read-only — view content, respond to polls |
+
+---
+
+## Trip Status Model
+
+Three statuses with distinct visual treatment on the Dashboard:
+
+| Status | Badge | Trigger | Dashboard Card |
+|---|---|---|---|
+| `planning` | ⊞ Planning | Default | Neutral border, no accent bar |
+| `ready` | ✓ Ready | Dest + date locked | Violet accent bar, countdown strip |
+| `active` | ▶ LIVE | Start date reached (auto) | Teal accent bar, live dot, scoreboard strip |
+
+**Key decision:** `active` is date-driven and automatic — no manual GO button. The day the start date arrives, the status flips. A future notification ("Your trip starts today") can accompany this.
+
+---
+
+## Navigation Architecture
+
+### Bottom Nav — context-aware
+
+**Outside a trip:** 3 items — Home · New Trip · Live  
+**Inside a trip:** 4 items — Home · Trip Home · Messages · Live
+
+- **Trip Home** — taps back to that trip's Home tab
+- **Messages** — shows unread badge (red dot) when messages from others are waiting
+- **Live** — always goes to live leaderboard
+
+### Breadcrumbs
+
+Pattern: `Trips > [Trip Name] > [Sub-screen]`
+
+- IdeaComparison: `Trips > BBMI 2026 > Where to?`
+- Messages: `Trips > BBMI 2026 > Messages`
+- LiveLeaderboard: No standard breadcrumb — uses native `← TRIP HOME` in header (monospace, matches scoreboard feel)
+
+---
+
+## Screen Inventory
+
+| Screen | Route Key | Status |
+|---|---|---|
+| Dashboard | `trips` | ✅ |
+| Trip Detail | `trip-detail` | ✅ 5 tabs: Home, Schedule, Crew, Competition, More |
+| Idea Comparison | `idea-comparison` | ✅ AI suggestions, comments with timestamps |
+| Trip Messages | `trip-messages` | ✅ Trip Chat + Team Chat stacked |
+| New Trip | `trip-new` | 🟡 Functional, needs simplification |
+| Competition Setup | `comp-setup` | 🟡 Team assignment, draft mode stub |
+| Live Leaderboard | `live-leaderboard` | ✅ Overview, Groups, Info, History |
+
+---
+
+## Home Tab — Panel Order (stable, do not reorder)
+
+1. Trip header card
+2. Destination vote panel (when voting active)
+3. Date panel (when dates not locked)
+4. Tab bar
+5. **[Home tab content]**
+   - Planning Arc (owner/planner only)
+   - About card
+   - Trip Chat teaser → navigates to Messages screen
+
+---
+
+## Destination + Date Panel Logic
+
+### Destination Panel
+- Shows when `trip.comparisonMode && !lockedDest`
+- Lock stored in `DESTINATION_LOCK[tripId]`; reactive via `setLockedDest()`
+- Edit button clears lock without navigating away
+- Card grid: `repeat(min(count, 3), minmax(0, 1fr))`
+
+### Date Panel
+- **No dates:** date pickers + Set Dates + Poll the crew
+- **Poll open:** windows, I'm in / Can't do it, Lock In, Add window
+- **Confirmed (green):** compact row, Change button reopens picker
+- `effectiveStartDate` priority: `lockedWindow → knownDateSet.start → trip.startDate`
+
+---
+
+## Messages Architecture
+
+```js
+TRIP_MESSAGES[tripId] = { trip: [...], team: [...] }
+```
+
+- **Home tab teaser:** compact unread row, stable below About card
+- **Messages screen:** Trip Chat + Team Chat stacked vertically, independent scroll/draft
+- **TripChat component:** `maxHeight` prop, scroll-to-bottom on mount, new-message pill when scrolled up
 
 ---
 
 ## Design System
 
-CSS variables in `src/index.css`:
-
 ```
---bt-base:     #0d1117   (page background)
---bt-card:     #161b22   (card background)
---bt-accent:   #00d4aa   (teal — primary action, live indicators)
---bt-text-1/2/3          (text hierarchy)
---bt-border              (default border)
---bt-danger              (red for destructive actions)
---bt-tag-bg:   #0d2a22   (teal-tinted tag backgrounds)
+--bt-accent:   #00d4aa   teal — primary, live
+--bt-base:     #0d1117   page bg
+--bt-card:     #161b22   card bg
+--bt-danger:   red        destructive, unread
+Ready color:   #a78bfa   violet
 ```
 
-Team colors: Hammer `#00d4aa` (teal) · Anvil `#f97316` (orange)  
-Score colors: Eagle `#f59e0b` · Birdie `#00d4aa` · Par gray · Bogey `#c0765a`
-
-Shared components in `src/components/ui.tsx`:
-`TopNav`, `BottomNav`, `Card`, `Btn`, `Avatar`, `TabBar`, `StatusBadge`, `RoleBadge`, `SectionLabel`, `LiveDot`, `Breadcrumb`, `Stepper`
+**Icon system:** All icons must exist in the `ICONS` dict (~line 144). Do NOT reference icon names that aren't listed. Common gotcha: `LayoutDashboard` does not exist — use `Flag` or another available icon.
 
 ---
 
-## Role System
+## Key Engineering Rules
 
-Three viewer roles control what each user sees and can do:
-
-| Role | Can Do |
-|---|---|
-| `owner` | Everything — Trip Settings, delete, transfer, expense split editing, crew menus, Quick Info tile editing |
-| `planner` | Add/edit content — expenses, bookings, invite crew, competition setup |
-| `member` | Read-only — view all content, add expenses |
-
-Dev role switcher is always visible bottom-right. Represents: Brad (Owner) · Grether (Planner) · Buddy (Member).
+1. **Hooks at top level only** — `useState`/`useRef` cannot live inside IIFEs, nested functions, or conditionals. This has caused multiple crashes.
+2. **IIFE vs Component** — use IIFEs for pure render logic. Extract to named component when you need `useRef`/`useEffect`.
+3. **Reactive globals** — always pair global object mutations with a `setState` call. `DESTINATION_LOCK[id] = x; setLockedDest(x)`.
 
 ---
 
 ## Session History
 
-### Sessions 1–9 — Scoring Engine
-Built the full golf scoring system:
-- `LiveLeaderboard` with Overview, Live Groups, Trip Info, History tabs
-- `LiveScoreEntry` for hole-by-hole input
-- `RoundBuilder` 6-step wizard (format → groups → handicaps → sides → preview)
-- Round formats: Scramble, Stableford, Sabotage (last-place elimination), Skins
-- BBMI_EVENT mock data: 16 players, 2 teams, 4 rounds at Bandon Dunes
+**Sessions 1–9:** Scoring engine — LiveLeaderboard, LiveScoreEntry, RoundBuilder, BBMI_EVENT mock data.
 
-### Session 10 — Trip Planning Layer
-Built the full trip planning layer on top of the scoring engine.
+**Session 10:** Trip planning layer — Dashboard, TripDetail tabs, roles, Add Competition, Quick Info tiles, expenses, IdeaComparison.
 
-**Dashboard** — Live Now / Upcoming / Past sections, competition bar on live card, past trips collapsed by default.
+**Session 11:** Competition tab accordions, add idea/lock in, crew dot legend, planner invite stubs.
 
-**TripDetail 4-tab restructure:**
-- Home: competition hero or Add Competition CTA, Quick Info tiles, destination voting, about/details
-- Schedule: reservations with confirmation numbers, date voting with availability bars  
-- Crew: role + team badges, roster-in-flux warning when destination not locked
-- More: expenses with split editing, trip settings (owner only)
-
-**Role-aware rendering** throughout all tabs via `ViewerRole` passed from App.tsx.
-
-**Add Competition flow** — modal with team assignment (pre-seeded from BBMI data), review step, launch. Transforms Home tab hero from CTA to live scoreboard. Competition is an event, not a settings toggle.
-
-**Quick Info tiles** — owner-editable grid on Home tab. Any label/value pair (door codes, tee times, dinner reservations). Crew sees read-only. Owner sees hover pencil/trash controls and a dashed Add tile.
-
-**Trip header card** — compact card with title, cost badge, location, dates, night count, cost estimate, and a faint state silhouette SVG (OR/AZ) in the corner.
-
-**Expense editing** — any role can add. Owner edits per-person splits via checkbox grid with All/None shortcuts and live per-person recalculation.
-
-**IdeaComparison** — contextual comment threads per destination, auto-expands when comments exist.
+**Session 12 (this session):** Status model (planning/ready/live), destination grid layout, date panel above tabs, Edit destination wired, context-aware bottom nav (4 items in trip), Messages screen with stacked threads, TripChat scroll/unread pill, comment timestamps, breadcrumb consistency, Planning Arc hidden from members, notification trigger inventory mapped.
 
 ---
 
-## Mock Data
+## Running
 
-Two trips in `src/data/mockData.ts`:
-
-| Trip | ID | Status | Location |
-|---|---|---|---|
-| BBMI 2025 | `trip-bbmi-live` | active | Bandon Dunes, OR |
-| BBMI 2026 | `trip-bbmi` | planning | Scottsdale, AZ |
-
-BBMI_EVENT: 2 teams (Hammer/Anvil), 16 players in 4 groups, 4 rounds (Scramble ✅, Stableford ✅, Sabotage 🔴 live, Skins upcoming)
-
----
-
-## Running Locally
-
-```bash
-npm install
-npm run dev
-```
-
-Build distributable single-file HTML:
-```bash
-npm run build
-# inline dist/assets/* into dist/index.html
-```
+Open `buddytrip.html` directly in a browser. No build step required.
