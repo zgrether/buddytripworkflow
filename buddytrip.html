@@ -421,11 +421,11 @@ const RESERVATIONS = [
 ]
 
 const EXPENSES = [
-  { _id: 'exp-1', tripId: 'trip-bbmi-live', title: 'Lodge & Rooms', amount: 6400, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
-  { _id: 'exp-2', tripId: 'trip-bbmi-live', title: 'Round 1 Greens Fees', amount: 1800, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
-  { _id: 'exp-3', tripId: 'trip-bbmi-live', title: 'Round 2 Greens Fees', amount: 1800, paidByName: 'JD', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
-  { _id: 'exp-4', tripId: 'trip-bbmi-live', title: 'Van Rental (airport)', amount: 420, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
-  { _id: 'exp-5', tripId: 'trip-bbmi-live', title: 'Night 2 Bar Tab', amount: 680, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ name: p.nickname })) },
+  { _id: 'exp-1', tripId: 'trip-bbmi-live', title: 'Lodge & Rooms', amount: 6400, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
+  { _id: 'exp-2', tripId: 'trip-bbmi-live', title: 'Round 1 Greens Fees', amount: 1800, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
+  { _id: 'exp-3', tripId: 'trip-bbmi-live', title: 'Round 2 Greens Fees', amount: 1800, paidByName: 'JD', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
+  { _id: 'exp-4', tripId: 'trip-bbmi-live', title: 'Van Rental (airport)', amount: 420, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
+  { _id: 'exp-5', tripId: 'trip-bbmi-live', title: 'Night 2 Bar Tab', amount: 680, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
 ]
 
 const IDEA_COMMENTS = [
@@ -736,7 +736,7 @@ function Dashboard({ navigate, viewerRole }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--bt-text-1)' }}>My Trips</h1>
-            <p style={{ fontSize: 13, color: 'var(--bt-text-3)', marginTop: 2 }}>Welcome back, Grether</p>
+            <p style={{ fontSize: 13, color: 'var(--bt-text-3)', marginTop: 2 }}>Welcome back, {ROLE_USERS[viewerRole]?.name || CURRENT_USER.nickname}</p>
           </div>
           <button onClick={() => navigate('trip-new')} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 8, background: 'var(--bt-accent)', color: '#0d1117', border: 'none', cursor: 'pointer' }}>
             + New Trip
@@ -2515,14 +2515,15 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
 
     function ExpenseRow({ exp }) {
       const [editing, setEditing] = useState(false)
-      const initialIds = new Set(exp.splitAmong?.map(s => s.name) || trip.attendees.map(a => a.name.split(' ')[0]))
+      const nameById = Object.fromEntries(trip.attendees.map(a => [a.userId, a.name.split(' ')[0]]))
+      const initialIds = new Set(exp.splitAmong?.map(s => s.userId) || trip.attendees.map(a => a.userId))
       const [assigned, setAssigned] = useState(initialIds)
       const perPerson = assigned.size > 0 ? Math.round(exp.amount / assigned.size) : 0
-      const toggle = name => {
+      const toggle = userId => {
         setAssigned(prev => {
           const next = new Set(prev)
-          if (next.has(name)) { if (next.size > 1) next.delete(name) }
-          else next.add(name)
+          if (next.has(userId)) { if (next.size > 1) next.delete(userId) }
+          else next.add(userId)
           return next
         })
       }
@@ -2546,20 +2547,19 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--bt-text-3)' }}>Assign to</span>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setAssigned(new Set(trip.attendees.map(a => a.name.split(' ')[0])))} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'none', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)', cursor: 'pointer' }}>All</button>
+                  <button onClick={() => setAssigned(new Set(trip.attendees.map(a => a.userId)))} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'none', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)', cursor: 'pointer' }}>All</button>
                   <button onClick={() => setAssigned(new Set())} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'none', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)', cursor: 'pointer' }}>None</button>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                 {trip.attendees.map(a => {
-                  const firstName = a.name.split(' ')[0]
-                  const isChecked = assigned.has(firstName)
+                  const isChecked = assigned.has(a.userId)
                   return (
-                    <button key={a.userId} onClick={() => toggle(firstName)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', background: isChecked ? 'var(--bt-tag-bg)' : 'transparent', border: `1px solid ${isChecked ? 'var(--bt-accent)30' : 'var(--bt-border)'}`, fontSize: 12, color: isChecked ? 'var(--bt-text-1)' : 'var(--bt-text-3)' }}>
+                    <button key={a.userId} onClick={() => toggle(a.userId)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', background: isChecked ? 'var(--bt-tag-bg)' : 'transparent', border: `1px solid ${isChecked ? 'var(--bt-accent)30' : 'var(--bt-border)'}`, fontSize: 12, color: isChecked ? 'var(--bt-text-1)' : 'var(--bt-text-3)' }}>
                       <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isChecked ? 'var(--bt-accent)' : 'transparent', border: `1.5px solid ${isChecked ? 'var(--bt-accent)' : 'var(--bt-border)'}` }}>
                         {isChecked && <span style={{ color: '#0d1117', fontSize: 10, fontWeight: 900 }}>✓</span>}
                       </div>
-                      {firstName}
+                      {nameById[a.userId] || a.name.split(' ')[0]}
                     </button>
                   )
                 })}

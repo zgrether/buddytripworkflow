@@ -1,25 +1,29 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 0.3 complete
+2026-03-09 — Task 0.5 complete
 
 ## Current State
 - buddytrip.html: ~4730 lines
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
+- Expense splits now keyed by userId, not first names
 
 ## Completed Tasks
 - [x] 0.1 — Send icon added to ICONS dict (line 197)
 - [x] 0.2 — Competition Explainer icon rendering fix (line 1679)
 - [x] 0.3 — computeTeamScores(event) function added (~line 462); replaces hardcoded scores in Dashboard, HomeTab (TripDetail), and LiveLeaderboard
+- [x] 0.4 — EXPENSES splitAmong changed from { name } to { userId }; ExpenseRow now uses userId as Set key and resolves display names via nameById lookup
 
 ## Notes from 0.3
 - Old hardcoded values (6.5/8.5) did NOT match mock data — they were arbitrary placeholders
 - Computed values from ROUND_RESULTS + sides[].result: team-a: 10, team-b: 13
-- This is correct behavior — the prototype is now self-consistent and data-driven
+
+## Completed Tasks (continued)
+- [x] 0.5 — Dashboard greeting now uses ROLE_USERS[viewerRole].name, updates with dev role switcher
 
 ## In Progress
-- [ ] 0.4 — Fix expense split using first names instead of user IDs
+- [ ] 1.1 — Unify user identity (Opus task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
