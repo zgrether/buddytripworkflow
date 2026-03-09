@@ -581,11 +581,12 @@ function getTripStatus(trip) {
 }
 
 // Compute total team scores from round results + side event results.
-// Returns { teamId: totalPoints } for each team in the event.
-function computeTeamScores(event) {
+// Pure function — reads only from the arguments passed in, no globals.
+// Returns { teamId: totalPoints, remaining: pointsStillAvailable }.
+function computeScores(event, roundResults) {
   const totals = {}
   event.teams.forEach(t => { totals[t._id] = 0 })
-  Object.values(ROUND_RESULTS).forEach(res => {
+  Object.values(roundResults).forEach(res => {
     Object.entries(res).forEach(([teamId, pts]) => {
       if (teamId in totals) totals[teamId] += pts
     })
@@ -595,7 +596,10 @@ function computeTeamScores(event) {
       if (teamId in totals) totals[teamId] += pts
     })
   })
-  return totals
+  const totalPossible = event.rounds.reduce((s, r) => s + r.pointsAvailable, 0)
+                      + event.sides.reduce((s, sd) => s + sd.pointsAvailable, 0)
+  const awarded = Object.values(totals).reduce((s, v) => s + v, 0)
+  return { ...totals, remaining: totalPossible - awarded }
 }
 
 // ── Notification Event Layer ─────────────────────────────────────
@@ -932,7 +936,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
   const ready    = trips.filter(t => getTripStatus(t) === 'ready')
   const upcoming = trips.filter(t => getTripStatus(t) === 'planning')
   const past     = trips.filter(t => getTripStatus(t) === 'completed')
-  const scores = computeTeamScores(BBMI_EVENT)
+  const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
 
   function TripCard({ trip }) {
     const isLive  = getTripStatus(trip) === 'active'
@@ -1919,7 +1923,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
     return v ? v.ideaId : null
   })
   const [inlineIdeas, setInlineIdeas] = useState(trip.ideas || [])
-  const scores = computeTeamScores(BBMI_EVENT)
+  const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
 
   // Destination lock — pulled from shared store, refreshes on each render
   const [lockedDest, setLockedDest] = useState(DESTINATION_LOCK[tripId] || null)
@@ -4966,7 +4970,7 @@ function LiveLeaderboard({ navigate, showToast, notify, notifications, onMarkAll
   const { teams, rounds, sides } = BBMI_EVENT
   const [tab, setTab] = useState('overview')
   const [scoreNonce, setScoreNonce] = useState(0)
-  const scores = computeTeamScores(BBMI_EVENT)
+  const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
   const [scoreEntryGroup, setScoreEntryGroup] = useState(null)
   const activeRound = rounds.find(r => r.status === 'active') || rounds[rounds.length - 1]
 
@@ -4982,8 +4986,7 @@ function LiveLeaderboard({ navigate, showToast, notify, notifications, onMarkAll
   }
   const [teamA, teamB] = teams
   const ptsA = scores[teamA._id], ptsB = scores[teamB._id]
-  const totalPossible = rounds.reduce((s, r) => s + r.pointsAvailable, 0) + sides.reduce((s, sd) => s + sd.pointsAvailable, 0)
-  const remaining = totalPossible - ptsA - ptsB
+  const remaining = scores.remaining
 
   const HISTORY = [
     { year: 2025, team: 'Ham, Egg & Cheese Biscuit', location: 'Bandon Dunes, OR' },
