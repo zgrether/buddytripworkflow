@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 1.6 complete
+2026-03-09 — Task 2.1 complete
 
 ## Current State
 - buddytrip.html: ~4730 lines
@@ -70,9 +70,18 @@
 - paidByName 'Grether' mapped to paidByUserId 'zach' — nickname resolved at render time
 - KNOWN_ACCOUNTS inline in TripSettingsPanel left as-is (it's a component-local lookup for the invite flow; 1.6 notes it's now redundant and can be replaced with USERS in a future cleanup)
 - Phase 1 data model tasks are now complete (1.1–1.6)
+- [x] 2.1 — Lifted MOCK_TRIPS to App-level useState; TripNew.handleFinish now builds a real trip object and pushes it onto state; all 5 consuming components (Dashboard, TripDetail, CompetitionSetup, IdeaComparison, TripMessages) updated to accept trips prop; no component reads MOCK_TRIPS directly any more
+
+## Notes from 2.1
+- MOCK_TRIPS remains as the module-level initializer — `useState(MOCK_TRIPS)` in App
+- setTrips passed to TripNew only; all other screens are read-only consumers of trips
+- New trip shape mirrors existing trips: comparisonMode=true when 2+ ideas, comparisonMode=false when known destination or 1 idea
+- 1-idea vote path creates the trip with comparisonMode=false and no ideas[] — user will see the normal planning view (destination can be set from there)
+- Attendees array seeded with CURRENT_USER as Owner (joinedAt: new Date())
+- DESTINATION_LOCK, DATE_POLL are still module-level mutable objects — task 3.2 will move them onto trip objects once trips are stateful (which they now are)
 
 ## In Progress
-- [ ] 2.1 — Make TripNew actually create a trip (Opus task)
+- [ ] 2.2 — Derive trip status dynamically (Opus task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
