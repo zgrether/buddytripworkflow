@@ -457,6 +457,24 @@ const ROUND_RESULTS = {
   'r2': { 'team-a': 1.5, 'team-b': 2.5 },
 }
 
+// Compute total team scores from round results + side event results.
+// Returns { teamId: totalPoints } for each team in the event.
+function computeTeamScores(event) {
+  const totals = {}
+  event.teams.forEach(t => { totals[t._id] = 0 })
+  Object.values(ROUND_RESULTS).forEach(res => {
+    Object.entries(res).forEach(([teamId, pts]) => {
+      if (teamId in totals) totals[teamId] += pts
+    })
+  })
+  event.sides.forEach(side => {
+    Object.entries(side.result).forEach(([teamId, pts]) => {
+      if (teamId in totals) totals[teamId] += pts
+    })
+  })
+  return totals
+}
+
 // ── UI Components ────────────────────────────────────────────────
 
 function Avatar({ name, size = 'md' }) {
@@ -640,7 +658,7 @@ function Dashboard({ navigate, viewerRole }) {
   const ready    = MOCK_TRIPS.filter(t => t.status === 'ready')
   const upcoming = MOCK_TRIPS.filter(t => t.status === 'planning')
   const past     = MOCK_TRIPS.filter(t => t.status === 'completed')
-  const scores = { 'team-a': 6.5, 'team-b': 8.5 }
+  const scores = computeTeamScores(BBMI_EVENT)
 
   function TripCard({ trip }) {
     const isLive  = trip.status === 'active'
@@ -1593,7 +1611,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
     return v ? v.ideaIndex : null
   })
   const [inlineIdeas, setInlineIdeas] = useState(trip.ideas || [])
-  const scores = { 'team-a': 6.5, 'team-b': 8.5 }
+  const scores = computeTeamScores(BBMI_EVENT)
 
   // Destination lock — pulled from shared store, refreshes on each render
   const [lockedDest, setLockedDest] = useState(DESTINATION_LOCK[tripId] || null)
@@ -4404,10 +4422,11 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
 function LiveLeaderboard({ navigate, showToast }) {
   const { teams, rounds, sides } = BBMI_EVENT
   const [tab, setTab] = useState('overview')
-  const ptsA = 6.5, ptsB = 8.5
+  const scores = computeTeamScores(BBMI_EVENT)
+  const [teamA, teamB] = teams
+  const ptsA = scores[teamA._id], ptsB = scores[teamB._id]
   const totalPossible = rounds.reduce((s, r) => s + r.pointsAvailable, 0) + sides.reduce((s, sd) => s + sd.pointsAvailable, 0)
   const remaining = totalPossible - ptsA - ptsB
-  const [teamA, teamB] = teams
 
   const HISTORY = [
     { year: 2025, team: 'Ham, Egg & Cheese Biscuit', location: 'Bandon Dunes, OR' },
