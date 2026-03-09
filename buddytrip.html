@@ -303,6 +303,7 @@ const MOCK_TRIPS = [
     comparisonMode: true,
     ideas: [
       {
+        _id: 'idea-scottsdale',
         title: 'Scottsdale Desert Escape', location: 'Scottsdale, AZ',
         description: '300 days of sunshine, saguaro cacti framing every shot, legendary nightlife.',
         golfCourses: ['TPC Scottsdale', 'We-Ko-Pa (Saguaro)', 'Troon North (Monument)'],
@@ -314,6 +315,7 @@ const MOCK_TRIPS = [
         accommodation: 'Luxury rental home in North Scottsdale', notes: 'March is prime season.', archived: false,
       },
       {
+        _id: 'idea-bandon',
         title: 'Bandon Dunes Return', location: 'Bandon, OR',
         description: 'The best golf in the US. Links-style, no carts, pure game.',
         golfCourses: ['Bandon Dunes', 'Pacific Dunes', 'Bandon Trails', 'Old Macdonald'],
@@ -326,8 +328,8 @@ const MOCK_TRIPS = [
       },
     ],
     proposedDates: [
-      { start: '2026-03-09', end: '2026-03-12' },
-      { start: '2026-10-05', end: '2026-10-08' },
+      { _id: 'pd-mar-2026', start: '2026-03-09', end: '2026-03-12' },
+      { _id: 'pd-oct-2026', start: '2026-10-05', end: '2026-10-08' },
     ],
     eventId: null,
   },
@@ -346,6 +348,7 @@ const MOCK_TRIPS = [
     comparisonMode: true,
     ideas: [
       {
+        _id: 'idea-scottsdale-2027',
         title: 'Scottsdale Desert Escape', location: 'Scottsdale, AZ',
         description: '300 days of sunshine, world-class courses.',
         golfCourses: ['TPC Scottsdale', 'Troon North'],
@@ -368,48 +371,48 @@ const DESTINATION_LOCK = {}  // { [tripId]: { title, location } | null }
 const DATE_POLL = {
   'trip-bbmi': {
     open: false,
-    lockedIdx: 1,
+    lockedId: 'dw-oct-2026',
     windows: [
-      { start: '2026-03-09', end: '2026-03-12' },
-      { start: '2026-10-05', end: '2026-10-08' },
+      { _id: 'dw-mar-2026', start: '2026-03-09', end: '2026-03-12' },
+      { _id: 'dw-oct-2026', start: '2026-10-05', end: '2026-10-08' },
     ],
     votes: [
-      { windowIdx: 0, userId: 'brad',    name: 'Brad',    answer: 'yes' },
-      { windowIdx: 0, userId: 'zach',    name: 'Zach',    answer: 'yes' },
-      { windowIdx: 0, userId: 'jd',      name: 'JD',      answer: 'no'  },
-      { windowIdx: 1, userId: 'brad',    name: 'Brad',    answer: 'yes' },
-      { windowIdx: 1, userId: 'zach',    name: 'Zach',    answer: 'yes' },
-      { windowIdx: 1, userId: 'jd',      name: 'JD',      answer: 'yes' },
-      { windowIdx: 1, userId: 'rob',     name: 'Rob',     answer: 'yes' },
-      { windowIdx: 1, userId: 'charlie', name: 'Charlie', answer: 'yes' },
-      { windowIdx: 0, userId: 'tyler',   name: 'Tyler',   answer: 'yes' },
-      { windowIdx: 1, userId: 'tyler',   name: 'Tyler',   answer: 'yes' },
+      { windowId: 'dw-mar-2026', userId: 'brad',    name: 'Brad',    answer: 'yes' },
+      { windowId: 'dw-mar-2026', userId: 'zach',    name: 'Zach',    answer: 'yes' },
+      { windowId: 'dw-mar-2026', userId: 'jd',      name: 'JD',      answer: 'no'  },
+      { windowId: 'dw-oct-2026', userId: 'brad',    name: 'Brad',    answer: 'yes' },
+      { windowId: 'dw-oct-2026', userId: 'zach',    name: 'Zach',    answer: 'yes' },
+      { windowId: 'dw-oct-2026', userId: 'jd',      name: 'JD',      answer: 'yes' },
+      { windowId: 'dw-oct-2026', userId: 'rob',     name: 'Rob',     answer: 'yes' },
+      { windowId: 'dw-oct-2026', userId: 'charlie', name: 'Charlie', answer: 'yes' },
+      { windowId: 'dw-mar-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes' },
+      { windowId: 'dw-oct-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes' },
     ],
   },
   'trip-new-deciding': {
     open: false,
-    lockedIdx: null,
+    lockedId: null,
     windows: [],
     votes: [],
   },
 }
 
 const IDEA_VOTES = [
-  { tripId: 'trip-bbmi', ideaIndex: 0, userId: 'brad',    userName: 'Brad'    },
-  { tripId: 'trip-bbmi', ideaIndex: 0, userId: 'zach',    userName: 'Zach'    },
-  { tripId: 'trip-bbmi', ideaIndex: 1, userId: 'jd',      userName: 'JD'      },
-  { tripId: 'trip-bbmi', ideaIndex: 1, userId: 'rob',     userName: 'Rob'     },
-  { tripId: 'trip-bbmi', ideaIndex: 0, userId: 'tyler',   userName: 'Tyler'   },
-  { tripId: 'trip-bbmi', ideaIndex: 1, userId: 'charlie', userName: 'Charlie' },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    userName: 'Brad'    },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'zach',    userName: 'Zach'    },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      userName: 'JD'      },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     userName: 'Rob'     },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   userName: 'Tyler'   },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'charlie', userName: 'Charlie' },
 ]
 
 const DATE_VOTES = [
-  { tripId: 'trip-bbmi', proposedDateIndex: 0, userId: 'brad', userName: 'Brad', availability: 'yes'   },
-  { tripId: 'trip-bbmi', proposedDateIndex: 0, userId: 'zach', userName: 'Zach', availability: 'yes'   },
-  { tripId: 'trip-bbmi', proposedDateIndex: 0, userId: 'jd',   userName: 'JD',   availability: 'yes'   },
-  { tripId: 'trip-bbmi', proposedDateIndex: 0, userId: 'rob',  userName: 'Rob',  availability: 'maybe' },
-  { tripId: 'trip-bbmi', proposedDateIndex: 1, userId: 'brad', userName: 'Brad', availability: 'no'    },
-  { tripId: 'trip-bbmi', proposedDateIndex: 1, userId: 'zach', userName: 'Zach', availability: 'yes'   },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'brad', userName: 'Brad', availability: 'yes'   },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'zach', userName: 'Zach', availability: 'yes'   },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'jd',   userName: 'JD',   availability: 'yes'   },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'rob',  userName: 'Rob',  availability: 'maybe' },
+  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'brad', userName: 'Brad', availability: 'no'    },
+  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'zach', userName: 'Zach', availability: 'yes'   },
 ]
 
 const RESERVATIONS = [
@@ -429,10 +432,10 @@ const EXPENSES = [
 ]
 
 const IDEA_COMMENTS = [
-  { _id: 'ic-1', tripId: 'trip-bbmi', ideaIndex: 0, userId: 'brad',    userName: 'Brad',    text: 'TPC Scottsdale is bucket list. We do this.', createdAt: new Date('2025-02-02') },
-  { _id: 'ic-2', tripId: 'trip-bbmi', ideaIndex: 0, userId: 'tyler',   userName: 'Tyler',   text: 'We-Ko-Pa Saguaro is world class. +1 Scottsdale.', createdAt: new Date('2025-02-04') },
-  { _id: 'ic-3', tripId: 'trip-bbmi', ideaIndex: 1, userId: 'jd',      userName: 'JD',      text: 'We literally said we\'d go back. Nothing compares.', createdAt: new Date('2025-02-03') },
-  { _id: 'ic-4', tripId: 'trip-bbmi', ideaIndex: 1, userId: 'rob',     userName: 'Rob',     text: 'Old Macdonald for the final round. That\'s the one.', createdAt: new Date('2025-02-05') },
+  { _id: 'ic-1', tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    userName: 'Brad',    text: 'TPC Scottsdale is bucket list. We do this.', createdAt: new Date('2025-02-02') },
+  { _id: 'ic-2', tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   userName: 'Tyler',   text: 'We-Ko-Pa Saguaro is world class. +1 Scottsdale.', createdAt: new Date('2025-02-04') },
+  { _id: 'ic-3', tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      userName: 'JD',      text: 'We literally said we\'d go back. Nothing compares.', createdAt: new Date('2025-02-03') },
+  { _id: 'ic-4', tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     userName: 'Rob',     text: 'Old Macdonald for the final round. That\'s the one.', createdAt: new Date('2025-02-05') },
 ]
 
 const TRIP_MESSAGES = {
@@ -1608,7 +1611,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
   const [inlineVotes, setInlineVotes] = useState(IDEA_VOTES.filter(v => v.tripId === trip._id))
   const [inlineMyVote, setInlineMyVote] = useState(() => {
     const v = IDEA_VOTES.find(v => v.tripId === trip._id && v.userId === CURRENT_USER._id)
-    return v ? v.ideaIndex : null
+    return v ? v.ideaId : null
   })
   const [inlineIdeas, setInlineIdeas] = useState(trip.ideas || [])
   const scores = computeTeamScores(BBMI_EVENT)
@@ -1620,7 +1623,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
   const effectiveComparisonMode = trip.comparisonMode && !effectiveLockedDest
 
   // Date poll state — driven from shared DATE_POLL store
-  const [datePoll, setDatePoll] = React.useState(() => DATE_POLL[trip._id] || { open: false, lockedIdx: null, windows: [], votes: [] })
+  const [datePoll, setDatePoll] = React.useState(() => DATE_POLL[trip._id] || { open: false, lockedId: null, windows: [], votes: [] })
   const syncDatePoll = (updater) => {
     setDatePoll(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater
@@ -1640,7 +1643,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
   const [msgDraft, setMsgDraft] = useState('')
   const [inlineNewTitle, setInlineNewTitle] = useState('')
 
-  const lockedWindow = datePoll.lockedIdx !== null ? datePoll.windows[datePoll.lockedIdx] : null
+  const lockedWindow = datePoll.lockedId ? datePoll.windows.find(w => w._id === datePoll.lockedId) : null
   const effectiveStartDate = lockedWindow ? lockedWindow.start : (knownDateSet.start || trip.startDate || null)
   const effectiveEndDate   = lockedWindow ? lockedWindow.end   : (knownDateSet.end   || trip.endDate   || null)
 
@@ -1670,7 +1673,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
 
   // Post date-lock cleanup sheet
   const [showNoVoterCleanup, setShowNoVoterCleanup] = useState(false)
-  const [cleanupWindowIdx, setCleanupWindowIdx] = useState(null)
+  const [cleanupWindowId, setCleanupWindowIdx] = useState(null)
 
   function HomeTab() {
     return (
@@ -1918,8 +1921,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
     const reservations = RESERVATIONS.filter(r => r.tripId === trip._id)
     const RES_ICONS = { accommodation: 'Building2', 'tee-time': 'Flag', restaurant: 'UtensilsCrossed', transportation: 'Car', activity: 'Target', other: 'ClipboardList' }
     const dateVotes = DATE_VOTES.filter(v => v.tripId === trip._id)
-    const getDateScore = idx => {
-      const vs = dateVotes.filter(v => v.proposedDateIndex === idx)
+    const getDateScore = dateId => {
+      const vs = dateVotes.filter(v => v.dateId === dateId)
       return { yes: vs.filter(v => v.availability === 'yes').length, maybe: vs.filter(v => v.availability === 'maybe').length, no: vs.filter(v => v.availability === 'no').length }
     }
 
@@ -2661,14 +2664,14 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
             {effectiveStartDate ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 <><Ic n="Calendar" size={14} color="var(--bt-accent)" style={{marginRight:5}} />{fmtDateRange(effectiveStartDate, effectiveEndDate)}</>
-                {datePoll.open && datePoll.lockedIdx === null && (
+                {datePoll.open && datePoll.lockedId === null && (
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 9999, background: '#1a1200', color: '#f59e0b', border: '1px solid #f59e0b40' }}>
                     TENTATIVE · Poll active
                   </span>
                 )}
                 {(lockedWindow || knownDateSet.start) && canEdit && (
                   <button onClick={() => {
-                    if (lockedWindow) syncDatePoll(p => ({ ...p, lockedIdx: null, open: true }))
+                    if (lockedWindow) syncDatePoll(p => ({ ...p, lockedId: null, open: true }))
                     setKnownDateSet({ start: null, end: null })
                     setTab('home')
                   }}
@@ -2731,11 +2734,11 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                 <p style={{ fontSize: 13, color: 'var(--bt-text-3)', margin: '0 0 10px' }}>No ideas yet — add the first one below.</p>
               )}
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(inlineIdeas.length || 1, 3)}, minmax(0, 1fr))`, gap: 8, marginBottom: inlineIdeas.length ? 10 : 0 }}>
-                {inlineIdeas.map((idea, idx) => {
-                  const voters = inlineVotes.filter(v => v.tripId === trip._id && v.ideaIndex === idx).map(v => v.userName)
-                  const isMyPick = inlineMyVote === idx
+                {inlineIdeas.map((idea) => {
+                  const voters = inlineVotes.filter(v => v.tripId === trip._id && v.ideaId === idea._id).map(v => v.userName)
+                  const isMyPick = inlineMyVote === idea._id
                   return (
-                    <div key={idx} style={{ borderRadius: 10, border: `1px solid ${isMyPick ? 'var(--bt-accent)80' : 'var(--bt-border)'}`, background: 'var(--bt-base)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color .2s' }}>
+                    <div key={idea._id} style={{ borderRadius: 10, border: `1px solid ${isMyPick ? 'var(--bt-accent)80' : 'var(--bt-border)'}`, background: 'var(--bt-base)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color .2s' }}>
                       {/* Hero image — shorter since cards are narrower */}
                       <div style={{ position: 'relative', height: 60, flexShrink: 0 }}>
                         {idea.imageUrl
@@ -2757,8 +2760,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                         {inlineIdeas.length >= 2 && (
                           <button onClick={() => {
                             const filtered = inlineVotes.filter(v => !(v.tripId===trip._id && v.userId===CURRENT_USER._id))
-                            setInlineVotes([...filtered, { tripId:trip._id, ideaIndex:idx, userId:CURRENT_USER._id, userName:CURRENT_USER.firstName }])
-                            setInlineMyVote(idx)
+                            setInlineVotes([...filtered, { tripId:trip._id, ideaId:idea._id, userId:CURRENT_USER._id, userName:CURRENT_USER.firstName }])
+                            setInlineMyVote(idea._id)
                             showToast(`Voted for ${idea.title}!`)
                           }}
                             style={{ flex:1, padding:'6px 4px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer', border:'none', background:isMyPick?'var(--bt-accent)':'var(--bt-tag-bg)', color:isMyPick?'#0d1117':'var(--bt-accent)', display:'flex', alignItems:'center', justifyContent:'center', gap:3 }}>
@@ -2787,9 +2790,9 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
               {canEdit && (inlineAddOpen ? (
                 <div style={{ display:'flex', gap:8 }}>
                   <input autoFocus value={inlineNewTitle} onChange={e=>setInlineNewTitle(e.target.value)}
-                    onKeyDown={e => { if(e.key==='Enter' && inlineNewTitle.trim()) { setInlineIdeas(l=>[...l,{title:inlineNewTitle.trim(),imageUrl:null,pros:[],cons:[],golfCourses:[],activities:[]}]); setInlineNewTitle(''); setInlineAddOpen(false) }}}
+                    onKeyDown={e => { if(e.key==='Enter' && inlineNewTitle.trim()) { setInlineIdeas(l=>[...l,{_id:'idea-'+Date.now(),title:inlineNewTitle.trim(),imageUrl:null,pros:[],cons:[],golfCourses:[],activities:[]}]); setInlineNewTitle(''); setInlineAddOpen(false) }}}
                     placeholder="Add a destination…" style={{ flex:1, fontSize:13, padding:'8px 10px', borderRadius:7, background:'var(--bt-input)', border:'1px solid var(--bt-accent)60', color:'var(--bt-text-1)', outline:'none' }} />
-                  <button onClick={() => { if(inlineNewTitle.trim()) { setInlineIdeas(l=>[...l,{title:inlineNewTitle.trim(),imageUrl:null,pros:[],cons:[],golfCourses:[],activities:[]}]); setInlineNewTitle(''); setInlineAddOpen(false) }}}
+                  <button onClick={() => { if(inlineNewTitle.trim()) { setInlineIdeas(l=>[...l,{_id:'idea-'+Date.now(),title:inlineNewTitle.trim(),imageUrl:null,pros:[],cons:[],golfCourses:[],activities:[]}]); setInlineNewTitle(''); setInlineAddOpen(false) }}}
                     style={{ padding:'8px 12px', borderRadius:7, border:'none', background:'var(--bt-accent)', color:'#0d1117', fontWeight:700, fontSize:12, cursor:'pointer' }}>Add</button>
                   <button onClick={()=>setInlineAddOpen(false)} style={{ padding:'8px', borderRadius:7, border:'1px solid var(--bt-border)', background:'transparent', color:'var(--bt-text-3)', cursor:'pointer' }}><Ic n="X" size={14} color="currentColor" /></button>
                 </div>
@@ -2804,30 +2807,32 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
         )}
 
         {/* ── Date panel — always visible when dates not locked ── */}
-        {datePoll.lockedIdx === null && (() => {
-          const myVote = (wIdx) => datePoll.votes.find(v => v.windowIdx === wIdx && v.userId === CURRENT_USER._id)?.answer || null
-          const getTally = (wIdx) => ({
-            yes: datePoll.votes.filter(v => v.windowIdx === wIdx && v.answer === 'yes').length,
-            no:  datePoll.votes.filter(v => v.windowIdx === wIdx && v.answer === 'no').length,
+        {datePoll.lockedId === null && (() => {
+          const myVote = (wId) => datePoll.votes.find(v => v.windowId === wId && v.userId === CURRENT_USER._id)?.answer || null
+          const getTally = (wId) => ({
+            yes: datePoll.votes.filter(v => v.windowId === wId && v.answer === 'yes').length,
+            no:  datePoll.votes.filter(v => v.windowId === wId && v.answer === 'no').length,
           })
-          const castVote = (wIdx, answer) => syncDatePoll(p => {
-            const filtered = p.votes.filter(v => !(v.windowIdx === wIdx && v.userId === CURRENT_USER._id))
-            return { ...p, votes: [...filtered, { windowIdx: wIdx, userId: CURRENT_USER._id, name: CURRENT_USER.firstName, answer }] }
+          const castVote = (wId, answer) => syncDatePoll(p => {
+            const filtered = p.votes.filter(v => !(v.windowId === wId && v.userId === CURRENT_USER._id))
+            return { ...p, votes: [...filtered, { windowId: wId, userId: CURRENT_USER._id, name: CURRENT_USER.firstName, answer }] }
           })
-          const lockWindow = (wIdx) => {
-            syncDatePoll(p => ({ ...p, lockedIdx: wIdx, open: false }))
-            const noVoters = datePoll.votes.filter(v => v.windowIdx === wIdx && v.answer === 'no')
-            if (noVoters.length > 0) { setCleanupWindowIdx(wIdx); setShowNoVoterCleanup(true) }
-            else showToast(`📅 ${fmtDateRange(datePoll.windows[wIdx].start, datePoll.windows[wIdx].end)} locked in!`)
+          const lockWindow = (wId) => {
+            const w = datePoll.windows.find(w => w._id === wId)
+            syncDatePoll(p => ({ ...p, lockedId: wId, open: false }))
+            const noVoters = datePoll.votes.filter(v => v.windowId === wId && v.answer === 'no')
+            if (noVoters.length > 0) { setCleanupWindowId(wId); setShowNoVoterCleanup(true) }
+            else showToast(`📅 ${fmtDateRange(w.start, w.end)} locked in!`)
           }
           const addWindow = () => {
             if (!windowDraft.start || !windowDraft.end) return
-            syncDatePoll(p => ({ ...p, windows: [...p.windows, { start: windowDraft.start, end: windowDraft.end }] }))
+            const newId = 'dw-' + Date.now()
+            syncDatePoll(p => ({ ...p, windows: [...p.windows, { _id: newId, start: windowDraft.start, end: windowDraft.end }] }))
             setWindowDraft({ start: '', end: '' })
             setAddingWindow(false)
           }
-          const bestIdx = datePoll.windows.reduce((best, _, i) => {
-            const t = getTally(i), bT = getTally(best)
+          const bestIdx = datePoll.windows.reduce((best, w, i) => {
+            const t = getTally(w._id), bT = getTally(datePoll.windows[best]._id)
             return t.yes > bT.yes ? i : best
           }, 0)
 
@@ -2847,7 +2852,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                     style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor='var(--bt-accent)'; e.currentTarget.style.color='var(--bt-accent)' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor='var(--bt-border)'; e.currentTarget.style.color='var(--bt-text-3)' }}>Change</button>
-                  <button onClick={() => syncDatePoll(p => ({ ...p, open: true, windows: [...p.windows, { start: effectiveStartDate, end: effectiveEndDate }] }))}
+                  <button onClick={() => syncDatePoll(p => ({ ...p, open: true, windows: [...p.windows, { _id: 'dw-' + Date.now(), start: effectiveStartDate, end: effectiveEndDate }] }))}
                     style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor='#f59e0b'; e.currentTarget.style.color='#f59e0b' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor='var(--bt-border)'; e.currentTarget.style.color='var(--bt-text-3)' }}>Poll crew</button>
@@ -2888,7 +2893,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                     </button>
                     <button onClick={() => {
                       if (knownDateDraft.start && knownDateDraft.end)
-                        syncDatePoll(p => ({ ...p, open: true, windows: [...p.windows, { start: knownDateDraft.start, end: knownDateDraft.end }] }))
+                        syncDatePoll(p => ({ ...p, open: true, windows: [...p.windows, { _id: 'dw-' + Date.now(), start: knownDateDraft.start, end: knownDateDraft.end }] }))
                       else syncDatePoll(p => ({ ...p, open: true }))
                       showToast('Poll opened')
                     }}
@@ -2937,19 +2942,19 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                   </div>
                 )}
                 {datePoll.windows.map((w, wIdx) => {
-                  const t = getTally(wIdx)
+                  const t = getTally(w._id)
                   const total = trip.attendees.length || 1
                   const isBest = datePoll.windows.length > 1 && wIdx === bestIdx && t.yes > 0
-                  const mv = myVote(wIdx)
+                  const mv = myVote(w._id)
                   return (
-                    <div key={wIdx} style={{ borderRadius: 10, padding: '12px 14px', background: 'var(--bt-base)', border: `1px solid ${isBest ? 'var(--bt-accent)50' : 'var(--bt-border)'}` }}>
+                    <div key={w._id} style={{ borderRadius: 10, padding: '12px 14px', background: 'var(--bt-base)', border: `1px solid ${isBest ? 'var(--bt-accent)50' : 'var(--bt-border)'}` }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                         <div>
                           {isBest && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--bt-accent)', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '.06em' }}>Best availability</div>}
                           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--bt-text-1)' }}>{fmtDateRange(w.start, w.end)}</div>
                         </div>
                         {canEdit && (
-                          <button onClick={() => lockWindow(wIdx)}
+                          <button onClick={() => lockWindow(w._id)}
                             style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-accent)60', color: 'var(--bt-accent)' }}
                             onMouseEnter={e => { e.currentTarget.style.background = 'var(--bt-accent)'; e.currentTarget.style.color = '#0d1117' }}
                             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--bt-accent)' }}>
@@ -2969,7 +2974,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
                           {['yes','no'].map(ans => (
-                            <button key={ans} onClick={() => castVote(wIdx, ans)}
+                            <button key={ans} onClick={() => castVote(w._id, ans)}
                               style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 6, cursor: 'pointer', transition: 'all .15s',
                                 background: mv === ans ? (ans === 'yes' ? 'var(--bt-accent)' : 'var(--bt-danger)') : 'transparent',
                                 color: mv === ans ? '#0d1117' : (ans === 'yes' ? 'var(--bt-accent)' : 'var(--bt-danger)'),
@@ -3031,10 +3036,10 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
       </div>
 
       {/* ── No-voter cleanup sheet — shown after locking a date ── */}
-      {showNoVoterCleanup && cleanupWindowIdx !== null && (() => {
-        const w = datePoll.windows[cleanupWindowIdx]
+      {showNoVoterCleanup && cleanupWindowId !== null && (() => {
+        const w = datePoll.windows.find(w => w._id === cleanupWindowId)
         const noVoterIds = datePoll.votes
-          .filter(v => v.windowIdx === cleanupWindowIdx && v.answer === 'no')
+          .filter(v => v.windowId === cleanupWindowId && v.answer === 'no')
           .map(v => v.userId)
         const noVoters = roster.filter(m => noVoterIds.includes(m.userId))
         if (noVoters.length === 0) { setShowNoVoterCleanup(false); return null }
@@ -3573,10 +3578,10 @@ function IdeaComparison({ navigate, showToast, tripId, viewerRole }) {
   const [votes, setVotes] = useState(IDEA_VOTES)
   const [mobileIdx, setMobileIdx] = useState(0)
   const [allComments, setAllComments] = useState(IDEA_COMMENTS)
-  const [openComments, setOpenComments] = useState(new Set(IDEA_COMMENTS.filter(c => c.tripId === trip._id).map(c => c.ideaIndex)))
+  const [openComments, setOpenComments] = useState(new Set(IDEA_COMMENTS.filter(c => c.tripId === trip._id).map(c => c.ideaId)))
   const [commentTexts, setCommentTexts] = useState({})
   const [lockedIn, setLockedIn] = useState(
-    DESTINATION_LOCK[trip._id] ? localIdeas.findIndex(i => i.title === DESTINATION_LOCK[trip._id]?.title) : null
+    DESTINATION_LOCK[trip._id] ? (localIdeas.find(i => i.title === DESTINATION_LOCK[trip._id]?.title)?._id || null) : null
   )
   const [showReopenConfirm, setShowReopenConfirm] = useState(false)
   const [manualDest, setManualDest] = useState('')
@@ -3618,20 +3623,21 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
     }
   }
 
-  const getCount = idx => votes.filter(v => v.tripId === trip._id && v.ideaIndex === idx).length
-  const getVoters = idx => votes.filter(v => v.tripId === trip._id && v.ideaIndex === idx).map(v => v.userName)
-  const getComments = idx => allComments.filter(c => c.tripId === trip._id && c.ideaIndex === idx)
-  const maxVotes = Math.max(...localIdeas.map((_, i) => getCount(i)), 1)
-  const leadingIdx = localIdeas.reduce((best, _, i) => getCount(i) > getCount(best) ? i : best, 0)
+  const getCount = ideaId => votes.filter(v => v.tripId === trip._id && v.ideaId === ideaId).length
+  const getVoters = ideaId => votes.filter(v => v.tripId === trip._id && v.ideaId === ideaId).map(v => v.userName)
+  const getComments = ideaId => allComments.filter(c => c.tripId === trip._id && c.ideaId === ideaId)
+  const maxVotes = Math.max(...localIdeas.map(idea => getCount(idea._id)), 1)
+  const leadingIdx = localIdeas.reduce((best, idea, i) => getCount(idea._id) > getCount(localIdeas[best]._id) ? i : best, 0)
 
   function IdeaCard({ idx }) {
     const idea = localIdeas[idx]
     if (!idea) return null
-    const count       = getCount(idx)
-    const voters      = getVoters(idx)
-    const isMyVote    = myVote === idx
+    const ideaId      = idea._id
+    const count       = getCount(ideaId)
+    const voters      = getVoters(ideaId)
+    const isMyVote    = myVote === ideaId
     const isLeading   = count === maxVotes && count > 0
-    const isLocked    = lockedIn === idx
+    const isLocked    = lockedIn === ideaId
     const totalVoters = trip.attendees.length
 
     const [editingPros, setEditingPros] = useState(false)
@@ -3824,15 +3830,15 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
           )}
 
           <div style={{ borderTop: '1px solid var(--bt-border)', paddingTop: 10 }}>
-            <button onClick={() => setOpenComments(prev => { const n=new Set(prev); n.has(idx)?n.delete(idx):n.add(idx); return n })}
+            <button onClick={() => setOpenComments(prev => { const n=new Set(prev); n.has(ideaId)?n.delete(ideaId):n.add(ideaId); return n })}
               style={{ background:'none', border:'none', cursor:'pointer', color:'var(--bt-text-3)', fontSize:12, display:'flex', alignItems:'center', gap:6, padding:'2px 0' }}>
               <Ic n="MessageCircle" size={14} color="var(--bt-text-3)" />
-              {getComments(idx).length > 0 ? `${getComments(idx).length} comment${getComments(idx).length!==1?'s':''}` : 'Comments'}
-              <Ic n={openComments.has(idx) ? 'ChevronUp' : 'ChevronDown'} size={12} color="var(--bt-text-3)" />
+              {getComments(ideaId).length > 0 ? `${getComments(ideaId).length} comment${getComments(ideaId).length!==1?'s':''}` : 'Comments'}
+              <Ic n={openComments.has(ideaId) ? 'ChevronUp' : 'ChevronDown'} size={12} color="var(--bt-text-3)" />
             </button>
-            {openComments.has(idx) && (
+            {openComments.has(ideaId) && (
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {getComments(idx).map(c => (
+                {getComments(ideaId).map(c => (
                   <div key={c._id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <Avatar name={c.userName} size="sm" />
                     <div style={{ flex:1, background:'var(--bt-base)', borderRadius:8, padding:'6px 10px' }}>
@@ -3847,23 +3853,23 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                 {/* Comment input with send button */}
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <Avatar name={CURRENT_USER.firstName} size="sm" />
-                  <input value={commentTexts[idx]||''} onChange={e => setCommentTexts(t=>({...t,[idx]:e.target.value}))}
+                  <input value={commentTexts[ideaId]||''} onChange={e => setCommentTexts(t=>({...t,[ideaId]:e.target.value}))}
                     onKeyDown={e => {
                       if(e.key!=='Enter') return
-                      const text = commentTexts[idx]?.trim()
+                      const text = commentTexts[ideaId]?.trim()
                       if(!text) return
-                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaIndex:idx,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,text,createdAt:new Date()}])
-                      setCommentTexts(t=>({...t,[idx]:''}))
+                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,text,createdAt:new Date()}])
+                      setCommentTexts(t=>({...t,[ideaId]:''}))
                     }}
                     placeholder="Write a comment…" style={{ flex:1, fontSize:12, padding:'6px 10px', borderRadius:6, outline:'none', background:'var(--bt-input)', border:'1px solid var(--bt-border-input)', color:'var(--bt-text-1)' }}
                     onFocus={e=>e.target.style.borderColor='var(--bt-accent)'}
                     onBlur={e=>e.target.style.borderColor='var(--bt-border-input)'} />
                   <button
                     onClick={() => {
-                      const text = commentTexts[idx]?.trim()
+                      const text = commentTexts[ideaId]?.trim()
                       if(!text) return
-                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaIndex:idx,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,text,createdAt:new Date()}])
-                      setCommentTexts(t=>({...t,[idx]:''}))
+                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,text,createdAt:new Date()}])
+                      setCommentTexts(t=>({...t,[ideaId]:''}))
                     }}
                     style={{ flexShrink:0, padding:'6px 12px', borderRadius:6, border:'none', cursor:'pointer', background:'var(--bt-accent)', color:'#0d1117', fontSize:12, fontWeight:700 }}>
                     Send
@@ -3876,14 +3882,14 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
           {localIdeas.length >= 2 && (
             <div style={{ display: 'flex', gap: 8 }}>
               {lockedIn === null && (
-                <button onClick={() => { setMyVote(idx); setVotes(v => { const f=v.filter(x=>!(x.tripId===trip._id&&x.userId===CURRENT_USER._id)); return [...f,{tripId:trip._id,ideaIndex:idx,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName}] }); showToast(`Voted for ${idea.title}!`) }}
+                <button onClick={() => { setMyVote(ideaId); setVotes(v => { const f=v.filter(x=>!(x.tripId===trip._id&&x.userId===CURRENT_USER._id)); return [...f,{tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName}] }); showToast(`Voted for ${idea.title}!`) }}
                   style={{ flex:1, padding:'10px', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer', border:'none', background:isMyVote?'var(--bt-accent)':'var(--bt-tag-bg)', color:isMyVote?'#0d1117':'var(--bt-accent)', transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
                   <Ic n={isMyVote?'Check':'ThumbsUp'} size={15} color={isMyVote?'#0d1117':'var(--bt-accent)'} />
                   {isMyVote ? 'Your pick' : 'Vote for this'}
                 </button>
               )}
               {isOwner && lockedIn === null && (
-                <button onClick={() => setShowLockConfirm(idx)}
+                <button onClick={() => setShowLockConfirm(ideaId)}
                   style={{ padding:'10px 14px', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer', border:'1px solid var(--bt-accent)40', background:'transparent', color:'var(--bt-accent)', display:'flex', alignItems:'center', gap:6 }}>
                   <Ic n="Lock" size={14} color="var(--bt-accent)" /> Lock In
                 </button>
@@ -3892,9 +3898,9 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                 <button
                   onClick={() => {
                     if(!window.confirm(`Remove "${idea.title}" from the list?`)) return
-                    setLocalIdeas(ids => ids.filter((_,i) => i !== idx))
-                    if(myVote === idx) setMyVote(null)
-                    setVotes(v => v.filter(x => !(x.tripId===trip._id && x.ideaIndex===idx)))
+                    setLocalIdeas(ids => ids.filter(i => i._id !== ideaId))
+                    if(myVote === ideaId) setMyVote(null)
+                    setVotes(v => v.filter(x => !(x.tripId===trip._id && x.ideaId===ideaId)))
                     showToast(`"${idea.title}" removed`)
                   }}
                   style={{ padding:'10px 12px', borderRadius:8, fontSize:13, cursor:'pointer', border:'1px solid var(--bt-border)', background:'transparent', color:'var(--bt-text-3)', display:'flex', alignItems:'center', gap:6 }}
@@ -4289,6 +4295,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                   if (!ideaDraft.title.trim()) { showToast('Destination name required'); return }
                   const r = aiSuggest?.result
                   const newIdea = {
+                    _id: 'idea-' + Date.now(),
                     title: ideaDraft.title.trim(),
                     location: ideaDraft.title.trim(),
                     description: ideaDraft.description.trim(),
@@ -4325,14 +4332,14 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
               <div style={{ textAlign: "center", marginBottom: 12 }}><Ic n="MapPin" size={36} color="var(--bt-accent)" /></div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--bt-text-1)', textAlign: 'center', marginBottom: 6 }}>Lock in this destination?</h2>
               <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--bt-accent)', textAlign: 'center', marginBottom: 8 }}>
-                {localIdeas[showLockConfirm]?.title}
+                {localIdeas.find(i => i._id === showLockConfirm)?.title}
               </p>
               <p style={{ fontSize: 13, color: 'var(--bt-text-2)', textAlign: 'center', lineHeight: 1.6, marginBottom: 24 }}>
                 This closes voting and sets the destination for the trip. You can change it later if plans shift.
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => {
-                  const idea = localIdeas[showLockConfirm]
+                  const idea = localIdeas.find(i => i._id === showLockConfirm)
                   DESTINATION_LOCK[trip._id] = { title: idea.title, location: idea.location || idea.title }
                   setLockedIn(showLockConfirm)
                   setShowLockConfirm(false)
