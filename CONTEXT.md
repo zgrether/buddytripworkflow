@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 2.5 complete
+2026-03-09 — Task 2.6 complete
 
 ## Current State
 - buddytrip.html: ~5200 lines (grew ~200 lines with score entry)
@@ -135,6 +135,18 @@
 - TripDetail inline teamMessages uses same pattern via myTripDetailTeamId variable
 - Dev role switcher does NOT affect team visibility — team is fixed by TEAM_ASSIGNMENTS regardless of viewerRole
 - 'trip-new-deciding' team changed from [] to {} to match new shape
+
+## Completed Tasks (continued)
+- [x] 2.6 — Added expense creation: AddExpenseForm in MoreTab with title, amount, paid-by dropdown, split-among checkboxes; pushes to EXPENSES array and updates local expenseList state; gated on canEdit; Trip Total and Your Share update after add
+
+## Notes from 2.6
+- AddExpenseForm is a nested function inside MoreTab (same scope as ExpenseRow)
+- MoreTab now owns `expenseList` state (initialized from EXPENSES.filter) and `addExpenseOpen` state
+- On submit: push to EXPENSES module-level array + setExpenseList(EXPENSES.filter(...)) to trigger re-render
+- Add button hidden while form is open; Cancel/submit both call onClose() which sets addExpenseOpen=false
+- "Just me" shortcut in split-among resets to Set([paidBy]) — sensible default when someone pays solo
+- Per-person preview only shows when parsedAmount > 0
+- Phase 2 (Missing Features) is now complete (2.1–2.6)
 
 ## In Progress
 - (none)
