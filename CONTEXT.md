@@ -1,16 +1,17 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 2.2 complete
+2026-03-09 — Task 2.3 complete
 
 ## Current State
-- buddytrip.html: ~4800 lines
+- buddytrip.html: ~5000 lines (grew ~200 lines with notification layer)
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
 - All user IDs unified — single format (plain IDs, no prefixes)
 - All votes, comments, and date polls reference stable IDs instead of array indexes
 - Trip status is now derived dynamically via getTripStatus(trip) — no status field on trip objects
+- In-app notification system live — bell icon in TopNav with unread count, dropdown panel, 4 triggers wired
 
 ## Completed Tasks
 - [x] 0.1 — Send icon added to ICONS dict (line 197)
@@ -89,8 +90,27 @@
 - DATE_POLL[trip._id]?.lockedId checked for locked date window; also handles trips with trip.startDate directly
 - No status field exists anywhere in the data layer — fully derived at render time
 
+## Completed Tasks (continued)
+- [x] 2.3 — Built notification event layer: NOTIFICATION_EVENTS array with 5 seed entries, pushNotification() helper, formatNotification() + notificationIcon() + notificationColor() display helpers, bell icon in TopNav with unread count badge, dropdown panel with time-ago formatting and click-to-navigate, mark-as-read on open; wired 4 triggers (destination locked, dates locked, crew added, chat message); score_submitted trigger ready for task 2.4
+
+## Notes from 2.3
+- NOTIFICATION_EVENTS is a module-level array (same pattern as DESTINATION_LOCK, DATE_POLL) — will move to trip-level or server state in migration
+- pushNotification() generates unique IDs via `Date.now()` + random suffix
+- App-level state uses a `notifNonce` counter to force re-renders when new notifications are pushed (since the array itself is module-level)
+- `notifyAndRefresh` callback passed as `notify` prop to TripDetail, IdeaComparison, TripMessages — the 3 screens with mutation handlers
+- `notifications` and `onMarkAllRead` props passed through all 7 screen components → TopNav via `navProps` spread
+- TopNav now accepts `notifications` and `onMarkAllRead` props; renders bell icon (accent-colored when unread), unread count badge (red, caps at 9+), and a dropdown panel with click-outside-to-close
+- TripChat component gained `onSend` callback prop — called after message is added to state, used by TripMessages to fire chat_message notifications
+- TripSettingsPanel gained `notify` prop — used by handleAddToRoster and quickAdd for crew_added notifications
+- 5 seed notifications: 2 historical (read), 3 recent (2 unread) — bell shows "2" on first load
+- Notification event schema: `{ _id, type, tripId, actorId, payload, createdAt, readAt }`
+- Supported types: destination_locked, dates_locked, crew_added, chat_message, score_submitted
+- Score submitted trigger: no score entry UI exists yet (task 2.4), but the type is fully supported in seed data and display helpers — wire-up will be a single `notify()` call when score entry is built
+- Dropdown shows up to 20 most recent events, sorted newest first, with type-specific icons and accent colors
+- Clicking a notification navigates to that trip's detail view
+
 ## In Progress
-- [ ] 2.3 — Build notification event layer (Opus task)
+- [ ] 2.4 — Wire up score entry (Opus for design/component structure, then Sonnet for implementation)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container

@@ -558,6 +558,72 @@ function computeTeamScores(event) {
   return totals
 }
 
+// ── Notification Event Layer ─────────────────────────────────────
+// In-app notification log. Each event records who did what on which trip.
+// The real app will persist these server-side; here we use a module-level array.
+
+const NOTIFICATION_EVENTS = [
+  // Seed a few historical notifications so the UI isn't empty on first load
+  { _id: 'notif-1', type: 'destination_locked', tripId: 'trip-bbmi-live', actorId: 'brad', payload: { destination: 'Bandon Dunes' }, createdAt: new Date('2024-08-20T11:00:00'), readAt: new Date('2024-08-20T12:00:00') },
+  { _id: 'notif-2', type: 'score_submitted',    tripId: 'trip-bbmi-live', actorId: 'brad', payload: { roundTitle: 'Day 1 – Four-Ball' }, createdAt: new Date('2025-03-11T18:30:00'), readAt: new Date('2025-03-11T19:00:00') },
+  { _id: 'notif-3', type: 'score_submitted',    tripId: 'trip-bbmi-live', actorId: 'jd',   payload: { roundTitle: 'Day 2 – Alternate Shot' }, createdAt: new Date('2025-03-12T17:45:00'), readAt: new Date('2025-03-12T18:00:00') },
+  { _id: 'notif-4', type: 'dates_locked',       tripId: 'trip-bbmi',      actorId: 'brad', payload: { dateRange: 'Oct 5 – Oct 8, 2026' }, createdAt: new Date('2026-02-20T14:00:00'), readAt: null },
+  { _id: 'notif-5', type: 'chat_message',       tripId: 'trip-bbmi',      actorId: 'brad', payload: { preview: 'Reminder — everyone needs to book flights...' }, createdAt: new Date('2026-01-15T10:23:00'), readAt: null },
+]
+
+// Push a new notification event. Callers pass type, tripId, actorId, and a payload object.
+// Returns the created event object.
+function pushNotification({ type, tripId, actorId, payload }) {
+  const event = {
+    _id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    type,
+    tripId,
+    actorId,
+    payload: payload || {},
+    createdAt: new Date(),
+    readAt: null,
+  }
+  NOTIFICATION_EVENTS.push(event)
+  return event
+}
+
+// Format a notification event into a human-readable string.
+function formatNotification(ev) {
+  const actor = USERS[ev.actorId]?.nickname || ev.actorId
+  switch (ev.type) {
+    case 'destination_locked': return `${actor} locked the destination: ${ev.payload.destination}`
+    case 'dates_locked':       return `${actor} locked the dates: ${ev.payload.dateRange}`
+    case 'crew_added':         return `${ev.payload.memberName} was added to the trip by ${actor}`
+    case 'chat_message':       return `${actor}: ${(ev.payload.preview || '').slice(0, 60)}${(ev.payload.preview || '').length > 60 ? '…' : ''}`
+    case 'score_submitted':    return `${actor} submitted scores for ${ev.payload.roundTitle}`
+    default:                   return `${actor} performed an action`
+  }
+}
+
+// Icon name for each notification type (used in the dropdown).
+function notificationIcon(type) {
+  switch (type) {
+    case 'destination_locked': return 'MapPin'
+    case 'dates_locked':       return 'Calendar'
+    case 'crew_added':         return 'Users'
+    case 'chat_message':       return 'MessageCircle'
+    case 'score_submitted':    return 'Trophy'
+    default:                   return 'Bell'
+  }
+}
+
+// Accent color for each notification type.
+function notificationColor(type) {
+  switch (type) {
+    case 'destination_locked': return 'var(--bt-accent)'
+    case 'dates_locked':       return '#7c93d4'
+    case 'crew_added':         return 'var(--bt-owner)'
+    case 'chat_message':       return 'var(--bt-text-2)'
+    case 'score_submitted':    return '#f0a84a'
+    default:                   return 'var(--bt-text-3)'
+  }
+}
+
 // ── UI Components ────────────────────────────────────────────────
 
 function Avatar({ name, size = 'md' }) {
@@ -667,7 +733,43 @@ function TabBar({ tabs, active, onChange }) {
   )
 }
 
-function TopNav({ navigate }) {
+function TopNav({ navigate, notifications, onMarkAllRead }) {
+  const { useState, useRef, useEffect } = React
+  const [open, setOpen] = useState(false)
+  const panelRef = useRef(null)
+
+  // Close panel when clicking outside
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const unreadCount = (notifications || []).filter(n => !n.readAt).length
+
+  const togglePanel = () => {
+    const wasOpen = open
+    setOpen(!wasOpen)
+    // Mark all as read when opening
+    if (!wasOpen && unreadCount > 0 && onMarkAllRead) onMarkAllRead()
+  }
+
+  const fmtNotifTime = (d) => {
+    const now = new Date(), dt = new Date(d)
+    const diffMs = now - dt
+    const diffMin = Math.floor(diffMs / 60000)
+    if (diffMin < 1) return 'just now'
+    if (diffMin < 60) return `${diffMin}m ago`
+    const diffHrs = Math.floor(diffMin / 60)
+    if (diffHrs < 24) return `${diffHrs}h ago`
+    const diffDays = Math.floor(diffHrs / 24)
+    if (diffDays < 7) return `${diffDays}d ago`
+    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const recentNotifs = (notifications || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 20)
+
   return (
     <nav style={{ position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'center', height: 56, padding: '0 16px', borderBottom: '1px solid var(--bt-border)', background: 'var(--bt-base)' }}>
       <button onClick={() => navigate('trips')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, marginRight: 24 }}>
@@ -677,6 +779,55 @@ function TopNav({ navigate }) {
       <div style={{ flex: 1 }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button onClick={() => navigate('trips')} style={{ background: 'none', border: '1px solid var(--bt-border)', borderRadius: 6, cursor: 'pointer', color: 'var(--bt-text-1)', fontSize: 13, padding: '6px 12px' }}><Ic n="LayoutGrid" size={14} color="currentColor" style={{marginRight:5}} /> Dashboard</button>
+
+        {/* ── Bell icon with unread badge ── */}
+        <div ref={panelRef} style={{ position: 'relative' }}>
+          <button onClick={togglePanel} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}>
+            <Ic n="Bell" size={16} color={unreadCount > 0 ? 'var(--bt-accent)' : 'var(--bt-text-2)'} />
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: 2, right: 4, minWidth: 16, height: 16, borderRadius: 9999, background: 'var(--bt-danger)', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', lineHeight: 1 }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* ── Notification dropdown panel ── */}
+          {open && (
+            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 340, maxHeight: 420, overflowY: 'auto', borderRadius: 12, background: 'var(--bt-card)', border: '1px solid var(--bt-border)', boxShadow: '0 8px 32px rgba(0,0,0,.5)', zIndex: 100 }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--bt-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--bt-text-1)' }}>Notifications</span>
+                {recentNotifs.length > 0 && (
+                  <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{recentNotifs.length} recent</span>
+                )}
+              </div>
+              {recentNotifs.length === 0 ? (
+                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <Ic n="Bell" size={24} color="var(--bt-text-3)" />
+                  <div style={{ fontSize: 13, color: 'var(--bt-text-3)', marginTop: 8 }}>No notifications yet</div>
+                </div>
+              ) : (
+                recentNotifs.map(ev => (
+                  <div key={ev._id}
+                    onClick={() => { if (ev.tripId) { navigate('trip-detail', { tripId: ev.tripId }); setOpen(false) } }}
+                    style={{ padding: '10px 16px', borderBottom: '1px solid var(--bt-border)', cursor: ev.tripId ? 'pointer' : 'default', display: 'flex', gap: 10, alignItems: 'flex-start', transition: 'background .15s', background: 'transparent' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bt-card-hover)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <div style={{ marginTop: 2, flexShrink: 0, width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: notificationColor(ev.type) + '18' }}>
+                      <Ic n={notificationIcon(ev.type)} size={14} color={notificationColor(ev.type)} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: 'var(--bt-text-1)', lineHeight: 1.4, marginBottom: 2 }}>
+                        {formatNotification(ev)}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{fmtNotifTime(ev.createdAt)}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
         <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bt-text-2)', fontSize: 13, padding: '6px 8px' }}><Ic n="User" size={14} color="currentColor" style={{marginRight:5}} /> Grether</button>
       </div>
     </nav>
@@ -735,7 +886,7 @@ function fmtDateRange(start, end) {
 }
 
 // ── SCREEN: Dashboard ────────────────────────────────────────────
-function Dashboard({ navigate, viewerRole, trips }) {
+function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }) {
   const [pastExpanded, setPastExpanded] = useState(false)
   const live     = trips.filter(t => getTripStatus(t) === 'active')
   const ready    = trips.filter(t => getTripStatus(t) === 'ready')
@@ -814,7 +965,7 @@ function Dashboard({ navigate, viewerRole, trips }) {
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
       <div style={{ maxWidth: 672, margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
@@ -862,7 +1013,7 @@ function Dashboard({ navigate, viewerRole, trips }) {
 }
 
 // ── SCREEN: TripNew — 2-step creation flow ───────────────────────
-function TripNew({ navigate, showToast, setTrips }) {
+function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }) {
   const [step, setStep]               = useState(1)   // 1 = basics, 2 = destination
   const [tripName, setTripName]       = useState('')
   const [inviteInput, setInviteInput] = useState('')
@@ -1003,7 +1154,7 @@ function TripNew({ navigate, showToast, setTrips }) {
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
       <div style={{ maxWidth: 512, margin: '0 auto', padding: '24px 16px' }}>
         <Breadcrumb items={[{ label: 'Dashboard', screen: 'trips' }, { label: 'New Trip' }]} navigate={navigate} />
 
@@ -1304,7 +1455,7 @@ const MOCK_SERIES = [
   { _id: 'series-ryder', name: 'Ryder Knockoff', fullName: 'The Ryder Knockoff Cup', years: '2022–present', trips: 3 },
 ]
 
-function TripSettingsPanel({ trip, showToast, navigate }) {
+function TripSettingsPanel({ trip, showToast, navigate, notify }) {
   const [open, setOpen] = React.useState(null)  // 'series' | 'transfer' | 'archive' | 'delete'
   const toggle = key => setOpen(o => o === key ? null : key)
 
@@ -1600,7 +1751,7 @@ function AboutCard({ trip, canEdit }) {
 }
 
 // ── TripChat — scrollable message board with new-message indicator ──
-function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 320 }) {
+function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 320, onSend }) {
   const { useRef, useEffect, useState } = React
   const scrollRef = useRef(null)
   const [atBottom, setAtBottom] = useState(true)
@@ -1638,6 +1789,7 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
     const text = msgDraft.trim()
     if (!text) return
     setMessages(m => [...m, { _id: `msg-${Date.now()}`, userId: CURRENT_USER._id, text, createdAt: new Date() }])
+    if (onSend) onSend(text)
     setMsgDraft('')
     setAtBottom(true)
   }
@@ -1712,7 +1864,7 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
   )
 }
 
-function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips }) {
+function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips, notify, notifications, onMarkAllRead }) {
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const isOwner = viewerRole === 'owner'
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
@@ -2112,6 +2264,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
       setAddName('')
       setAddEmail('')
       setAddError('')
+      if (notify) notify({ type: 'crew_added', tripId: trip._id, actorId: CURRENT_USER._id, payload: { memberName: name.split(' ')[0] } })
       showToast(name.split(' ')[0] + ' added to roster')
     }
 
@@ -2128,6 +2281,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
         isGhost: !person.hasAccount,
         inviteSent: false,
       }])
+      if (notify) notify({ type: 'crew_added', tripId: trip._id, actorId: CURRENT_USER._id, payload: { memberName: person.name.split(' ')[0] } })
       showToast(person.name.split(' ')[0] + ' added')
     }
 
@@ -2707,14 +2861,14 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
             : expenses.map(exp => <ExpenseRow key={exp._id} exp={exp} />)
           }
         </div>
-        {isOwner && <TripSettingsPanel trip={trip} showToast={showToast} navigate={navigate} />}
+        {isOwner && <TripSettingsPanel trip={trip} showToast={showToast} navigate={navigate} notify={notify} />}
       </div>
     )
   }
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
       <div style={{ maxWidth: 672, margin: '0 auto', padding: '20px 16px' }}>
         <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: trip.title }]} navigate={navigate} />
 
@@ -2887,6 +3041,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                             const lock = { title: idea.title, location: idea.location || idea.title, createdAt: new Date() }
                             DESTINATION_LOCK[trip._id] = lock
                             setLockedDest(lock)
+                            if (notify) notify({ type: 'destination_locked', tripId: trip._id, actorId: CURRENT_USER._id, payload: { destination: idea.title } })
                             showToast(`🎯 Locked in: ${idea.title}`)
                           }}
                             style={{ flex:1, padding:'6px 4px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer', border:'1px solid var(--bt-accent)40', background:'transparent', color:'var(--bt-accent)', display:'flex', alignItems:'center', justifyContent:'center', gap:3 }}>
@@ -2933,6 +3088,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
           const lockWindow = (wId) => {
             const w = datePoll.windows.find(w => w._id === wId)
             syncDatePoll(p => ({ ...p, lockedId: wId, open: false }))
+            if (notify) notify({ type: 'dates_locked', tripId: trip._id, actorId: CURRENT_USER._id, payload: { dateRange: fmtDateRange(w.start, w.end) } })
             const noVoters = datePoll.votes.filter(v => v.windowId === wId && v.answer === 'no')
             if (noVoters.length > 0) { setCleanupWindowId(wId); setShowNoVoterCleanup(true) }
             else showToast(`📅 ${fmtDateRange(w.start, w.end)} locked in!`)
@@ -3223,7 +3379,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 }
 
 // ── SCREEN: CompetitionSetup ─────────────────────────────────────
-function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips }) {
+function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, notifications, onMarkAllRead }) {
   const trip = trips.find(t => t._id === tripId) || trips[1]
   const roster = trip.attendees.filter(a => a.status === 'in')
 
@@ -3339,7 +3495,7 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips }) {
   // ── Shared header / layout ───────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 40, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '24px 16px' }}>
         <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: trip.title, screen: 'trip-detail', extra: { tripId: trip._id } }, { label: 'Competition Setup' }]} navigate={navigate} />
 
@@ -3681,7 +3837,7 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips }) {
 }
 
 // ── SCREEN: IdeaComparison ───────────────────────────────────────
-function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips }) {
+function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips, notify, notifications, onMarkAllRead }) {
   const trip = trips.find(t => t._id === (tripId || 'trip-bbmi')) || trips[1]
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
   const isOwner = viewerRole === 'owner'
@@ -4045,7 +4201,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
 
       {/* ── Constrained header ── */}
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 0' }}>
@@ -4456,6 +4612,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                   DESTINATION_LOCK[trip._id] = { title: idea.title, location: idea.location || idea.title, createdAt: new Date() }
                   setLockedIn(showLockConfirm)
                   setShowLockConfirm(false)
+                  if (notify) notify({ type: 'destination_locked', tripId: trip._id, actorId: CURRENT_USER._id, payload: { destination: idea.title } })
                   showToast(`📍 ${idea.title} locked in!`)
                   navigate('trip-detail', { tripId: trip._id })
                 }}
@@ -4515,6 +4672,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                     DESTINATION_LOCK[trip._id] = { title: manualDest.trim(), location: manualDest.trim(), createdAt: new Date() }
                     setLockedIn(null)
                     setShowReopenConfirm(false)
+                    if (notify) notify({ type: 'destination_locked', tripId: trip._id, actorId: CURRENT_USER._id, payload: { destination: manualDest.trim() } })
                     setManualDest('')
                     showToast(`📍 Destination changed to ${manualDest.trim()}`)
                     navigate('trip-detail', { tripId: trip._id })
@@ -4539,7 +4697,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
 }
 
 // ── SCREEN: LiveLeaderboard (compact) ────────────────────────────
-function LiveLeaderboard({ navigate, showToast }) {
+function LiveLeaderboard({ navigate, showToast, notifications, onMarkAllRead }) {
   const { teams, rounds, sides } = BBMI_EVENT
   const [tab, setTab] = useState('overview')
   const scores = computeTeamScores(BBMI_EVENT)
@@ -4558,7 +4716,7 @@ function LiveLeaderboard({ navigate, showToast }) {
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
       <div style={{ maxWidth: 540, margin: '0 auto', padding: '0 0 24px' }}>
         <div style={{ padding: '16px 16px 0', borderBottom: '1px solid var(--bt-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -4741,7 +4899,7 @@ function LiveLeaderboard({ navigate, showToast }) {
 }
 
 // ── SCREEN: TripMessages ─────────────────────────────────────────
-function TripMessages({ navigate, showToast, tripId, viewerRole, trips }) {
+function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, notifications, onMarkAllRead }) {
   const { useState } = React
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const hasComp = !!trip.eventId
@@ -4755,7 +4913,7 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips }) {
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '16px 16px 0' }}>
         <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: trip.title, screen: 'trip-detail', extra: { tripId } }, { label: 'Messages' }]} navigate={navigate} />
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--bt-text-1)', margin: '12px 0 16px' }}>Messages</h1>
@@ -4770,7 +4928,8 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips }) {
             <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-text-3)' }}>Trip Chat</span>
             <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>· Everyone</span>
           </div>
-          <TripChat messages={tripMsgs} setMessages={setTripMsgs} msgDraft={tripDraft} setMsgDraft={setTripDraft} maxHeight={280} />
+          <TripChat messages={tripMsgs} setMessages={setTripMsgs} msgDraft={tripDraft} setMsgDraft={setTripDraft} maxHeight={280}
+            onSend={(text) => { if (notify) notify({ type: 'chat_message', tripId, actorId: CURRENT_USER._id, payload: { preview: text } }) }} />
         </div>
 
         {/* ── Team Chat ── */}
@@ -4783,7 +4942,8 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips }) {
               </span>
               <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>· Teammates only</span>
             </div>
-            <TripChat messages={teamMsgs} setMessages={setTeamMsgs} msgDraft={teamDraft} setMsgDraft={setTeamDraft} maxHeight={280} />
+            <TripChat messages={teamMsgs} setMessages={setTeamMsgs} msgDraft={teamDraft} setMsgDraft={setTeamDraft} maxHeight={280}
+              onSend={(text) => { if (notify) notify({ type: 'chat_message', tripId, actorId: CURRENT_USER._id, payload: { preview: text } }) }} />
           </div>
         )}
 
@@ -4806,6 +4966,15 @@ function App() {
   const [toast, setToast] = useState(null)
   const [viewerRole, setViewerRole] = useState('planner')
   const [trips, setTrips] = useState(MOCK_TRIPS)
+  // Notification state — backed by module-level NOTIFICATION_EVENTS array.
+  // The nonce counter forces re-renders when new notifications are pushed.
+  const [notifNonce, setNotifNonce] = useState(0)
+  const notifyAndRefresh = (opts) => { pushNotification(opts); setNotifNonce(n => n + 1) }
+  const markAllRead = () => {
+    const now = new Date()
+    NOTIFICATION_EVENTS.forEach(ev => { if (!ev.readAt) ev.readAt = now })
+    setNotifNonce(n => n + 1)
+  }
 
   const navigate = (s, extra = {}) => {
     setScreen(s)
@@ -4818,15 +4987,18 @@ function App() {
     setTimeout(() => setToast(null), 2800)
   }
 
+  // Common props passed to every screen that renders TopNav
+  const navProps = { notifications: NOTIFICATION_EVENTS, onMarkAllRead: markAllRead }
+
   return (
     <>
-      {screen === 'trips'            && <Dashboard navigate={navigate} viewerRole={viewerRole} trips={trips} />}
-      {screen === 'trip-new'         && <TripNew navigate={navigate} showToast={showToast} setTrips={setTrips} />}
-      {screen === 'trip-detail'      && <TripDetail navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
-      {screen === 'comp-setup'       && <CompetitionSetup navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
-      {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
-      {screen === 'trip-messages'    && <TripMessages navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
-      {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} />}
+      {screen === 'trips'            && <Dashboard navigate={navigate} viewerRole={viewerRole} trips={trips} {...navProps} />}
+      {screen === 'trip-new'         && <TripNew navigate={navigate} showToast={showToast} setTrips={setTrips} {...navProps} />}
+      {screen === 'trip-detail'      && <TripDetail navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
+      {screen === 'comp-setup'       && <CompetitionSetup navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} {...navProps} />}
+      {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
+      {screen === 'trip-messages'    && <TripMessages navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
+      {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} {...navProps} />}
 
       {/* Dev role switcher */}
       <div style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
