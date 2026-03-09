@@ -500,13 +500,21 @@ const TRIP_MESSAGES = {
       { _id: 'msg-3', userId: 'zach',  text: "Who wants to share a rental car? I'll organize if there's interest.", createdAt: new Date('2026-01-16T08:45:00') },
       { _id: 'msg-4', userId: 'tyler', text: "I'm in on the car. Arriving Thursday afternoon.", createdAt: new Date('2026-01-16T09:12:00') },
     ],
-    team: [
-      { _id: 'tm-1', userId: 'zach',  text: "Don't tell Brad but I think we take them on Day 1 if we get the scramble format.", createdAt: new Date('2026-01-17T20:11:00') },
-      { _id: 'tm-2', userId: 'tyler', text: 'Agreed. Their team always falls apart on the back nine.', createdAt: new Date('2026-01-17T20:34:00') },
-      { _id: 'tm-3', userId: 'rob',   text: "I'm bringing my A game this year. No excuses.", createdAt: new Date('2026-01-18T07:02:00') },
-    ],
+    // Team messages are keyed by teamId so each team only sees their own channel.
+    team: {
+      'team-a': [
+        { _id: 'tm-1', userId: 'zach',  text: "Don't tell Brad but I think we take them on Day 1 if we get the scramble format.", createdAt: new Date('2026-01-17T20:11:00') },
+        { _id: 'tm-2', userId: 'tyler', text: 'Agreed. Their team always falls apart on the back nine.', createdAt: new Date('2026-01-17T20:34:00') },
+        { _id: 'tm-3', userId: 'ben',   text: "I'm bringing my A game this year. No excuses.", createdAt: new Date('2026-01-18T07:02:00') },
+      ],
+      'team-b': [
+        { _id: 'tm-4', userId: 'jd',    text: "Hammer time. These guys have no idea what's coming.", createdAt: new Date('2026-01-17T21:05:00') },
+        { _id: 'tm-5', userId: 'rob',   text: 'JD you still owe me from last year. Let\'s make it right on Day 1.', createdAt: new Date('2026-01-17T21:22:00') },
+        { _id: 'tm-6', userId: 'charlie', text: 'I watched film. Team Eagle has one weakness — late-round pressure. We exploit that.', createdAt: new Date('2026-01-18T09:15:00') },
+      ],
+    },
   },
-  'trip-new-deciding': { trip: [], team: [] },
+  'trip-new-deciding': { trip: [], team: {} },
 }
 
 const ROUND_RESULTS = {
@@ -1936,7 +1944,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   const [windowDraft, setWindowDraft] = useState({ start: '', end: '' })
   const [inlineAddOpen, setInlineAddOpen] = useState(false)
   const [messages, setMessages] = useState(TRIP_MESSAGES[tripId]?.trip || [])
-  const [teamMessages, setTeamMessages] = useState(TRIP_MESSAGES[tripId]?.team || [])
+  const myTripDetailTeamId = hasComp ? getTeamId(BBMI_EVENT._id, CURRENT_USER._id) : null
+  const [teamMessages, setTeamMessages] = useState(myTripDetailTeamId ? (TRIP_MESSAGES[tripId]?.team?.[myTripDetailTeamId] || []) : [])
   const [msgDraft, setMsgDraft] = useState('')
   const [inlineNewTitle, setInlineNewTitle] = useState('')
 
@@ -5111,10 +5120,17 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, 
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const hasComp = !!trip.eventId
   const hasTeams = hasComp && BBMI_EVENT.teams.length > 0
-  const myTeam = hasTeams ? (BBMI_EVENT.teams.find(t => t._id === getTeamId(BBMI_EVENT._id, CURRENT_USER._id)) || BBMI_EVENT.teams[1]) : null
+
+  // Determine the current user's team for this event. Team is fixed by TEAM_ASSIGNMENTS
+  // regardless of which dev role is active — the role switcher changes viewerRole, not team.
+  const myTeamId = hasTeams ? getTeamId(BBMI_EVENT._id, CURRENT_USER._id) : null
+  const myTeam   = myTeamId ? BBMI_EVENT.teams.find(t => t._id === myTeamId) : null
+
+  // Team messages are keyed by teamId. Only load messages for the current user's team.
+  const myTeamMsgs = myTeamId ? (TRIP_MESSAGES[tripId]?.team?.[myTeamId] || []) : []
 
   const [tripMsgs, setTripMsgs]   = useState(TRIP_MESSAGES[tripId]?.trip || [])
-  const [teamMsgs, setTeamMsgs]   = useState(TRIP_MESSAGES[tripId]?.team || [])
+  const [teamMsgs, setTeamMsgs]   = useState(myTeamMsgs)
   const [tripDraft, setTripDraft] = useState('')
   const [teamDraft, setTeamDraft] = useState('')
 
@@ -5149,8 +5165,14 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, 
               </span>
               <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>· Teammates only</span>
             </div>
-            <TripChat messages={teamMsgs} setMessages={setTeamMsgs} msgDraft={teamDraft} setMsgDraft={setTeamDraft} maxHeight={280}
-              onSend={(text) => { if (notify) notify({ type: 'chat_message', tripId, actorId: CURRENT_USER._id, payload: { preview: text } }) }} />
+            {myTeamId ? (
+              <TripChat messages={teamMsgs} setMessages={setTeamMsgs} msgDraft={teamDraft} setMsgDraft={setTeamDraft} maxHeight={280}
+                onSend={(text) => { if (notify) notify({ type: 'chat_message', tripId, actorId: CURRENT_USER._id, payload: { preview: text } }) }} />
+            ) : (
+              <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--bt-text-3)', fontSize: 13, background: 'var(--bt-card)', borderRadius: 10, border: '1px solid var(--bt-border)' }}>
+                You're not on a team yet — check back once teams are assigned.
+              </div>
+            )}
           </div>
         )}
 
