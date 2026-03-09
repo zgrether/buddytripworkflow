@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 2.4 complete
+2026-03-09 — Task 2.5 complete
 
 ## Current State
 - buddytrip.html: ~5200 lines (grew ~200 lines with score entry)
@@ -126,8 +126,18 @@
 - Sabotage and skins formats show a stub with format-specific message: "Sabotage elimination tracking coming soon" / "Skins payouts coming soon"
 - Round 3 (active) is Sabotage format — tapping a group opens the stub. To test full score entry, change round r3's format to 'scramble' or r3's status to test with a scramble round.
 
+## Completed Tasks (continued)
+- [x] 2.5 — Implemented team chat privacy: restructured TRIP_MESSAGES[tripId].team from a flat array to an object keyed by teamId; TripMessages and TripDetail now use getTeamId() to load only the current user's team channel; added "You're not on a team yet" placeholder for unassigned users; added team-b seed messages; corrected rob's message (he's team-b per TEAM_ASSIGNMENTS)
+
+## Notes from 2.5
+- TRIP_MESSAGES[tripId].team shape changed: was `[...msgs]`, now `{ 'team-a': [...], 'team-b': [...] }`
+- TripMessages: myTeamId = getTeamId(BBMI_EVENT._id, CURRENT_USER._id); myTeamMsgs = TRIP_MESSAGES[tripId]?.team?.[myTeamId] || []
+- TripDetail inline teamMessages uses same pattern via myTripDetailTeamId variable
+- Dev role switcher does NOT affect team visibility — team is fixed by TEAM_ASSIGNMENTS regardless of viewerRole
+- 'trip-new-deciding' team changed from [] to {} to match new shape
+
 ## In Progress
-- [ ] 2.5 — Implement team chat privacy (Sonnet task)
+- (none)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
