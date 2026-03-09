@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 1.3 complete
+2026-03-09 — Task 1.4 complete
 
 ## Current State
 - buddytrip.html: ~4730 lines
@@ -34,6 +34,13 @@
 ## Completed Tasks (continued)
 - [x] 1.2 — Replaced array indexes with stable IDs for votes: added `_id` to ideas, proposedDates, and DATE_POLL windows; replaced `ideaIndex` with `ideaId` in IDEA_VOTES, IDEA_COMMENTS, and all component logic (TripDetail HomeTab, IdeaComparison); replaced `proposedDateIndex` with `dateId` in DATE_VOTES; replaced `windowIdx` with `windowId` in DATE_POLL votes; replaced `lockedIdx` with `lockedId`; ensured all new idea/window creation generates `_id`
 
+## Notes from 1.4
+- TEAM_ASSIGNMENTS lives at module level, after BBMI_EVENT closes and before MOCK_TRIPS
+- getTeamId(eventId, userId) returns null if not assigned — safe for future trips where a player has no team yet
+- The `t.members?.includes()` pattern in TripMessages was dead code (no `members` array on team objects) — replaced with the correct getTeamId lookup
+- computeTeamScores is unaffected — it never read teamId from players, it only reads team-keyed point totals from ROUND_RESULTS and sides[].result
+- Next task (1.5) is the symmetric cleanup: remove groupId from player objects and rely solely on groups[].playerIds
+
 ## Notes from 1.3
 - DESTINATION_LOCK pre-populated for 'trip-bbmi-live' with `{ title: 'Bandon Dunes', location: 'Bandon Dunes, OR', createdAt: new Date('2024-08-20') }` — this represents the trip that was already booked
 - ROUND_RESULTS now has `submittedBy` and `createdAt`; `computeTeamScores` was already safe (uses `if (teamId in totals)` guard — non-team keys skipped without any code change)
@@ -53,9 +60,10 @@
 
 ## Completed Tasks (continued)
 - [x] 1.3 — Added createdAt/updatedAt/joinedAt/submittedBy timestamps to all mock data objects: IDEA_VOTES, DATE_VOTES, DATE_POLL votes, DESTINATION_LOCK, EXPENSES, RESERVATIONS, ROUND_RESULTS, and trip attendees across all 3 MOCK_TRIPS entries; also updated all runtime vote/lock creation handlers to stamp new Date()
+- [x] 1.4 — Normalized team membership: created TEAM_ASSIGNMENTS array `[{ eventId, teamId, userId }]`, added getTeamId(eventId, userId) helper, removed teamId from all 16 BBMI_EVENT.players objects, updated 4 component call sites (TripDetail teams accordion, LiveLeaderboard team roster, LiveLeaderboard group player chips, TripMessages myTeam lookup)
 
 ## In Progress
-- [ ] 1.4 — Normalize team membership (Sonnet task)
+- [ ] 1.5 — Normalize group assignments (Sonnet task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
