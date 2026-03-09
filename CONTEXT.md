@@ -1,10 +1,10 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 2.3 complete
+2026-03-09 — Task 2.4 complete
 
 ## Current State
-- buddytrip.html: ~5000 lines (grew ~200 lines with notification layer)
+- buddytrip.html: ~5200 lines (grew ~200 lines with score entry)
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
@@ -109,8 +109,25 @@
 - Dropdown shows up to 20 most recent events, sorted newest first, with type-specific icons and accent colors
 - Clicking a notification navigates to that trip's detail view
 
+## Completed Tasks (continued)
+- [x] 2.4 — Built ScoreEntry component and GROUP_RESULTS data layer; wired group card tap handler in LiveLeaderboard Groups tab; score submission updates GROUP_RESULTS → aggregates into ROUND_RESULTS → recomputes via computeTeamScores; fires score_submitted notification; scramble and stableford fully functional; sabotage and skins show "not yet implemented" stub
+
+## Notes from 2.4
+- GROUP_RESULTS is a new module-level object: `{ [roundId]: { [groupId]: { 'team-a': pts, 'team-b': pts, submittedBy, createdAt } } }`
+- Each group is worth 1 point total. Result is win (1-0), halve (0.5-0.5), or loss (0-1). Ryder Cup format.
+- `aggregateGroupResults(roundId)` sums all group results for a round into ROUND_RESULTS, preserving the latest submitter as submittedBy
+- Seed data: GROUP_RESULTS pre-populated for rounds r1 and r2 with per-group breakdowns that sum to match existing ROUND_RESULTS values (2.5-1.5 and 1.5-2.5)
+- ScoreEntry component: bottom-sheet overlay with group roster (split by team), 3-way result selector (Team A wins / Halved / Team B wins), points preview, submit button
+- Existing results shown with green "Scored" indicator and score on group cards; unscored groups show "Enter score" with edit icon
+- Groups tab header now uses active round data dynamically instead of hardcoded "Round 3 · Sabotage · Pacific Dunes"
+- `scoreNonce` state forces re-render of LiveLeaderboard when scores change (since GROUP_RESULTS is module-level)
+- LiveLeaderboard now accepts `notify` prop; App passes `notifyAndRefresh` to it
+- Score_submitted notification now fully wired (was stubbed in 2.3)
+- Sabotage and skins formats show a stub with format-specific message: "Sabotage elimination tracking coming soon" / "Skins payouts coming soon"
+- Round 3 (active) is Sabotage format — tapping a group opens the stub. To test full score entry, change round r3's format to 'scramble' or r3's status to test with a scramble round.
+
 ## In Progress
-- [ ] 2.4 — Wire up score entry (Opus for design/component structure, then Sonnet for implementation)
+- [ ] 2.5 — Implement team chat privacy (Sonnet task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
