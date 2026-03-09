@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 1.2 complete
+2026-03-09 — Task 1.3 complete
 
 ## Current State
 - buddytrip.html: ~4730 lines
@@ -34,6 +34,13 @@
 ## Completed Tasks (continued)
 - [x] 1.2 — Replaced array indexes with stable IDs for votes: added `_id` to ideas, proposedDates, and DATE_POLL windows; replaced `ideaIndex` with `ideaId` in IDEA_VOTES, IDEA_COMMENTS, and all component logic (TripDetail HomeTab, IdeaComparison); replaced `proposedDateIndex` with `dateId` in DATE_VOTES; replaced `windowIdx` with `windowId` in DATE_POLL votes; replaced `lockedIdx` with `lockedId`; ensured all new idea/window creation generates `_id`
 
+## Notes from 1.3
+- DESTINATION_LOCK pre-populated for 'trip-bbmi-live' with `{ title: 'Bandon Dunes', location: 'Bandon Dunes, OR', createdAt: new Date('2024-08-20') }` — this represents the trip that was already booked
+- ROUND_RESULTS now has `submittedBy` and `createdAt`; `computeTeamScores` was already safe (uses `if (teamId in totals)` guard — non-team keys skipped without any code change)
+- Dates tell a story: BBMI 2025 lodging booked Nov 2024, greens fees Nov 2024, expenses logged during the March 2025 trip; BBMI 2026 idea votes in Jan 2026, date poll votes in Feb 2026; BBMI 2027 attendees joined Feb 2026
+- `updatedAt` added to EXPENSES and RESERVATIONS only (immutable records like votes don't warrant it)
+- All runtime vote/lock creation handlers now stamp `createdAt: new Date()` at the moment of interaction
+
 ## Notes from 1.2
 - Ideas now have `_id` fields: 'idea-scottsdale', 'idea-bandon', 'idea-scottsdale-2027'
 - Proposed dates have `_id` fields: 'pd-mar-2026', 'pd-oct-2026'
@@ -44,8 +51,11 @@
 - `showLockConfirm` state now stores idea `_id` instead of index
 - `mobileIdx` in IdeaComparison remains an index (for carousel navigation) — this is UI state, not data identity
 
+## Completed Tasks (continued)
+- [x] 1.3 — Added createdAt/updatedAt/joinedAt/submittedBy timestamps to all mock data objects: IDEA_VOTES, DATE_VOTES, DATE_POLL votes, DESTINATION_LOCK, EXPENSES, RESERVATIONS, ROUND_RESULTS, and trip attendees across all 3 MOCK_TRIPS entries; also updated all runtime vote/lock creation handlers to stamp new Date()
+
 ## In Progress
-- [ ] 1.3 — Add createdAt and updatedAt everywhere (Sonnet task)
+- [ ] 1.4 — Normalize team membership (Sonnet task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container

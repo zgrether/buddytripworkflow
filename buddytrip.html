@@ -277,6 +277,7 @@ const MOCK_TRIPS = [
     attendees: BBMI_EVENT.players.map(p => ({
       name: p.name, userId: p._id, status: 'in',
       role: p._id === 'brad' ? 'Owner' : p._id === 'zach' ? 'Planner' : 'Member',
+      joinedAt: new Date('2024-10-15'),
     })),
     comparisonMode: false, ideas: [], proposedDates: [], eventId: 'bbmi-2025',
   },
@@ -291,14 +292,14 @@ const MOCK_TRIPS = [
     activities: ['Golf', 'Poker', 'Hammerschlagen'],
     golfCourses: [],
     attendees: [
-      { name: 'Brad Giesler',  userId: 'brad',    status: 'in',     role: 'Owner'   },
-      { name: 'Zach Grether',  userId: 'zach',    status: 'in',     role: 'Planner' },
-      { name: 'JD Shumpert',   userId: 'jd',      status: 'in',     role: 'Planner' },
-      { name: 'Rob Drupp',     userId: 'rob',      status: 'in',     role: 'Member'  },
-      { name: 'Charlie Piper', userId: 'charlie',  status: 'likely', role: 'Member'  },
-      { name: 'Tyler Larson',  userId: 'tyler',    status: 'in',     role: 'Member'  },
-      { name: 'Ben Bartkus',   userId: 'ben',      status: 'maybe',  role: 'Member'  },
-      { name: 'BJ Dames',      userId: 'bj',       status: 'in',     role: 'Member'  },
+      { name: 'Brad Giesler',  userId: 'brad',    status: 'in',     role: 'Owner',   joinedAt: new Date('2025-10-01') },
+      { name: 'Zach Grether',  userId: 'zach',    status: 'in',     role: 'Planner', joinedAt: new Date('2025-10-01') },
+      { name: 'JD Shumpert',   userId: 'jd',      status: 'in',     role: 'Planner', joinedAt: new Date('2025-10-03') },
+      { name: 'Rob Drupp',     userId: 'rob',      status: 'in',     role: 'Member',  joinedAt: new Date('2025-10-10') },
+      { name: 'Charlie Piper', userId: 'charlie',  status: 'likely', role: 'Member',  joinedAt: new Date('2025-10-14') },
+      { name: 'Tyler Larson',  userId: 'tyler',    status: 'in',     role: 'Member',  joinedAt: new Date('2025-10-10') },
+      { name: 'Ben Bartkus',   userId: 'ben',      status: 'maybe',  role: 'Member',  joinedAt: new Date('2025-11-05') },
+      { name: 'BJ Dames',      userId: 'bj',       status: 'in',     role: 'Member',  joinedAt: new Date('2025-10-12') },
     ],
     comparisonMode: true,
     ideas: [
@@ -341,9 +342,9 @@ const MOCK_TRIPS = [
     accommodation: null, notes: null,
     activities: [], golfCourses: [],
     attendees: [
-      { name: 'Brad Giesler', userId: 'brad', status: 'in', role: 'Owner'   },
-      { name: 'Zach Grether', userId: 'zach', status: 'in', role: 'Planner' },
-      { name: 'JD Shumpert',  userId: 'jd',   status: 'in', role: 'Planner' },
+      { name: 'Brad Giesler', userId: 'brad', status: 'in', role: 'Owner',   joinedAt: new Date('2026-02-01') },
+      { name: 'Zach Grether', userId: 'zach', status: 'in', role: 'Planner', joinedAt: new Date('2026-02-01') },
+      { name: 'JD Shumpert',  userId: 'jd',   status: 'in', role: 'Planner', joinedAt: new Date('2026-02-03') },
     ],
     comparisonMode: true,
     ideas: [
@@ -365,7 +366,9 @@ const MOCK_TRIPS = [
 
 // Shared mutable store — destination lock state survives navigation
 // In a real app this would be server state; here it's module-level
-const DESTINATION_LOCK = {}  // { [tripId]: { title, location } | null }
+const DESTINATION_LOCK = {
+  'trip-bbmi-live': { title: 'Bandon Dunes', location: 'Bandon Dunes, OR', createdAt: new Date('2024-08-20T11:00:00') },
+}  // { [tripId]: { title, location, createdAt } | null }
 
 // Date poll store — survives navigation between TripDetail and back
 const DATE_POLL = {
@@ -377,16 +380,16 @@ const DATE_POLL = {
       { _id: 'dw-oct-2026', start: '2026-10-05', end: '2026-10-08' },
     ],
     votes: [
-      { windowId: 'dw-mar-2026', userId: 'brad',    name: 'Brad',    answer: 'yes' },
-      { windowId: 'dw-mar-2026', userId: 'zach',    name: 'Zach',    answer: 'yes' },
-      { windowId: 'dw-mar-2026', userId: 'jd',      name: 'JD',      answer: 'no'  },
-      { windowId: 'dw-oct-2026', userId: 'brad',    name: 'Brad',    answer: 'yes' },
-      { windowId: 'dw-oct-2026', userId: 'zach',    name: 'Zach',    answer: 'yes' },
-      { windowId: 'dw-oct-2026', userId: 'jd',      name: 'JD',      answer: 'yes' },
-      { windowId: 'dw-oct-2026', userId: 'rob',     name: 'Rob',     answer: 'yes' },
-      { windowId: 'dw-oct-2026', userId: 'charlie', name: 'Charlie', answer: 'yes' },
-      { windowId: 'dw-mar-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes' },
-      { windowId: 'dw-oct-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes' },
+      { windowId: 'dw-mar-2026', userId: 'brad',    name: 'Brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:00:00') },
+      { windowId: 'dw-mar-2026', userId: 'zach',    name: 'Zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:30:00') },
+      { windowId: 'dw-mar-2026', userId: 'jd',      name: 'JD',      answer: 'no',  createdAt: new Date('2026-02-07T14:15:00') },
+      { windowId: 'dw-oct-2026', userId: 'brad',    name: 'Brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:02:00') },
+      { windowId: 'dw-oct-2026', userId: 'zach',    name: 'Zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:32:00') },
+      { windowId: 'dw-oct-2026', userId: 'jd',      name: 'JD',      answer: 'yes', createdAt: new Date('2026-02-07T14:18:00') },
+      { windowId: 'dw-oct-2026', userId: 'rob',     name: 'Rob',     answer: 'yes', createdAt: new Date('2026-02-10T19:45:00') },
+      { windowId: 'dw-oct-2026', userId: 'charlie', name: 'Charlie', answer: 'yes', createdAt: new Date('2026-02-11T08:55:00') },
+      { windowId: 'dw-mar-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:20:00') },
+      { windowId: 'dw-oct-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:22:00') },
     ],
   },
   'trip-new-deciding': {
@@ -398,37 +401,37 @@ const DATE_POLL = {
 }
 
 const IDEA_VOTES = [
-  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    userName: 'Brad'    },
-  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'zach',    userName: 'Zach'    },
-  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      userName: 'JD'      },
-  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     userName: 'Rob'     },
-  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   userName: 'Tyler'   },
-  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'charlie', userName: 'Charlie' },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    userName: 'Brad',    createdAt: new Date('2026-01-20T09:15:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'zach',    userName: 'Zach',    createdAt: new Date('2026-01-22T14:30:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      userName: 'JD',      createdAt: new Date('2026-01-21T11:00:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     userName: 'Rob',     createdAt: new Date('2026-01-25T18:45:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   userName: 'Tyler',   createdAt: new Date('2026-01-23T08:20:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'charlie', userName: 'Charlie', createdAt: new Date('2026-01-24T20:05:00') },
 ]
 
 const DATE_VOTES = [
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'brad', userName: 'Brad', availability: 'yes'   },
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'zach', userName: 'Zach', availability: 'yes'   },
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'jd',   userName: 'JD',   availability: 'yes'   },
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'rob',  userName: 'Rob',  availability: 'maybe' },
-  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'brad', userName: 'Brad', availability: 'no'    },
-  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'zach', userName: 'Zach', availability: 'yes'   },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'brad', userName: 'Brad', availability: 'yes',   createdAt: new Date('2026-02-05T10:00:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'zach', userName: 'Zach', availability: 'yes',   createdAt: new Date('2026-02-06T09:30:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'jd',   userName: 'JD',   availability: 'yes',   createdAt: new Date('2026-02-07T14:15:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'rob',  userName: 'Rob',  availability: 'maybe', createdAt: new Date('2026-02-10T19:45:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'brad', userName: 'Brad', availability: 'no',    createdAt: new Date('2026-02-05T10:02:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'zach', userName: 'Zach', availability: 'yes',   createdAt: new Date('2026-02-06T09:32:00') },
 ]
 
 const RESERVATIONS = [
-  { _id: 'res-1', tripId: 'trip-bbmi-live', type: 'accommodation', title: 'Bandon Dunes Lodge', date: '2025-03-11', startTime: '3:00 PM', confirmationNumber: 'BD-8821', cost: 6400, notes: '4 nights, 8 rooms.' },
-  { _id: 'res-2', tripId: 'trip-bbmi-live', type: 'tee-time', title: 'Bandon Dunes — Round 1 Scramble', date: '2025-03-11', startTime: '8:00 AM', confirmationNumber: 'TT-1101', cost: 1800, notes: '4 groups of 4. Caddies included.' },
-  { _id: 'res-3', tripId: 'trip-bbmi-live', type: 'tee-time', title: 'Bandon Trails — Round 2 Stableford', date: '2025-03-12', startTime: '8:00 AM', confirmationNumber: 'TT-1102', cost: 1800, notes: '' },
-  { _id: 'res-4', tripId: 'trip-bbmi-live', type: 'tee-time', title: 'Pacific Dunes — Round 3 Sabotage', date: '2025-03-13', startTime: '8:00 AM', confirmationNumber: 'TT-1103', cost: 1800, notes: 'Best course on property.' },
-  { _id: 'res-5', tripId: 'trip-bbmi-live', type: 'tee-time', title: 'Old Macdonald — Round 4 Skins', date: '2025-03-14', startTime: '8:00 AM', confirmationNumber: 'TT-1104', cost: 1600, notes: 'Final round.' },
+  { _id: 'res-1', tripId: 'trip-bbmi-live', type: 'accommodation', title: 'Bandon Dunes Lodge',               date: '2025-03-11', startTime: '3:00 PM', confirmationNumber: 'BD-8821', cost: 6400, notes: '4 nights, 8 rooms.',              createdAt: new Date('2024-11-05T09:00:00'), updatedAt: new Date('2024-11-05T09:00:00') },
+  { _id: 'res-2', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Bandon Dunes — Round 1 Scramble',  date: '2025-03-11', startTime: '8:00 AM', confirmationNumber: 'TT-1101', cost: 1800, notes: '4 groups of 4. Caddies included.', createdAt: new Date('2024-11-06T10:30:00'), updatedAt: new Date('2024-11-06T10:30:00') },
+  { _id: 'res-3', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Bandon Trails — Round 2 Stableford',date: '2025-03-12', startTime: '8:00 AM', confirmationNumber: 'TT-1102', cost: 1800, notes: '',                                createdAt: new Date('2024-11-06T10:35:00'), updatedAt: new Date('2024-11-06T10:35:00') },
+  { _id: 'res-4', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Pacific Dunes — Round 3 Sabotage',  date: '2025-03-13', startTime: '8:00 AM', confirmationNumber: 'TT-1103', cost: 1800, notes: 'Best course on property.',       createdAt: new Date('2024-11-06T10:40:00'), updatedAt: new Date('2024-11-06T10:40:00') },
+  { _id: 'res-5', tripId: 'trip-bbmi-live', type: 'tee-time',      title: 'Old Macdonald — Round 4 Skins',     date: '2025-03-14', startTime: '8:00 AM', confirmationNumber: 'TT-1104', cost: 1600, notes: 'Final round.',                   createdAt: new Date('2024-11-06T10:45:00'), updatedAt: new Date('2024-11-06T10:45:00') },
 ]
 
 const EXPENSES = [
-  { _id: 'exp-1', tripId: 'trip-bbmi-live', title: 'Lodge & Rooms', amount: 6400, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
-  { _id: 'exp-2', tripId: 'trip-bbmi-live', title: 'Round 1 Greens Fees', amount: 1800, paidByName: 'Brad', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
-  { _id: 'exp-3', tripId: 'trip-bbmi-live', title: 'Round 2 Greens Fees', amount: 1800, paidByName: 'JD', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
-  { _id: 'exp-4', tripId: 'trip-bbmi-live', title: 'Van Rental (airport)', amount: 420, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
-  { _id: 'exp-5', tripId: 'trip-bbmi-live', title: 'Night 2 Bar Tab', amount: 680, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })) },
+  { _id: 'exp-1', tripId: 'trip-bbmi-live', title: 'Lodge & Rooms',       amount: 6400, paidByName: 'Brad',    splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T14:00:00'), updatedAt: new Date('2025-03-11T14:00:00') },
+  { _id: 'exp-2', tripId: 'trip-bbmi-live', title: 'Round 1 Greens Fees', amount: 1800, paidByName: 'Brad',    splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T19:30:00'), updatedAt: new Date('2025-03-11T19:30:00') },
+  { _id: 'exp-3', tripId: 'trip-bbmi-live', title: 'Round 2 Greens Fees', amount: 1800, paidByName: 'JD',      splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-12T20:00:00'), updatedAt: new Date('2025-03-12T20:00:00') },
+  { _id: 'exp-4', tripId: 'trip-bbmi-live', title: 'Van Rental (airport)', amount:  420, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T10:15:00'), updatedAt: new Date('2025-03-11T10:15:00') },
+  { _id: 'exp-5', tripId: 'trip-bbmi-live', title: 'Night 2 Bar Tab',      amount:  680, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-12T23:45:00'), updatedAt: new Date('2025-03-12T23:45:00') },
 ]
 
 const IDEA_COMMENTS = [
@@ -456,8 +459,8 @@ const TRIP_MESSAGES = {
 }
 
 const ROUND_RESULTS = {
-  'r1': { 'team-a': 2.5, 'team-b': 1.5 },
-  'r2': { 'team-a': 1.5, 'team-b': 2.5 },
+  'r1': { 'team-a': 2.5, 'team-b': 1.5, submittedBy: 'brad', createdAt: new Date('2025-03-11T18:30:00') },
+  'r2': { 'team-a': 1.5, 'team-b': 2.5, submittedBy: 'jd',   createdAt: new Date('2025-03-12T17:45:00') },
 }
 
 // Compute total team scores from round results + side event results.
@@ -2760,7 +2763,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                         {inlineIdeas.length >= 2 && (
                           <button onClick={() => {
                             const filtered = inlineVotes.filter(v => !(v.tripId===trip._id && v.userId===CURRENT_USER._id))
-                            setInlineVotes([...filtered, { tripId:trip._id, ideaId:idea._id, userId:CURRENT_USER._id, userName:CURRENT_USER.firstName }])
+                            setInlineVotes([...filtered, { tripId:trip._id, ideaId:idea._id, userId:CURRENT_USER._id, userName:CURRENT_USER.firstName, createdAt:new Date() }])
                             setInlineMyVote(idea._id)
                             showToast(`Voted for ${idea.title}!`)
                           }}
@@ -2771,7 +2774,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                         )}
                         {isOwner && (
                           <button onClick={() => {
-                            const lock = { title: idea.title, location: idea.location || idea.title }
+                            const lock = { title: idea.title, location: idea.location || idea.title, createdAt: new Date() }
                             DESTINATION_LOCK[trip._id] = lock
                             setLockedDest(lock)
                             showToast(`🎯 Locked in: ${idea.title}`)
@@ -2815,7 +2818,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
           })
           const castVote = (wId, answer) => syncDatePoll(p => {
             const filtered = p.votes.filter(v => !(v.windowId === wId && v.userId === CURRENT_USER._id))
-            return { ...p, votes: [...filtered, { windowId: wId, userId: CURRENT_USER._id, name: CURRENT_USER.firstName, answer }] }
+            return { ...p, votes: [...filtered, { windowId: wId, userId: CURRENT_USER._id, name: CURRENT_USER.firstName, answer, createdAt: new Date() }] }
           })
           const lockWindow = (wId) => {
             const w = datePoll.windows.find(w => w._id === wId)
@@ -3882,7 +3885,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
           {localIdeas.length >= 2 && (
             <div style={{ display: 'flex', gap: 8 }}>
               {lockedIn === null && (
-                <button onClick={() => { setMyVote(ideaId); setVotes(v => { const f=v.filter(x=>!(x.tripId===trip._id&&x.userId===CURRENT_USER._id)); return [...f,{tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName}] }); showToast(`Voted for ${idea.title}!`) }}
+                <button onClick={() => { setMyVote(ideaId); setVotes(v => { const f=v.filter(x=>!(x.tripId===trip._id&&x.userId===CURRENT_USER._id)); return [...f,{tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,createdAt:new Date()}] }); showToast(`Voted for ${idea.title}!`) }}
                   style={{ flex:1, padding:'10px', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer', border:'none', background:isMyVote?'var(--bt-accent)':'var(--bt-tag-bg)', color:isMyVote?'#0d1117':'var(--bt-accent)', transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
                   <Ic n={isMyVote?'Check':'ThumbsUp'} size={15} color={isMyVote?'#0d1117':'var(--bt-accent)'} />
                   {isMyVote ? 'Your pick' : 'Vote for this'}
@@ -4340,7 +4343,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => {
                   const idea = localIdeas.find(i => i._id === showLockConfirm)
-                  DESTINATION_LOCK[trip._id] = { title: idea.title, location: idea.location || idea.title }
+                  DESTINATION_LOCK[trip._id] = { title: idea.title, location: idea.location || idea.title, createdAt: new Date() }
                   setLockedIn(showLockConfirm)
                   setShowLockConfirm(false)
                   showToast(`📍 ${idea.title} locked in!`)
@@ -4399,7 +4402,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                     style={{ flex: 1, fontSize: 13, padding: '8px 10px', borderRadius: 7, background: 'var(--bt-input)', border: `1px solid ${manualDest ? 'var(--bt-accent)' : 'var(--bt-border-input)'}`, color: 'var(--bt-text-1)', outline: 'none' }} />
                   <button onClick={() => {
                     if (!manualDest.trim()) return
-                    DESTINATION_LOCK[trip._id] = { title: manualDest.trim(), location: manualDest.trim() }
+                    DESTINATION_LOCK[trip._id] = { title: manualDest.trim(), location: manualDest.trim(), createdAt: new Date() }
                     setLockedIn(null)
                     setShowReopenConfirm(false)
                     setManualDest('')
