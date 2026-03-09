@@ -226,22 +226,22 @@ const BBMI_EVENT = {
     { _id: 'team-b', name: 'Team Anvil',  shortName: 'Anvil',  color: '#f97316', colorDim: '#2a1200' },
   ],
   players: [
-    { _id: 'brad',    name: 'Brad Giesler',     nickname: 'Brad',    teamId: 'team-a', handicap: 8,  groupId: 'g1' },
-    { _id: 'zach',    name: 'Zach Grether',     nickname: 'Grether', teamId: 'team-a', handicap: 12, groupId: 'g2' },
-    { _id: 'tyler',   name: 'Tyler Larson',     nickname: 'Tyler',   teamId: 'team-a', handicap: 14, groupId: 'g3' },
-    { _id: 'ben',     name: 'Ben Bartkus',      nickname: 'Ben',     teamId: 'team-a', handicap: 16, groupId: 'g4' },
-    { _id: 'merling', name: 'Jeremy Merling',   nickname: 'Merling', teamId: 'team-a', handicap: 10, groupId: 'g1' },
-    { _id: 'steve',   name: 'Steve Bartkus',    nickname: 'Steve',   teamId: 'team-a', handicap: 18, groupId: 'g2' },
-    { _id: 'fach',    name: 'Matt Facchine',    nickname: 'Fach',    teamId: 'team-a', handicap: 15, groupId: 'g3' },
-    { _id: 'llama',   name: 'Llama Schumacher', nickname: 'Llama',   teamId: 'team-a', handicap: 20, groupId: 'g4' },
-    { _id: 'jd',      name: 'JD Shumpert',      nickname: 'JD',      teamId: 'team-b', handicap: 7,  groupId: 'g1' },
-    { _id: 'rob',     name: 'Rob Drupp',        nickname: 'Rob',     teamId: 'team-b', handicap: 11, groupId: 'g2' },
-    { _id: 'charlie', name: 'Charlie Piper',    nickname: 'Charlie', teamId: 'team-b', handicap: 13, groupId: 'g3' },
-    { _id: 'bj',      name: 'BJ Dames',         nickname: 'BJ',      teamId: 'team-b', handicap: 17, groupId: 'g4' },
-    { _id: 'jrob',    name: 'John Robinson',    nickname: 'JRob',    teamId: 'team-b', handicap: 9,  groupId: 'g1' },
-    { _id: 'buddy',   name: 'Buddy Banks',      nickname: 'Buddy',   teamId: 'team-b', handicap: 19, groupId: 'g2' },
-    { _id: 'frank',   name: 'Frank Damen',      nickname: 'Frank',   teamId: 'team-b', handicap: 16, groupId: 'g3' },
-    { _id: 'taj',     name: 'Tajar Varghese',   nickname: 'Taj',     teamId: 'team-b', handicap: 22, groupId: 'g4' },
+    { _id: 'brad',    name: 'Brad Giesler',     nickname: 'Brad',    handicap: 8,  groupId: 'g1' },
+    { _id: 'zach',    name: 'Zach Grether',     nickname: 'Grether', handicap: 12, groupId: 'g2' },
+    { _id: 'tyler',   name: 'Tyler Larson',     nickname: 'Tyler',   handicap: 14, groupId: 'g3' },
+    { _id: 'ben',     name: 'Ben Bartkus',      nickname: 'Ben',     handicap: 16, groupId: 'g4' },
+    { _id: 'merling', name: 'Jeremy Merling',   nickname: 'Merling', handicap: 10, groupId: 'g1' },
+    { _id: 'steve',   name: 'Steve Bartkus',    nickname: 'Steve',   handicap: 18, groupId: 'g2' },
+    { _id: 'fach',    name: 'Matt Facchine',    nickname: 'Fach',    handicap: 15, groupId: 'g3' },
+    { _id: 'llama',   name: 'Llama Schumacher', nickname: 'Llama',   handicap: 20, groupId: 'g4' },
+    { _id: 'jd',      name: 'JD Shumpert',      nickname: 'JD',      handicap: 7,  groupId: 'g1' },
+    { _id: 'rob',     name: 'Rob Drupp',        nickname: 'Rob',     handicap: 11, groupId: 'g2' },
+    { _id: 'charlie', name: 'Charlie Piper',    nickname: 'Charlie', handicap: 13, groupId: 'g3' },
+    { _id: 'bj',      name: 'BJ Dames',         nickname: 'BJ',      handicap: 17, groupId: 'g4' },
+    { _id: 'jrob',    name: 'John Robinson',    nickname: 'JRob',    handicap: 9,  groupId: 'g1' },
+    { _id: 'buddy',   name: 'Buddy Banks',      nickname: 'Buddy',   handicap: 19, groupId: 'g2' },
+    { _id: 'frank',   name: 'Frank Damen',      nickname: 'Frank',   handicap: 16, groupId: 'g3' },
+    { _id: 'taj',     name: 'Tajar Varghese',   nickname: 'Taj',     handicap: 22, groupId: 'g4' },
   ],
   groups: [
     { _id: 'g1', name: 'Group 1', teeTime: '8:00 AM', playerIds: ['brad','merling','jd','jrob'] },
@@ -261,6 +261,32 @@ const BBMI_EVENT = {
     { _id: 's3', name: 'Pick-Em',        icon: '🏈', pointsAvailable: 5, status: 'complete', result: { 'team-a': 1, 'team-b': 4 } },
     { _id: 's4', name: 'Cornhole',       icon: '🌽', pointsAvailable: 5, status: 'upcoming', result: { 'team-a': 0, 'team-b': 0 } },
   ],
+}
+
+// Normalized team membership — separate from the player roster.
+// One row per player per event; join on eventId + userId to find a player's team.
+const TEAM_ASSIGNMENTS = [
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'brad'    },
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'zach'    },
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'tyler'   },
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'ben'     },
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'merling' },
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'steve'   },
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'fach'    },
+  { eventId: 'bbmi-2025', teamId: 'team-a', userId: 'llama'   },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'jd'      },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'rob'     },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'charlie' },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'bj'      },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'jrob'    },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'buddy'   },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'frank'   },
+  { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'taj'     },
+]
+
+// Return the teamId for a player in a given event, or null if not assigned.
+function getTeamId(eventId, userId) {
+  return TEAM_ASSIGNMENTS.find(a => a.eventId === eventId && a.userId === userId)?.teamId || null
 }
 
 const MOCK_TRIPS = [
@@ -2381,7 +2407,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                   {BBMI_EVENT.teams.map(team => (
                     <div key={team._id} style={{ borderRadius: 8, padding: '10px 12px', background: 'var(--bt-card)', border: `1px solid ${team.color}40` }}>
                       <div style={{ color: team.color, fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{team.name}</div>
-                      {BBMI_EVENT.players.filter(p => p.teamId === team._id).map(p => (
+                      {BBMI_EVENT.players.filter(p => getTeamId(BBMI_EVENT._id, p._id) === team._id).map(p => (
                         <div key={p._id} style={{ fontSize: 12, color: 'var(--bt-text-2)', marginBottom: 2 }}>{p.name}</div>
                       ))}
                     </div>
@@ -4529,7 +4555,7 @@ function LiveLeaderboard({ navigate, showToast }) {
                 {teams.map(team => (
                   <Card key={team._id} style={{ border: `1px solid ${team.color}25` }}>
                     <div style={{ color: team.color, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>{team.name}</div>
-                    {BBMI_EVENT.players.filter(p => p.teamId === team._id).map(p => (
+                    {BBMI_EVENT.players.filter(p => getTeamId(BBMI_EVENT._id, p._id) === team._id).map(p => (
                       <div key={p._id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                         <div style={{ width: 18, height: 18, borderRadius: '50%', background: team.color + '25', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: team.color, flexShrink: 0 }}>{p.nickname.slice(0, 2).toUpperCase()}</div>
                         <span style={{ color: 'var(--bt-text-1)', fontSize: 12 }}>{p.nickname}</span>
@@ -4566,7 +4592,7 @@ function LiveLeaderboard({ navigate, showToast }) {
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {groupPlayers.map(p => {
-                        const team = BBMI_EVENT.teams.find(t => t._id === p.teamId)
+                        const team = BBMI_EVENT.teams.find(t => t._id === getTeamId(BBMI_EVENT._id, p._id))
                         return (
                           <div key={p._id} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--bt-base)', border: `1px solid ${team.color}30`, borderRadius: 6, padding: '4px 8px' }}>
                             <div style={{ width: 14, height: 14, borderRadius: '50%', background: team.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#0d1117', flexShrink: 0 }}>{p.nickname.slice(0, 2).toUpperCase()}</div>
@@ -4636,7 +4662,7 @@ function TripMessages({ navigate, showToast, tripId, viewerRole }) {
   const trip = MOCK_TRIPS.find(t => t._id === tripId) || MOCK_TRIPS[0]
   const hasComp = !!trip.eventId
   const hasTeams = hasComp && BBMI_EVENT.teams.length > 0
-  const myTeam = hasTeams ? (BBMI_EVENT.teams.find(t => t.members?.includes(CURRENT_USER._id)) || BBMI_EVENT.teams[1]) : null
+  const myTeam = hasTeams ? (BBMI_EVENT.teams.find(t => t._id === getTeamId(BBMI_EVENT._id, CURRENT_USER._id)) || BBMI_EVENT.teams[1]) : null
 
   const [tripMsgs, setTripMsgs]   = useState(TRIP_MESSAGES[tripId]?.trip || [])
   const [teamMsgs, setTeamMsgs]   = useState(TRIP_MESSAGES[tripId]?.team || [])
