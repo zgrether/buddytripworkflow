@@ -289,6 +289,31 @@ function getTeamId(eventId, userId) {
   return TEAM_ASSIGNMENTS.find(a => a.eventId === eventId && a.userId === userId)?.teamId || null
 }
 
+// Single source of truth for user display info.
+// Resolve names at render time: USERS[userId]?.nickname || userId
+const USERS = {
+  'brad':    { _id: 'brad',    name: 'Brad Giesler',     nickname: 'Brad',    email: 'brad.giesler@gmail.com'      },
+  'zach':    { _id: 'zach',    name: 'Zach Grether',     nickname: 'Grether', email: 'zach.grether@gmail.com'      },
+  'jd':      { _id: 'jd',      name: 'JD Shumpert',      nickname: 'JD',      email: 'jd.shumpert@gmail.com'       },
+  'rob':     { _id: 'rob',     name: 'Rob Drupp',        nickname: 'Rob',     email: 'rob.drupp@gmail.com'         },
+  'charlie': { _id: 'charlie', name: 'Charlie Piper',    nickname: 'Charlie', email: 'charlie.piper@gmail.com'     },
+  'tyler':   { _id: 'tyler',   name: 'Tyler Larson',     nickname: 'Tyler',   email: 'tyler.larson@gmail.com'      },
+  'ben':     { _id: 'ben',     name: 'Ben Bartkus',      nickname: 'Ben',     email: 'ben.bartkus@gmail.com'       },
+  'bj':      { _id: 'bj',      name: 'BJ Dames',         nickname: 'BJ',      email: 'bj.dames@gmail.com'          },
+  'merling': { _id: 'merling', name: 'Jeremy Merling',   nickname: 'Merling', email: 'jeremy.merling@gmail.com'    },
+  'steve':   { _id: 'steve',   name: 'Steve Bartkus',    nickname: 'Steve',   email: 'steve.bartkus@gmail.com'     },
+  'fach':    { _id: 'fach',    name: 'Matt Facchine',    nickname: 'Fach',    email: 'matt.facchine@gmail.com'     },
+  'llama':   { _id: 'llama',   name: 'Llama Schumacher', nickname: 'Llama',   email: 'llama.schumacher@gmail.com'  },
+  'jrob':    { _id: 'jrob',    name: 'John Robinson',    nickname: 'JRob',    email: 'john.robinson@gmail.com'     },
+  'buddy':   { _id: 'buddy',   name: 'Buddy Banks',      nickname: 'Buddy',   email: 'buddy.banks@gmail.com'       },
+  'frank':   { _id: 'frank',   name: 'Frank Damen',      nickname: 'Frank',   email: 'frank.damen@gmail.com'       },
+  'taj':     { _id: 'taj',     name: 'Tajar Varghese',   nickname: 'Taj',     email: 'taj.varghese@gmail.com'      },
+  // Non-player crew (known accounts for invite flow)
+  'mike':    { _id: 'mike',    name: 'Mike Donovan',     nickname: 'Mike',    email: 'mike.donovan@gmail.com'      },
+  'paul':    { _id: 'paul',    name: 'Paul Schaefer',    nickname: 'Paul',    email: 'paul.s@outlook.com'          },
+  'lance':   { _id: 'lance',   name: 'Lance Watts',      nickname: 'Lance',   email: 'lwatts@gmail.com'            },
+}
+
 const MOCK_TRIPS = [
   {
     _id: 'trip-bbmi-live', title: 'BBMI 2025', location: 'Bandon Dunes, OR',
@@ -406,16 +431,16 @@ const DATE_POLL = {
       { _id: 'dw-oct-2026', start: '2026-10-05', end: '2026-10-08' },
     ],
     votes: [
-      { windowId: 'dw-mar-2026', userId: 'brad',    name: 'Brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:00:00') },
-      { windowId: 'dw-mar-2026', userId: 'zach',    name: 'Zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:30:00') },
-      { windowId: 'dw-mar-2026', userId: 'jd',      name: 'JD',      answer: 'no',  createdAt: new Date('2026-02-07T14:15:00') },
-      { windowId: 'dw-oct-2026', userId: 'brad',    name: 'Brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:02:00') },
-      { windowId: 'dw-oct-2026', userId: 'zach',    name: 'Zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:32:00') },
-      { windowId: 'dw-oct-2026', userId: 'jd',      name: 'JD',      answer: 'yes', createdAt: new Date('2026-02-07T14:18:00') },
-      { windowId: 'dw-oct-2026', userId: 'rob',     name: 'Rob',     answer: 'yes', createdAt: new Date('2026-02-10T19:45:00') },
-      { windowId: 'dw-oct-2026', userId: 'charlie', name: 'Charlie', answer: 'yes', createdAt: new Date('2026-02-11T08:55:00') },
-      { windowId: 'dw-mar-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:20:00') },
-      { windowId: 'dw-oct-2026', userId: 'tyler',   name: 'Tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:22:00') },
+      { windowId: 'dw-mar-2026', userId: 'brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:00:00') },
+      { windowId: 'dw-mar-2026', userId: 'zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:30:00') },
+      { windowId: 'dw-mar-2026', userId: 'jd',      answer: 'no',  createdAt: new Date('2026-02-07T14:15:00') },
+      { windowId: 'dw-oct-2026', userId: 'brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:02:00') },
+      { windowId: 'dw-oct-2026', userId: 'zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:32:00') },
+      { windowId: 'dw-oct-2026', userId: 'jd',      answer: 'yes', createdAt: new Date('2026-02-07T14:18:00') },
+      { windowId: 'dw-oct-2026', userId: 'rob',     answer: 'yes', createdAt: new Date('2026-02-10T19:45:00') },
+      { windowId: 'dw-oct-2026', userId: 'charlie', answer: 'yes', createdAt: new Date('2026-02-11T08:55:00') },
+      { windowId: 'dw-mar-2026', userId: 'tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:20:00') },
+      { windowId: 'dw-oct-2026', userId: 'tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:22:00') },
     ],
   },
   'trip-new-deciding': {
@@ -427,21 +452,21 @@ const DATE_POLL = {
 }
 
 const IDEA_VOTES = [
-  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    userName: 'Brad',    createdAt: new Date('2026-01-20T09:15:00') },
-  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'zach',    userName: 'Zach',    createdAt: new Date('2026-01-22T14:30:00') },
-  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      userName: 'JD',      createdAt: new Date('2026-01-21T11:00:00') },
-  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     userName: 'Rob',     createdAt: new Date('2026-01-25T18:45:00') },
-  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   userName: 'Tyler',   createdAt: new Date('2026-01-23T08:20:00') },
-  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'charlie', userName: 'Charlie', createdAt: new Date('2026-01-24T20:05:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    createdAt: new Date('2026-01-20T09:15:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'zach',    createdAt: new Date('2026-01-22T14:30:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      createdAt: new Date('2026-01-21T11:00:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     createdAt: new Date('2026-01-25T18:45:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   createdAt: new Date('2026-01-23T08:20:00') },
+  { tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'charlie', createdAt: new Date('2026-01-24T20:05:00') },
 ]
 
 const DATE_VOTES = [
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'brad', userName: 'Brad', availability: 'yes',   createdAt: new Date('2026-02-05T10:00:00') },
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'zach', userName: 'Zach', availability: 'yes',   createdAt: new Date('2026-02-06T09:30:00') },
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'jd',   userName: 'JD',   availability: 'yes',   createdAt: new Date('2026-02-07T14:15:00') },
-  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'rob',  userName: 'Rob',  availability: 'maybe', createdAt: new Date('2026-02-10T19:45:00') },
-  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'brad', userName: 'Brad', availability: 'no',    createdAt: new Date('2026-02-05T10:02:00') },
-  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'zach', userName: 'Zach', availability: 'yes',   createdAt: new Date('2026-02-06T09:32:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'brad', availability: 'yes',   createdAt: new Date('2026-02-05T10:00:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'zach', availability: 'yes',   createdAt: new Date('2026-02-06T09:30:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'jd',   availability: 'yes',   createdAt: new Date('2026-02-07T14:15:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-mar-2026', userId: 'rob',  availability: 'maybe', createdAt: new Date('2026-02-10T19:45:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'brad', availability: 'no',    createdAt: new Date('2026-02-05T10:02:00') },
+  { tripId: 'trip-bbmi', dateId: 'pd-oct-2026', userId: 'zach', availability: 'yes',   createdAt: new Date('2026-02-06T09:32:00') },
 ]
 
 const RESERVATIONS = [
@@ -453,32 +478,32 @@ const RESERVATIONS = [
 ]
 
 const EXPENSES = [
-  { _id: 'exp-1', tripId: 'trip-bbmi-live', title: 'Lodge & Rooms',       amount: 6400, paidByName: 'Brad',    splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T14:00:00'), updatedAt: new Date('2025-03-11T14:00:00') },
-  { _id: 'exp-2', tripId: 'trip-bbmi-live', title: 'Round 1 Greens Fees', amount: 1800, paidByName: 'Brad',    splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T19:30:00'), updatedAt: new Date('2025-03-11T19:30:00') },
-  { _id: 'exp-3', tripId: 'trip-bbmi-live', title: 'Round 2 Greens Fees', amount: 1800, paidByName: 'JD',      splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-12T20:00:00'), updatedAt: new Date('2025-03-12T20:00:00') },
-  { _id: 'exp-4', tripId: 'trip-bbmi-live', title: 'Van Rental (airport)', amount:  420, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T10:15:00'), updatedAt: new Date('2025-03-11T10:15:00') },
-  { _id: 'exp-5', tripId: 'trip-bbmi-live', title: 'Night 2 Bar Tab',      amount:  680, paidByName: 'Grether', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-12T23:45:00'), updatedAt: new Date('2025-03-12T23:45:00') },
+  { _id: 'exp-1', tripId: 'trip-bbmi-live', title: 'Lodge & Rooms',       amount: 6400, paidByUserId: 'brad', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T14:00:00'), updatedAt: new Date('2025-03-11T14:00:00') },
+  { _id: 'exp-2', tripId: 'trip-bbmi-live', title: 'Round 1 Greens Fees', amount: 1800, paidByUserId: 'brad', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T19:30:00'), updatedAt: new Date('2025-03-11T19:30:00') },
+  { _id: 'exp-3', tripId: 'trip-bbmi-live', title: 'Round 2 Greens Fees', amount: 1800, paidByUserId: 'jd',   splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-12T20:00:00'), updatedAt: new Date('2025-03-12T20:00:00') },
+  { _id: 'exp-4', tripId: 'trip-bbmi-live', title: 'Van Rental (airport)', amount:  420, paidByUserId: 'zach', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-11T10:15:00'), updatedAt: new Date('2025-03-11T10:15:00') },
+  { _id: 'exp-5', tripId: 'trip-bbmi-live', title: 'Night 2 Bar Tab',      amount:  680, paidByUserId: 'zach', splitAmong: BBMI_EVENT.players.map(p => ({ userId: p._id })), createdAt: new Date('2025-03-12T23:45:00'), updatedAt: new Date('2025-03-12T23:45:00') },
 ]
 
 const IDEA_COMMENTS = [
-  { _id: 'ic-1', tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    userName: 'Brad',    text: 'TPC Scottsdale is bucket list. We do this.', createdAt: new Date('2025-02-02') },
-  { _id: 'ic-2', tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   userName: 'Tyler',   text: 'We-Ko-Pa Saguaro is world class. +1 Scottsdale.', createdAt: new Date('2025-02-04') },
-  { _id: 'ic-3', tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      userName: 'JD',      text: 'We literally said we\'d go back. Nothing compares.', createdAt: new Date('2025-02-03') },
-  { _id: 'ic-4', tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     userName: 'Rob',     text: 'Old Macdonald for the final round. That\'s the one.', createdAt: new Date('2025-02-05') },
+  { _id: 'ic-1', tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    text: 'TPC Scottsdale is bucket list. We do this.', createdAt: new Date('2025-02-02') },
+  { _id: 'ic-2', tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'tyler',   text: 'We-Ko-Pa Saguaro is world class. +1 Scottsdale.', createdAt: new Date('2025-02-04') },
+  { _id: 'ic-3', tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'jd',      text: 'We literally said we\'d go back. Nothing compares.', createdAt: new Date('2025-02-03') },
+  { _id: 'ic-4', tripId: 'trip-bbmi', ideaId: 'idea-bandon',     userId: 'rob',     text: 'Old Macdonald for the final round. That\'s the one.', createdAt: new Date('2025-02-05') },
 ]
 
 const TRIP_MESSAGES = {
   'trip-bbmi': {
     trip: [
-      { _id: 'msg-1', userId: 'brad',  userName: 'Brad',  text: 'Reminder — everyone needs to book flights by end of month if we want reasonable prices.', createdAt: new Date('2026-01-15T10:23:00') },
-      { _id: 'msg-2', userId: 'jd',    userName: 'JD',    text: 'Already on it. Found a decent deal out of Midway.', createdAt: new Date('2026-01-15T11:04:00') },
-      { _id: 'msg-3', userId: 'zach',  userName: 'Zach',  text: "Who wants to share a rental car? I'll organize if there's interest.", createdAt: new Date('2026-01-16T08:45:00') },
-      { _id: 'msg-4', userId: 'tyler', userName: 'Tyler', text: "I'm in on the car. Arriving Thursday afternoon.", createdAt: new Date('2026-01-16T09:12:00') },
+      { _id: 'msg-1', userId: 'brad',  text: 'Reminder — everyone needs to book flights by end of month if we want reasonable prices.', createdAt: new Date('2026-01-15T10:23:00') },
+      { _id: 'msg-2', userId: 'jd',    text: 'Already on it. Found a decent deal out of Midway.', createdAt: new Date('2026-01-15T11:04:00') },
+      { _id: 'msg-3', userId: 'zach',  text: "Who wants to share a rental car? I'll organize if there's interest.", createdAt: new Date('2026-01-16T08:45:00') },
+      { _id: 'msg-4', userId: 'tyler', text: "I'm in on the car. Arriving Thursday afternoon.", createdAt: new Date('2026-01-16T09:12:00') },
     ],
     team: [
-      { _id: 'tm-1', userId: 'zach',  userName: 'Zach',  text: "Don't tell Brad but I think we take them on Day 1 if we get the scramble format.", createdAt: new Date('2026-01-17T20:11:00') },
-      { _id: 'tm-2', userId: 'tyler', userName: 'Tyler', text: 'Agreed. Their team always falls apart on the back nine.', createdAt: new Date('2026-01-17T20:34:00') },
-      { _id: 'tm-3', userId: 'rob',   userName: 'Rob',   text: "I'm bringing my A game this year. No excuses.", createdAt: new Date('2026-01-18T07:02:00') },
+      { _id: 'tm-1', userId: 'zach',  text: "Don't tell Brad but I think we take them on Day 1 if we get the scramble format.", createdAt: new Date('2026-01-17T20:11:00') },
+      { _id: 'tm-2', userId: 'tyler', text: 'Agreed. Their team always falls apart on the back nine.', createdAt: new Date('2026-01-17T20:34:00') },
+      { _id: 'tm-3', userId: 'rob',   text: "I'm bringing my A game this year. No excuses.", createdAt: new Date('2026-01-18T07:02:00') },
     ],
   },
   'trip-new-deciding': { trip: [], team: [] },
@@ -1553,7 +1578,7 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
   const sendMsg = () => {
     const text = msgDraft.trim()
     if (!text) return
-    setMessages(m => [...m, { _id: `msg-${Date.now()}`, userId: CURRENT_USER._id, userName: CURRENT_USER.firstName, text, createdAt: new Date() }])
+    setMessages(m => [...m, { _id: `msg-${Date.now()}`, userId: CURRENT_USER._id, text, createdAt: new Date() }])
     setMsgDraft('')
     setAtBottom(true)
   }
@@ -1577,11 +1602,11 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
             const isMe = m.userId === CURRENT_USER._id
             return (
               <div key={m._id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                {!isMe && <Avatar name={m.userName} size="sm" />}
+                {!isMe && <Avatar name={USERS[m.userId]?.name || m.userId} size="sm" />}
                 <div style={{ maxWidth: '78%' }}>
                   {!isMe && (
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3, paddingLeft: 2 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-accent)' }}>{m.userName}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-accent)' }}>{USERS[m.userId]?.nickname || m.userId}</span>
                       <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>{fmtMsgTime(m.createdAt)}</span>
                     </div>
                   )}
@@ -1933,7 +1958,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                   {totalUnread > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-danger)' }}>{totalUnread} unread</span>}
                 </div>
                 {lastMsg
-                  ? <p style={{ margin: 0, fontSize: 12, color: 'var(--bt-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ color: 'var(--bt-text-2)', fontWeight: 600 }}>{lastMsg.userName}:</span> {lastMsg.text}</p>
+                  ? <p style={{ margin: 0, fontSize: 12, color: 'var(--bt-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ color: 'var(--bt-text-2)', fontWeight: 600 }}>{USERS[lastMsg.userId]?.nickname || lastMsg.userId}:</span> {lastMsg.text}</p>
                   : <p style={{ margin: 0, fontSize: 12, color: 'var(--bt-text-3)' }}>No messages yet — start the conversation</p>
                 }
               </div>
@@ -2564,7 +2589,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, padding: 16 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, color: 'var(--bt-text-1)' }}>{exp.title}</div>
-              <div style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>Paid by {exp.paidByName} · {assigned.size} people</div>
+              <div style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>Paid by {USERS[exp.paidByUserId]?.nickname || exp.paidByUserId} · {assigned.size} people</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
               <div style={{ textAlign: 'right' }}>
@@ -2764,7 +2789,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
               )}
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(inlineIdeas.length || 1, 3)}, minmax(0, 1fr))`, gap: 8, marginBottom: inlineIdeas.length ? 10 : 0 }}>
                 {inlineIdeas.map((idea) => {
-                  const voters = inlineVotes.filter(v => v.tripId === trip._id && v.ideaId === idea._id).map(v => v.userName)
+                  const voters = inlineVotes.filter(v => v.tripId === trip._id && v.ideaId === idea._id).map(v => USERS[v.userId]?.name || v.userId)
                   const isMyPick = inlineMyVote === idea._id
                   return (
                     <div key={idea._id} style={{ borderRadius: 10, border: `1px solid ${isMyPick ? 'var(--bt-accent)80' : 'var(--bt-border)'}`, background: 'var(--bt-base)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color .2s' }}>
@@ -2789,7 +2814,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                         {inlineIdeas.length >= 2 && (
                           <button onClick={() => {
                             const filtered = inlineVotes.filter(v => !(v.tripId===trip._id && v.userId===CURRENT_USER._id))
-                            setInlineVotes([...filtered, { tripId:trip._id, ideaId:idea._id, userId:CURRENT_USER._id, userName:CURRENT_USER.firstName, createdAt:new Date() }])
+                            setInlineVotes([...filtered, { tripId:trip._id, ideaId:idea._id, userId:CURRENT_USER._id, createdAt:new Date() }])
                             setInlineMyVote(idea._id)
                             showToast(`Voted for ${idea.title}!`)
                           }}
@@ -2844,7 +2869,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
           })
           const castVote = (wId, answer) => syncDatePoll(p => {
             const filtered = p.votes.filter(v => !(v.windowId === wId && v.userId === CURRENT_USER._id))
-            return { ...p, votes: [...filtered, { windowId: wId, userId: CURRENT_USER._id, name: CURRENT_USER.firstName, answer, createdAt: new Date() }] }
+            return { ...p, votes: [...filtered, { windowId: wId, userId: CURRENT_USER._id, answer, createdAt: new Date() }] }
           })
           const lockWindow = (wId) => {
             const w = datePoll.windows.find(w => w._id === wId)
@@ -3653,7 +3678,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
   }
 
   const getCount = ideaId => votes.filter(v => v.tripId === trip._id && v.ideaId === ideaId).length
-  const getVoters = ideaId => votes.filter(v => v.tripId === trip._id && v.ideaId === ideaId).map(v => v.userName)
+  const getVoters = ideaId => votes.filter(v => v.tripId === trip._id && v.ideaId === ideaId).map(v => USERS[v.userId]?.name || v.userId)
   const getComments = ideaId => allComments.filter(c => c.tripId === trip._id && c.ideaId === ideaId)
   const maxVotes = Math.max(...localIdeas.map(idea => getCount(idea._id)), 1)
   const leadingIdx = localIdeas.reduce((best, idea, i) => getCount(idea._id) > getCount(localIdeas[best]._id) ? i : best, 0)
@@ -3869,10 +3894,10 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {getComments(ideaId).map(c => (
                   <div key={c._id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <Avatar name={c.userName} size="sm" />
+                    <Avatar name={USERS[c.userId]?.name || c.userId} size="sm" />
                     <div style={{ flex:1, background:'var(--bt-base)', borderRadius:8, padding:'6px 10px' }}>
                       <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:2 }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:'var(--bt-accent)' }}>{c.userName}</span>
+                        <span style={{ fontSize:11, fontWeight:700, color:'var(--bt-accent)' }}>{USERS[c.userId]?.nickname || c.userId}</span>
                         <span style={{ fontSize:10, color:'var(--bt-text-3)' }}>{c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · ' + new Date(c.createdAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : ''}</span>
                       </div>
                       <span style={{ fontSize:12, color:'var(--bt-text-1)' }}>{c.text}</span>
@@ -3887,7 +3912,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                       if(e.key!=='Enter') return
                       const text = commentTexts[ideaId]?.trim()
                       if(!text) return
-                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,text,createdAt:new Date()}])
+                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaId,userId:CURRENT_USER._id,text,createdAt:new Date()}])
                       setCommentTexts(t=>({...t,[ideaId]:''}))
                     }}
                     placeholder="Write a comment…" style={{ flex:1, fontSize:12, padding:'6px 10px', borderRadius:6, outline:'none', background:'var(--bt-input)', border:'1px solid var(--bt-border-input)', color:'var(--bt-text-1)' }}
@@ -3897,7 +3922,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                     onClick={() => {
                       const text = commentTexts[ideaId]?.trim()
                       if(!text) return
-                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,text,createdAt:new Date()}])
+                      setAllComments(c=>[...c,{_id:`ic-${Date.now()}`,tripId:trip._id,ideaId,userId:CURRENT_USER._id,text,createdAt:new Date()}])
                       setCommentTexts(t=>({...t,[ideaId]:''}))
                     }}
                     style={{ flexShrink:0, padding:'6px 12px', borderRadius:6, border:'none', cursor:'pointer', background:'var(--bt-accent)', color:'#0d1117', fontSize:12, fontWeight:700 }}>
@@ -3911,7 +3936,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
           {localIdeas.length >= 2 && (
             <div style={{ display: 'flex', gap: 8 }}>
               {lockedIn === null && (
-                <button onClick={() => { setMyVote(ideaId); setVotes(v => { const f=v.filter(x=>!(x.tripId===trip._id&&x.userId===CURRENT_USER._id)); return [...f,{tripId:trip._id,ideaId,userId:CURRENT_USER._id,userName:CURRENT_USER.firstName,createdAt:new Date()}] }); showToast(`Voted for ${idea.title}!`) }}
+                <button onClick={() => { setMyVote(ideaId); setVotes(v => { const f=v.filter(x=>!(x.tripId===trip._id&&x.userId===CURRENT_USER._id)); return [...f,{tripId:trip._id,ideaId,userId:CURRENT_USER._id,createdAt:new Date()}] }); showToast(`Voted for ${idea.title}!`) }}
                   style={{ flex:1, padding:'10px', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer', border:'none', background:isMyVote?'var(--bt-accent)':'var(--bt-tag-bg)', color:isMyVote?'#0d1117':'var(--bt-accent)', transition:'all .2s', display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
                   <Ic n={isMyVote?'Check':'ThumbsUp'} size={15} color={isMyVote?'#0d1117':'var(--bt-accent)'} />
                   {isMyVote ? 'Your pick' : 'Vote for this'}

@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 1.5 complete
+2026-03-09 — Task 1.6 complete
 
 ## Current State
 - buddytrip.html: ~4730 lines
@@ -62,9 +62,17 @@
 - [x] 1.3 — Added createdAt/updatedAt/joinedAt/submittedBy timestamps to all mock data objects: IDEA_VOTES, DATE_VOTES, DATE_POLL votes, DESTINATION_LOCK, EXPENSES, RESERVATIONS, ROUND_RESULTS, and trip attendees across all 3 MOCK_TRIPS entries; also updated all runtime vote/lock creation handlers to stamp new Date()
 - [x] 1.4 — Normalized team membership: created TEAM_ASSIGNMENTS array `[{ eventId, teamId, userId }]`, added getTeamId(eventId, userId) helper, removed teamId from all 16 BBMI_EVENT.players objects, updated 4 component call sites (TripDetail teams accordion, LiveLeaderboard team roster, LiveLeaderboard group player chips, TripMessages myTeam lookup)
 - [x] 1.5 — Normalized group assignments: removed groupId from all 16 BBMI_EVENT.players objects; groups[].playerIds was already the sole source of truth and no component read p.groupId, so no component changes needed
+- [x] 1.6 — Created USERS lookup object (19 entries: all 16 BBMI players + mike/paul/lance from invite flow); removed userName from IDEA_VOTES, DATE_VOTES, IDEA_COMMENTS, TRIP_MESSAGES; removed name from DATE_POLL votes; changed paidByName → paidByUserId on EXPENSES; updated 7 render sites and 4 runtime creation handlers to resolve names via USERS[userId]
+
+## Notes from 1.6
+- USERS keyed by plain userId (same format as all other IDs since task 1.1)
+- Render pattern: `USERS[id]?.nickname || id` for display names; `USERS[id]?.name || id` for Avatar (needs full name for initials)
+- paidByName 'Grether' mapped to paidByUserId 'zach' — nickname resolved at render time
+- KNOWN_ACCOUNTS inline in TripSettingsPanel left as-is (it's a component-local lookup for the invite flow; 1.6 notes it's now redundant and can be replaced with USERS in a future cleanup)
+- Phase 1 data model tasks are now complete (1.1–1.6)
 
 ## In Progress
-- [ ] 1.6 — Create a proper User lookup object (Sonnet task)
+- [ ] 2.1 — Make TripNew actually create a trip (Opus task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
