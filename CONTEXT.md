@@ -1,15 +1,16 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 2.1 complete
+2026-03-09 — Task 2.2 complete
 
 ## Current State
-- buddytrip.html: ~4730 lines
+- buddytrip.html: ~4800 lines
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
 - All user IDs unified — single format (plain IDs, no prefixes)
 - All votes, comments, and date polls reference stable IDs instead of array indexes
+- Trip status is now derived dynamically via getTripStatus(trip) — no status field on trip objects
 
 ## Completed Tasks
 - [x] 0.1 — Send icon added to ICONS dict (line 197)
@@ -71,6 +72,7 @@
 - KNOWN_ACCOUNTS inline in TripSettingsPanel left as-is (it's a component-local lookup for the invite flow; 1.6 notes it's now redundant and can be replaced with USERS in a future cleanup)
 - Phase 1 data model tasks are now complete (1.1–1.6)
 - [x] 2.1 — Lifted MOCK_TRIPS to App-level useState; TripNew.handleFinish now builds a real trip object and pushes it onto state; all 5 consuming components (Dashboard, TripDetail, CompetitionSetup, IdeaComparison, TripMessages) updated to accept trips prop; no component reads MOCK_TRIPS directly any more
+- [x] 2.2 — Added getTripStatus(trip) function; removed status field from all 3 MOCK_TRIPS entries and TripNew.handleFinish template; replaced all trip.status / t.status reads (Dashboard filters ×4, TripCard ×3, TripDetail isLive, TripDetail header badge) with getTripStatus() calls
 
 ## Notes from 2.1
 - MOCK_TRIPS remains as the module-level initializer — `useState(MOCK_TRIPS)` in App
@@ -80,8 +82,15 @@
 - Attendees array seeded with CURRENT_USER as Owner (joinedAt: new Date())
 - DESTINATION_LOCK, DATE_POLL are still module-level mutable objects — task 3.2 will move them onto trip objects once trips are stateful (which they now are)
 
+## Notes from 2.2
+- getTripStatus(trip) placed immediately before computeTeamScores (after all mock data is defined so DESTINATION_LOCK and DATE_POLL are in scope)
+- Status derivation order: completed (end date in past) → active (start date today or earlier) → ready (dest + dates locked) → planning
+- DESTINATION_LOCK[trip._id] checked for locked destination; also handles non-comparisonMode trips that have trip.location directly
+- DATE_POLL[trip._id]?.lockedId checked for locked date window; also handles trips with trip.startDate directly
+- No status field exists anywhere in the data layer — fully derived at render time
+
 ## In Progress
-- [ ] 2.2 — Derive trip status dynamically (Opus task)
+- [ ] 2.3 — Build notification event layer (Opus task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
