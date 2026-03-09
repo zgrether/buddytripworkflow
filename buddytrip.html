@@ -2820,9 +2820,96 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
     }
 
     function MoreTab() {
-    const expenses = EXPENSES.filter(e => e.tripId === trip._id)
-    const total = expenses.reduce((s, e) => s + e.amount, 0)
+    const [expenseList, setExpenseList] = useState(() => EXPENSES.filter(e => e.tripId === trip._id))
+    const [addExpenseOpen, setAddExpenseOpen] = useState(false)
+    const total = expenseList.reduce((s, e) => s + e.amount, 0)
     const myShare = Math.round(total / (trip.attendees.length || 1))
+
+    function AddExpenseForm({ onClose }) {
+      const [title, setTitle]       = useState('')
+      const [amount, setAmount]     = useState('')
+      const [paidBy, setPaidBy]     = useState(CURRENT_USER._id)
+      const [splitIds, setSplitIds] = useState(new Set(trip.attendees.map(a => a.userId)))
+      const nameById = Object.fromEntries(trip.attendees.map(a => [a.userId, (USERS[a.userId]?.nickname || a.name.split(' ')[0])]))
+      const toggleSplit = userId => setSplitIds(prev => {
+        const next = new Set(prev)
+        if (next.has(userId)) { if (next.size > 1) next.delete(userId) }
+        else next.add(userId)
+        return next
+      })
+      const parsedAmount = parseFloat(amount) || 0
+      const perPerson = splitIds.size > 0 ? Math.round(parsedAmount / splitIds.size) : 0
+      const canSubmit = title.trim() && parsedAmount > 0
+      const handleSubmit = () => {
+        if (!canSubmit) return
+        const newExp = {
+          _id: 'exp-' + Date.now(),
+          tripId: trip._id,
+          title: title.trim(),
+          amount: parsedAmount,
+          paidByUserId: paidBy,
+          splitAmong: Array.from(splitIds).map(userId => ({ userId })),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+        EXPENSES.push(newExp)
+        setExpenseList(EXPENSES.filter(e => e.tripId === trip._id))
+        onClose()
+      }
+      const inputStyle = { width: '100%', padding: '9px 12px', borderRadius: 8, background: 'var(--bt-base)', border: '1px solid var(--bt-border)', color: 'var(--bt-text-1)', fontSize: 14, boxSizing: 'border-box', outline: 'none' }
+      return (
+        <Card style={{ marginBottom: 12, padding: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--bt-text-1)', marginBottom: 14 }}>Add Expense</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-text-3)', display: 'block', marginBottom: 4 }}>Title</label>
+              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Lodge & Rooms" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-text-3)', display: 'block', marginBottom: 4 }}>Amount ($)</label>
+              <input type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-text-3)', display: 'block', marginBottom: 4 }}>Paid by</label>
+              <select value={paidBy} onChange={e => setPaidBy(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                {trip.attendees.map(a => (
+                  <option key={a.userId} value={a.userId}>{nameById[a.userId] || a.userId}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-text-3)' }}>Split among</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setSplitIds(new Set(trip.attendees.map(a => a.userId)))} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'none', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)', cursor: 'pointer' }}>All</button>
+                  <button onClick={() => setSplitIds(new Set([paidBy]))} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'none', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)', cursor: 'pointer' }}>Just me</button>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                {trip.attendees.map(a => {
+                  const checked = splitIds.has(a.userId)
+                  return (
+                    <button key={a.userId} onClick={() => toggleSplit(a.userId)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', background: checked ? 'var(--bt-tag-bg)' : 'transparent', border: `1px solid ${checked ? 'var(--bt-accent)30' : 'var(--bt-border)'}`, fontSize: 12, color: checked ? 'var(--bt-text-1)' : 'var(--bt-text-3)' }}>
+                      <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: checked ? 'var(--bt-accent)' : 'transparent', border: `1.5px solid ${checked ? 'var(--bt-accent)' : 'var(--bt-border)'}` }}>
+                        {checked && <span style={{ color: '#0d1117', fontSize: 10, fontWeight: 900 }}>✓</span>}
+                      </div>
+                      {nameById[a.userId] || a.userId}
+                    </button>
+                  )
+                })}
+              </div>
+              {parsedAmount > 0 && splitIds.size > 0 && (
+                <div style={{ marginTop: 8, fontSize: 12, textAlign: 'right', fontWeight: 600, color: 'var(--bt-accent)' }}>${perPerson}/ea · {splitIds.size} people</div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <Btn variant="secondary" onClick={onClose} style={{ flex: 1 }}>Cancel</Btn>
+              <Btn onClick={handleSubmit} disabled={!canSubmit} style={{ flex: 2, opacity: canSubmit ? 1 : 0.4, cursor: canSubmit ? 'pointer' : 'default' }}>Add Expense</Btn>
+            </div>
+          </div>
+        </Card>
+      )
+    }
 
     function ExpenseRow({ exp }) {
       const [editing, setEditing] = useState(false)
@@ -2887,8 +2974,9 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SectionLabel>Expenses</SectionLabel>
-            <Btn variant="secondary" onClick={() => showToast('Add expense — coming soon')}>+ Add</Btn>
+            {canEdit && !addExpenseOpen && <Btn variant="secondary" onClick={() => setAddExpenseOpen(true)}>+ Add</Btn>}
           </div>
+          {addExpenseOpen && <AddExpenseForm onClose={() => setAddExpenseOpen(false)} />}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             {[{ label: 'Trip Total', val: `$${total.toLocaleString()}`, accent: false }, { label: 'Your Share', val: `$${myShare.toLocaleString()}`, accent: true }].map(s => (
               <Card key={s.label} style={{ textAlign: 'center' }}>
@@ -2897,9 +2985,9 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
               </Card>
             ))}
           </div>
-          {expenses.length === 0
+          {expenseList.length === 0
             ? <Card><div style={{ textAlign: 'center', padding: '24px 0', fontSize: 14, color: 'var(--bt-text-3)' }}>No expenses yet</div></Card>
-            : expenses.map(exp => <ExpenseRow key={exp._id} exp={exp} />)
+            : expenseList.map(exp => <ExpenseRow key={exp._id} exp={exp} />)
           }
         </div>
         {isOwner && <TripSettingsPanel trip={trip} showToast={showToast} navigate={navigate} notify={notify} />}
