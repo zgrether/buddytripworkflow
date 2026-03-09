@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 0.4 complete
+2026-03-09 — Task 0.5 complete
 
 ## Current State
 - buddytrip.html: ~4730 lines
@@ -19,8 +19,11 @@
 - Old hardcoded values (6.5/8.5) did NOT match mock data — they were arbitrary placeholders
 - Computed values from ROUND_RESULTS + sides[].result: team-a: 10, team-b: 13
 
+## Completed Tasks (continued)
+- [x] 0.5 — Dashboard greeting now uses ROLE_USERS[viewerRole].name, updates with dev role switcher
+
 ## In Progress
-- [ ] 0.5 — Fix "Welcome back, Grether" hardcoding (should use CURRENT_USER)
+- [ ] 1.1 — Unify user identity (Opus task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container

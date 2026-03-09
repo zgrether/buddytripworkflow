@@ -736,7 +736,7 @@ function Dashboard({ navigate, viewerRole }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--bt-text-1)' }}>My Trips</h1>
-            <p style={{ fontSize: 13, color: 'var(--bt-text-3)', marginTop: 2 }}>Welcome back, Grether</p>
+            <p style={{ fontSize: 13, color: 'var(--bt-text-3)', marginTop: 2 }}>Welcome back, {ROLE_USERS[viewerRole]?.name || CURRENT_USER.nickname}</p>
           </div>
           <button onClick={() => navigate('trip-new')} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 8, background: 'var(--bt-accent)', color: '#0d1117', border: 'none', cursor: 'pointer' }}>
             + New Trip
