@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 2.6 complete
+2026-03-09 — Task 3.1 complete
 
 ## Current State
 - buddytrip.html: ~5200 lines (grew ~200 lines with score entry)
@@ -147,6 +147,17 @@
 - "Just me" shortcut in split-among resets to Set([paidBy]) — sensible default when someone pays solo
 - Per-person preview only shows when parsedAmount > 0
 - Phase 2 (Missing Features) is now complete (2.1–2.6)
+
+## Completed Tasks (continued)
+- [x] 3.1 — Extracted scoring engine into pure function computeScores(event, roundResults): parameter instead of ROUND_RESULTS global, returns { ...teamTotals, remaining }; removed manual remaining calc from LiveLeaderboard; all 3 call sites updated; old computeTeamScores removed
+
+## Notes from 3.1
+- computeScores(event, roundResults) — both arguments required at every call site
+- remaining = totalPossible - awarded, where totalPossible = sum(r.pointsAvailable) + sum(s.pointsAvailable)
+- awarded = Object.values(totals).reduce(...) — sums all team point totals
+- The `remaining` key in the return object doesn't collide with any team ID since team IDs are 'team-a'/'team-b'
+- LiveLeaderboard previously computed totalPossible + remaining inline — those 2 lines removed, replaced with scores.remaining
+- scoreNonce still needed to force LiveLeaderboard re-render when GROUP_RESULTS mutates (computeScores is pure but LiveLeaderboard is a plain function call, not a hook)
 
 ## In Progress
 - (none)
