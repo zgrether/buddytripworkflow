@@ -1676,7 +1676,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
                   { icon: 'BarChart2', text: 'Live leaderboard and scoring during the trip' },
                 ].map(item => (
                   <div key={item.icon} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 8, background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
-                    <span style={{ fontSize: 18 }}>{item.icon}</span>
+                    <Ic n={item.icon} size={18} />
                     <span style={{ fontSize: 13, color: 'var(--bt-text-2)' }}>{item.text}</span>
                   </div>
                 ))}
