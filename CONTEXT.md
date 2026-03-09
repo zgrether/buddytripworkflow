@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 1.4 complete
+2026-03-09 — Task 1.5 complete
 
 ## Current State
 - buddytrip.html: ~4730 lines
@@ -61,9 +61,10 @@
 ## Completed Tasks (continued)
 - [x] 1.3 — Added createdAt/updatedAt/joinedAt/submittedBy timestamps to all mock data objects: IDEA_VOTES, DATE_VOTES, DATE_POLL votes, DESTINATION_LOCK, EXPENSES, RESERVATIONS, ROUND_RESULTS, and trip attendees across all 3 MOCK_TRIPS entries; also updated all runtime vote/lock creation handlers to stamp new Date()
 - [x] 1.4 — Normalized team membership: created TEAM_ASSIGNMENTS array `[{ eventId, teamId, userId }]`, added getTeamId(eventId, userId) helper, removed teamId from all 16 BBMI_EVENT.players objects, updated 4 component call sites (TripDetail teams accordion, LiveLeaderboard team roster, LiveLeaderboard group player chips, TripMessages myTeam lookup)
+- [x] 1.5 — Normalized group assignments: removed groupId from all 16 BBMI_EVENT.players objects; groups[].playerIds was already the sole source of truth and no component read p.groupId, so no component changes needed
 
 ## In Progress
-- [ ] 1.5 — Normalize group assignments (Sonnet task)
+- [ ] 1.6 — Create a proper User lookup object (Sonnet task)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
