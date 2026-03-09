@@ -709,12 +709,12 @@ function fmtDateRange(start, end) {
 }
 
 // ── SCREEN: Dashboard ────────────────────────────────────────────
-function Dashboard({ navigate, viewerRole }) {
+function Dashboard({ navigate, viewerRole, trips }) {
   const [pastExpanded, setPastExpanded] = useState(false)
-  const live     = MOCK_TRIPS.filter(t => t.status === 'active')
-  const ready    = MOCK_TRIPS.filter(t => t.status === 'ready')
-  const upcoming = MOCK_TRIPS.filter(t => t.status === 'planning')
-  const past     = MOCK_TRIPS.filter(t => t.status === 'completed')
+  const live     = trips.filter(t => t.status === 'active')
+  const ready    = trips.filter(t => t.status === 'ready')
+  const upcoming = trips.filter(t => t.status === 'planning')
+  const past     = trips.filter(t => t.status === 'completed')
   const scores = computeTeamScores(BBMI_EVENT)
 
   function TripCard({ trip }) {
@@ -836,7 +836,7 @@ function Dashboard({ navigate, viewerRole }) {
 }
 
 // ── SCREEN: TripNew — 2-step creation flow ───────────────────────
-function TripNew({ navigate, showToast }) {
+function TripNew({ navigate, showToast, setTrips }) {
   const [step, setStep]               = useState(1)   // 1 = basics, 2 = destination
   const [tripName, setTripName]       = useState('')
   const [inviteInput, setInviteInput] = useState('')
@@ -897,10 +897,44 @@ function TripNew({ navigate, showToast }) {
     : destKnown === false && ideaList.length >= 1
 
   const handleFinish = () => {
-    // All paths land on the trip page now.
-    // 1 idea on vote path = treat as locked destination (same as "Yes we have a spot")
-    // 2+ ideas on vote path = trip page opens with inline destination vote panel active
-    navigate('trip-detail', { tripId: ideaList.length > 1 ? 'trip-new-deciding' : 'trip-bbmi' })
+    const now = new Date()
+    const id  = 'trip-' + Date.now()
+    const comparisonMode = destKnown === false && ideaList.length >= 2
+
+    const newTrip = {
+      _id: id,
+      title: tripName.trim(),
+      location: destKnown ? knownDest.trim() : null,
+      status: 'planning',
+      costTier: null,
+      imageUrl: null,
+      description: '',
+      startDate: null, endDate: null,
+      accommodation: null, notes: null,
+      activities: [], golfCourses: [],
+      attendees: [
+        { name: CURRENT_USER.name, userId: CURRENT_USER._id, status: 'in', role: 'Owner', joinedAt: now },
+      ],
+      comparisonMode,
+      ideas: comparisonMode
+        ? ideaList.map((idea, i) => ({
+            _id: `idea-${Date.now()}-${i}`,
+            title: idea.title,
+            description: idea.desc || '',
+            location: idea.title,
+            golfCourses: [], activities: [],
+            costTier: null, proposedDates: [],
+            pros: [], cons: [],
+            imageUrl: null, archived: false,
+          }))
+        : [],
+      proposedDates: [],
+      eventId: null,
+    }
+
+    setTrips(ts => [...ts, newTrip])
+    showToast(`"${newTrip.title}" created!`)
+    navigate('trip-detail', { tripId: id })
   }
 
   const handleAiSeed = async () => {
@@ -1653,8 +1687,8 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
   )
 }
 
-function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
-  const trip = MOCK_TRIPS.find(t => t._id === tripId) || MOCK_TRIPS[0]
+function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips }) {
+  const trip = trips.find(t => t._id === tripId) || trips[0]
   const isOwner = viewerRole === 'owner'
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
   const isLive = trip.status === 'active'
@@ -3164,8 +3198,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner' }) {
 }
 
 // ── SCREEN: CompetitionSetup ─────────────────────────────────────
-function CompetitionSetup({ navigate, showToast, tripId, viewerRole }) {
-  const trip = MOCK_TRIPS.find(t => t._id === tripId) || MOCK_TRIPS[1]
+function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips }) {
+  const trip = trips.find(t => t._id === tripId) || trips[1]
   const roster = trip.attendees.filter(a => a.status === 'in')
 
   // ── Shared state ────────────────────────────────────────────────
@@ -3622,8 +3656,8 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole }) {
 }
 
 // ── SCREEN: IdeaComparison ───────────────────────────────────────
-function IdeaComparison({ navigate, showToast, tripId, viewerRole }) {
-  const trip = MOCK_TRIPS.find(t => t._id === (tripId || 'trip-bbmi')) || MOCK_TRIPS[1]
+function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips }) {
+  const trip = trips.find(t => t._id === (tripId || 'trip-bbmi')) || trips[1]
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
   const isOwner = viewerRole === 'owner'
 
@@ -4682,9 +4716,9 @@ function LiveLeaderboard({ navigate, showToast }) {
 }
 
 // ── SCREEN: TripMessages ─────────────────────────────────────────
-function TripMessages({ navigate, showToast, tripId, viewerRole }) {
+function TripMessages({ navigate, showToast, tripId, viewerRole, trips }) {
   const { useState } = React
-  const trip = MOCK_TRIPS.find(t => t._id === tripId) || MOCK_TRIPS[0]
+  const trip = trips.find(t => t._id === tripId) || trips[0]
   const hasComp = !!trip.eventId
   const hasTeams = hasComp && BBMI_EVENT.teams.length > 0
   const myTeam = hasTeams ? (BBMI_EVENT.teams.find(t => t._id === getTeamId(BBMI_EVENT._id, CURRENT_USER._id)) || BBMI_EVENT.teams[1]) : null
@@ -4746,6 +4780,7 @@ function App() {
   const [tripId, setTripId] = useState(null)
   const [toast, setToast] = useState(null)
   const [viewerRole, setViewerRole] = useState('planner')
+  const [trips, setTrips] = useState(MOCK_TRIPS)
 
   const navigate = (s, extra = {}) => {
     setScreen(s)
@@ -4760,12 +4795,12 @@ function App() {
 
   return (
     <>
-      {screen === 'trips'            && <Dashboard navigate={navigate} viewerRole={viewerRole} />}
-      {screen === 'trip-new'         && <TripNew navigate={navigate} showToast={showToast} />}
-      {screen === 'trip-detail'      && <TripDetail navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} />}
-      {screen === 'comp-setup'       && <CompetitionSetup navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} />}
-      {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} />}
-      {screen === 'trip-messages'    && <TripMessages navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} />}
+      {screen === 'trips'            && <Dashboard navigate={navigate} viewerRole={viewerRole} trips={trips} />}
+      {screen === 'trip-new'         && <TripNew navigate={navigate} showToast={showToast} setTrips={setTrips} />}
+      {screen === 'trip-detail'      && <TripDetail navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
+      {screen === 'comp-setup'       && <CompetitionSetup navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
+      {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
+      {screen === 'trip-messages'    && <TripMessages navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} />}
       {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} />}
 
       {/* Dev role switcher */}
