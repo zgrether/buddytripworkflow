@@ -317,7 +317,7 @@ const USERS = {
 const MOCK_TRIPS = [
   {
     _id: 'trip-bbmi-live', title: 'BBMI 2025', location: 'Bandon Dunes, OR',
-    status: 'active', costTier: '$$$$',
+    costTier: '$$$$',
     imageUrl: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80',
     description: 'The Buddy Banks Memorial Invitational. 16 players, 4 days, Ryder Cup format. Day 3 underway — Sabotage round at Pacific Dunes.',
     startDate: '2025-03-11', endDate: '2025-03-14',
@@ -334,7 +334,7 @@ const MOCK_TRIPS = [
   },
   {
     _id: 'trip-bbmi', title: 'BBMI 2026', location: 'Scottsdale, AZ',
-    status: 'ready', costTier: '$$$',
+    costTier: '$$$',
     imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
     description: 'Annual BBMI. Destination still being voted on — Scottsdale vs Bandon return.',
     startDate: '2026-03-09', endDate: '2026-03-12',
@@ -387,7 +387,7 @@ const MOCK_TRIPS = [
   },
   {
     _id: 'trip-new-deciding', title: 'BBMI 2027', location: null,
-    status: 'planning', costTier: null,
+    costTier: null,
     description: 'Just started planning. First idea on the table — waiting for more.',
     startDate: null, endDate: null,
     accommodation: null, notes: null,
@@ -512,6 +512,32 @@ const TRIP_MESSAGES = {
 const ROUND_RESULTS = {
   'r1': { 'team-a': 2.5, 'team-b': 1.5, submittedBy: 'brad', createdAt: new Date('2025-03-11T18:30:00') },
   'r2': { 'team-a': 1.5, 'team-b': 2.5, submittedBy: 'jd',   createdAt: new Date('2025-03-12T17:45:00') },
+}
+
+// Derive trip status from data rather than a stored field.
+// planning → ready:    destination locked AND dates known/locked
+// ready    → active:   today >= effectiveStartDate
+// active   → completed: today > effectiveEndDate
+function getTripStatus(trip) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const datePoll     = DATE_POLL[trip._id]
+  const lockedWindow = datePoll?.lockedId
+    ? datePoll.windows.find(w => w._id === datePoll.lockedId)
+    : null
+
+  const effectiveStart = lockedWindow?.start || trip.startDate || null
+  const effectiveEnd   = lockedWindow?.end   || trip.endDate   || null
+
+  if (effectiveEnd   && today > new Date(effectiveEnd))   return 'completed'
+  if (effectiveStart && today >= new Date(effectiveStart)) return 'active'
+
+  const hasLockedDest  = !!DESTINATION_LOCK[trip._id] || (!trip.comparisonMode && !!trip.location)
+  const hasLockedDates = !!datePoll?.lockedId || !!trip.startDate
+
+  if (hasLockedDest && hasLockedDates) return 'ready'
+  return 'planning'
 }
 
 // Compute total team scores from round results + side event results.
@@ -711,15 +737,15 @@ function fmtDateRange(start, end) {
 // ── SCREEN: Dashboard ────────────────────────────────────────────
 function Dashboard({ navigate, viewerRole, trips }) {
   const [pastExpanded, setPastExpanded] = useState(false)
-  const live     = trips.filter(t => t.status === 'active')
-  const ready    = trips.filter(t => t.status === 'ready')
-  const upcoming = trips.filter(t => t.status === 'planning')
-  const past     = trips.filter(t => t.status === 'completed')
+  const live     = trips.filter(t => getTripStatus(t) === 'active')
+  const ready    = trips.filter(t => getTripStatus(t) === 'ready')
+  const upcoming = trips.filter(t => getTripStatus(t) === 'planning')
+  const past     = trips.filter(t => getTripStatus(t) === 'completed')
   const scores = computeTeamScores(BBMI_EVENT)
 
   function TripCard({ trip }) {
-    const isLive  = trip.status === 'active'
-    const isReady = trip.status === 'ready'
+    const isLive  = getTripStatus(trip) === 'active'
+    const isReady = getTripStatus(trip) === 'ready'
     const accentColor = isLive ? 'var(--bt-accent)' : isReady ? '#a78bfa' : null
     return (
       <div onClick={() => navigate('trip-detail', { tripId: trip._id })}
@@ -740,7 +766,7 @@ function Dashboard({ navigate, viewerRole, trips }) {
               {isLive && <LiveDot />}
               <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--bt-text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trip.title}</span>
             </div>
-            <StatusBadge status={trip.status} />
+            <StatusBadge status={getTripStatus(trip)} />
           </div>
           {trip.location && (
             <div style={{ fontSize: 12, color: 'var(--bt-text-2)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -905,7 +931,6 @@ function TripNew({ navigate, showToast, setTrips }) {
       _id: id,
       title: tripName.trim(),
       location: destKnown ? knownDest.trim() : null,
-      status: 'planning',
       costTier: null,
       imageUrl: null,
       description: '',
@@ -1691,7 +1716,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const isOwner = viewerRole === 'owner'
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
-  const isLive = trip.status === 'active'
+  const isLive = getTripStatus(trip) === 'active'
 
   const [tab, setTab] = useState('home')
   const [hasComp, setHasComp] = useState(!!trip.eventId)
@@ -2706,7 +2731,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6, paddingRight: 56 }}>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--bt-text-1)' }}>{trip.title}</h1>
-            {trip.status === 'active' && (
+            {getTripStatus(trip) === 'active' && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 9999, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)40' }}>
                 <span className="animate-pulse-dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--bt-accent)' }} />
                 LIVE
