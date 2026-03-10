@@ -165,7 +165,7 @@ export interface DateVote {
 
 export type EventStatus = 'active' | 'completed' | 'upcoming'
 export type RoundFormat = 'scramble' | 'stableford' | 'sabotage' | 'skins'
-export type RoundStatus = 'complete' | 'active' | 'upcoming'
+export type RoundStatus = 'upcoming' | 'active' | 'submitted' | 'closed'
 
 /** A competition event linked to a trip. Maps to `events` table. */
 export interface Event {
