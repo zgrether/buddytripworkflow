@@ -1040,6 +1040,34 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
             </div>
           </section>
         )}
+
+        {live.length === 0 && ready.length === 0 && upcoming.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+            <Ic n="Map" size={36} color="var(--bt-text-3)" style={{ marginBottom: 12 }} />
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--bt-text-2)', marginBottom: 6 }}>No upcoming trips</p>
+            <p style={{ fontSize: 13, color: 'var(--bt-text-3)', marginBottom: 20 }}>Plan something — your crew is waiting.</p>
+            <button onClick={() => navigate('trip-new')}
+              style={{ fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 8, background: 'var(--bt-accent)', color: '#0d1117', border: 'none', cursor: 'pointer' }}>
+              + New Trip
+            </button>
+          </div>
+        )}
+
+        {past.length > 0 && (
+          <section style={{ marginBottom: 32 }}>
+            <button onClick={() => setPastExpanded(e => !e)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--bt-text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 12px', width: '100%', textAlign: 'left' }}>
+              <Ic n={pastExpanded ? 'ChevronDown' : 'ChevronRight'} size={14} color="var(--bt-text-3)" />
+              Past Trips
+              <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 500, color: 'var(--bt-text-3)' }}>({past.length})</span>
+            </button>
+            {pastExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {past.map(t => <TripCard key={t._id} trip={t} />)}
+              </div>
+            )}
+          </section>
+        )}
       </div>
       <BottomNav active="trips" navigate={navigate} />
     </div>
@@ -2238,7 +2266,11 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
             {canEdit && <Btn variant="secondary" onClick={() => showToast('Add booking — coming soon')}>+ Add</Btn>}
           </div>
           {reservations.length === 0
-            ? <Card><div style={{ textAlign: 'center', padding: '32px 0', fontSize: 14, color: 'var(--bt-text-3)' }}>No bookings yet</div></Card>
+            ? <Card><div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <Ic n="ClipboardList" size={28} color="var(--bt-text-3)" style={{ marginBottom: 8 }} />
+                <p style={{ fontSize: 14, color: 'var(--bt-text-3)', margin: '0 0 4px' }}>No bookings yet</p>
+                {canEdit && <p style={{ fontSize: 12, color: 'var(--bt-text-3)', margin: 0 }}>Use + Add to log lodging, tee times, and more.</p>}
+              </div></Card>
             : reservations.map(r => (
               <Card key={r._id} style={{ marginBottom: 8, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <Ic n={RES_ICONS[r.type] || 'ClipboardList'} size={18} color="var(--bt-text-3)" style={{ marginTop: 2 }} />
