@@ -805,7 +805,7 @@ function Breadcrumb({ items, navigate }) {
 
 function TabBar({ tabs, active, onChange }) {
   return (
-    <div style={{ display: 'flex', overflowX: 'auto', borderBottom: '1px solid var(--bt-border)', marginBottom: 20 }}>
+    <div style={{ display: 'flex', overflowX: 'auto', borderBottom: '1px solid var(--bt-border)', marginBottom: 20, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {tabs.map(tab => (
         <button key={tab.id} onClick={() => onChange(tab.id)}
           style={{ flexShrink: 0, fontSize: 13, fontWeight: active === tab.id ? 700 : 400, padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', color: active === tab.id ? 'var(--bt-accent)' : 'var(--bt-text-2)', borderBottom: active === tab.id ? '2px solid var(--bt-accent)' : '2px solid transparent', marginBottom: -1 }}>
@@ -1025,6 +1025,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
             <RoleBadge role={myRole} />
             <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}><Ic n="Users" size={13} color="var(--bt-text-3)" style={{marginRight:4}} />{trip.attendees.length}</span>
             {trip.startDate && <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}><><Ic n="Calendar" size={12} color="var(--bt-text-3)" style={{marginRight:3}} />{fmtDateRange(trip.startDate, trip.endDate)}</></span>}
+            {!trip.startDate && !trip.datePoll?.lockedId && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'var(--bt-border)', color: 'var(--bt-text-3)' }}>Dates TBD</span>}
             {trip.comparisonMode && <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--bt-accent)' }}>{trip.ideas.length} destinations</span>}
           </div>
           {/* Ready — countdown cue */}
@@ -1342,7 +1343,7 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input ref={inviteRef} value={inviteInput} onChange={e => { setInviteInput(e.target.value); setInviteError('') }}
                     onKeyDown={e => e.key === 'Enter' && addInvite()}
-                    placeholder="Name, nickname, or email"
+                    placeholder="Name, nickname, or email — optional"
                     style={{ ...inputStyle, flex: 1, borderColor: inviteError ? 'var(--bt-danger)' : undefined }}
                     onFocus={e => e.target.style.borderColor = inviteError ? 'var(--bt-danger)' : 'var(--bt-accent)'}
                     onBlur={e => e.target.style.borderColor = inviteError ? 'var(--bt-danger)' : 'var(--bt-border-input)'} />
@@ -1354,7 +1355,7 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
                 {inviteError
                   ? <div style={{ fontSize: 12, color: 'var(--bt-danger)', marginTop: 4 }}>{inviteError}</div>
                   : <p style={{ fontSize: 11, marginTop: 7, color: 'var(--bt-text-3)', lineHeight: 1.5 }}>
-                      Must have a BuddyTrip account. Auto-assigned <strong style={{ color: 'var(--bt-accent)' }}>Planner</strong> role. Add the rest of the crew later.
+                      Skip this — you can always add crew later. Co-planners get the <strong style={{ color: 'var(--bt-accent)' }}>Planner</strong> role and need a BuddyTrip account.
                     </p>
                 }
               </div>
@@ -1951,7 +1952,7 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
       {/* Scrollable message window */}
       <div style={{ position: 'relative' }}>
         <div ref={scrollRef} onScroll={handleScroll}
-          style={{ maxHeight, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12,
+          style={{ maxHeight, overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12,
             scrollbarWidth: 'thin', scrollbarColor: 'var(--bt-border) transparent' }}>
           {messages.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--bt-text-3)', margin: '12px 0', textAlign: 'center' }}>No messages yet — say something.</p>
@@ -1970,7 +1971,8 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
                   <div style={{ fontSize: 13, padding: '8px 11px', lineHeight: 1.45,
                     borderRadius: isMe ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                     background: isMe ? 'var(--bt-accent)' : 'var(--bt-base)',
-                    color: isMe ? '#0d1117' : 'var(--bt-text-1)' }}>
+                    color: isMe ? '#0d1117' : 'var(--bt-text-1)',
+                    wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     {m.text}
                   </div>
                   {isMe && <div style={{ fontSize: 10, color: 'var(--bt-text-3)', textAlign: 'right', marginTop: 3, paddingRight: 2 }}>{fmtMsgTime(m.createdAt)}</div>}
@@ -1996,7 +1998,7 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
         <input value={msgDraft} onChange={e => setMsgDraft(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg() } }}
           placeholder="Message the crew…"
-          style={{ flex: 1, fontSize: 13, padding: '8px 11px', borderRadius: 8, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }}
+          style={{ flex: 1, minWidth: 0, fontSize: 13, padding: '8px 11px', borderRadius: 8, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none', boxSizing: 'border-box' }}
           onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
           onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
         <button onClick={sendMsg} disabled={!msgDraft.trim()}
@@ -2055,7 +2057,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   const [messages, setMessages] = useState(TRIP_MESSAGES[tripId]?.trip || [])
   const myTripDetailTeamId = hasComp ? getTeamId(BBMI_EVENT._id, CURRENT_USER._id) : null
   const [teamMessages, setTeamMessages] = useState(myTripDetailTeamId ? (TRIP_MESSAGES[tripId]?.team?.[myTripDetailTeamId] || []) : [])
-  const [msgDraft, setMsgDraft] = useState('')
+  const [msgDraft, setMsgDraft]           = useState('')
+  const [chatExpanded, setChatExpanded]   = useState(false)
   const [inlineNewTitle, setInlineNewTitle] = useState('')
 
   const lockedWindow = datePoll.lockedId ? datePoll.windows.find(w => w._id === datePoll.lockedId) : null
@@ -2298,32 +2301,46 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
         <AboutCard trip={trip} canEdit={canEdit} />
 
-        {/* ── Messages teaser ── */}
+        {/* ── Messages panel (collapsible) ── */}
         {(() => {
           const unread = messages.filter(m => m.userId !== CURRENT_USER._id).length
           const teamUnread = teamMessages.filter(m => m.userId !== CURRENT_USER._id).length
           const totalUnread = unread + teamUnread
           const lastMsg = [...messages, ...teamMessages].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
           return (
-            <div onClick={() => navigate('trip-messages', { tripId })}
-              style={{ borderRadius: 12, padding: '12px 14px', background: 'var(--bt-card)', border: `1px solid ${totalUnread > 0 ? 'var(--bt-accent)50' : 'var(--bt-border)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, transition: 'border-color .15s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--bt-accent)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = totalUnread > 0 ? 'var(--bt-accent)50' : 'var(--bt-border)'}>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <Ic n="MessageCircle" size={22} color={totalUnread > 0 ? 'var(--bt-accent)' : 'var(--bt-text-3)'} />
-                {totalUnread > 0 && <span style={{ position: 'absolute', top: -4, right: -5, minWidth: 14, height: 14, borderRadius: 9999, background: 'var(--bt-danger)', color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{totalUnread > 9 ? '9+' : totalUnread}</span>}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-text-1)' }}>Messages</span>
-                  {totalUnread > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-danger)' }}>{totalUnread} unread</span>}
+            <div style={{ borderRadius: 12, background: 'var(--bt-card)', border: `1px solid ${totalUnread > 0 && !chatExpanded ? 'var(--bt-accent)50' : 'var(--bt-border)'}`, overflow: 'hidden', transition: 'border-color .15s' }}>
+              {/* Header row — always visible, toggles panel */}
+              <div onClick={() => setChatExpanded(x => !x)}
+                style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
+                onMouseEnter={e => e.currentTarget.parentElement.style.borderColor = 'var(--bt-accent)'}
+                onMouseLeave={e => e.currentTarget.parentElement.style.borderColor = totalUnread > 0 && !chatExpanded ? 'var(--bt-accent)50' : 'var(--bt-border)'}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <Ic n="MessageCircle" size={22} color={totalUnread > 0 ? 'var(--bt-accent)' : 'var(--bt-text-3)'} />
+                  {totalUnread > 0 && !chatExpanded && <span style={{ position: 'absolute', top: -4, right: -5, minWidth: 14, height: 14, borderRadius: 9999, background: 'var(--bt-danger)', color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{totalUnread > 9 ? '9+' : totalUnread}</span>}
                 </div>
-                {lastMsg
-                  ? <p style={{ margin: 0, fontSize: 12, color: 'var(--bt-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ color: 'var(--bt-text-2)', fontWeight: 600 }}>{USERS[lastMsg.userId]?.nickname || lastMsg.userId}:</span> {lastMsg.text}</p>
-                  : <p style={{ margin: 0, fontSize: 12, color: 'var(--bt-text-3)' }}>No messages yet — start the conversation</p>
-                }
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: chatExpanded ? 0 : 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-text-1)' }}>Messages</span>
+                    {totalUnread > 0 && !chatExpanded && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-danger)' }}>{totalUnread} unread</span>}
+                  </div>
+                  {!chatExpanded && (lastMsg
+                    ? <p style={{ margin: 0, fontSize: 12, color: 'var(--bt-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ color: 'var(--bt-text-2)', fontWeight: 600 }}>{USERS[lastMsg.userId]?.nickname || lastMsg.userId}:</span> {lastMsg.text}</p>
+                    : <p style={{ margin: 0, fontSize: 12, color: 'var(--bt-text-3)' }}>No messages yet — start the conversation</p>
+                  )}
+                </div>
+                <Ic n={chatExpanded ? 'ChevronUp' : 'ChevronDown'} size={16} color="var(--bt-text-3)" />
               </div>
-              <Ic n="ChevronRight" size={16} color="var(--bt-text-3)" />
+              {/* Inline chat panel */}
+              {chatExpanded && (
+                <div style={{ borderTop: '1px solid var(--bt-border)', padding: '0 14px 14px' }} className="animate-slide-up">
+                  <TripChat messages={messages} setMessages={setMessages} msgDraft={msgDraft} setMsgDraft={setMsgDraft} maxHeight={260}
+                    onSend={(text) => { if (notify) notify({ type: 'chat_message', tripId, actorId: CURRENT_USER._id, payload: { preview: text } }) }} />
+                  <button onClick={() => navigate('trip-messages', { tripId })}
+                    style={{ marginTop: 8, width: '100%', fontSize: 12, fontWeight: 600, padding: '7px 0', borderRadius: 8, background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)', cursor: 'pointer' }}>
+                    Open full Messages →
+                  </button>
+                </div>
+              )}
             </div>
           )
         })()}
