@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 4.2 complete
+2026-03-10 — Task 4.3 complete
 
 ## Current State
 - buddytrip.html: ~5240 lines — navigation fixes + empty states
@@ -219,7 +219,48 @@
 - LiveLeaderboard is tightly coupled to BBMI mock data but tripId is now wired through; 'trip-bbmi-live' fallback handles direct URL access
 - CompetitionSetup already had breadcrumb "Trips > {trip} > Competition Setup" and correct post-submit navigation; the only gap was the mode picker had no explicit Cancel
 - All other paths (TripDetail tabs, IdeaComparison, TripMessages, TripNew) had correct round-trip navigation already
-- Next task: 4.3 — Test the complete user journey per role (Opus recommended — consider switching models)
+- Next task: 4.4 — Add a "completed" trip to mock data (Sonnet recommended)
+
+## Completed Tasks (continued)
+- [x] 4.3 — Complete user journey audit per role (Owner, Planner, Member): tested all navigation paths, permissions, and data mutations across full lifecycle; fixed 4 bugs; documented 5 permission gaps and 2 dead ends
+
+## Notes from 4.3
+
+### Bugs Fixed
+1. **CRITICAL — Line 5100:** `totalPossible` referenced in LiveLeaderboard Overview tab but not defined in scope — caused ReferenceError crash. Fixed: replaced with `ptsA + ptsB + remaining` (derived from `computeScores` return value).
+2. **Dashboard TripCard role badge (line 962):** Hardcoded `<RoleBadge role="Planner" />` for every trip card regardless of viewer's actual role. Fixed: resolves viewer's role from trip attendees using `roleUserIds[viewerRole]`.
+3. **TripNew co-planners discarded (line 1157):** Invites added during Step 1 were collected in state but never included in `newTrip.attendees` in `handleFinish()`. Fixed: invites are now mapped to attendees with role 'Planner' and USERS lookup for known accounts.
+4. **ROLE_USERS member name mismatch (line 5319):** Member role labeled as 'Buddy' but `roleUserIds` maps member to 'rob'. Fixed: changed to 'Rob'.
+
+### Audit Results by Role
+
+**Owner (brad):** 11/13 steps PASS, 2 PARTIAL
+- PARTIAL: Trip goes live — no explicit "Go Live" action; `hasComp` local state resets on re-render
+- PARTIAL: Enter scores — active round (Sabotage) format not supported; only scramble/stableford work
+- All Owner-gated actions (lock destination, manage crew roles, trip settings, archive/delete) work correctly
+
+**Planner (zach):** 8/8 steps PASS
+- All canEdit-gated actions work correctly (add ideas, manage dates, set up competition, add crew, add expenses)
+- Correctly blocked from Owner-only actions (lock destination, manage roles, trip settings)
+- Quick Info Tiles gated by `isOwner` instead of `canEdit` — flagged as design decision, not changed
+
+**Member (rob):** 5/8 steps PASS, 3 PARTIAL/FAIL
+- PASS: Open trip, view destination vote, view leaderboard, notification bell
+- PARTIAL: Cast vote — works but recorded under CURRENT_USER (zach), not rob
+- PARTIAL: Send message — works but attributed to zach; team chat shows wrong team (team-a instead of team-b)
+- FAIL: Score entry — no role gating at all; LiveLeaderboard doesn't receive viewerRole prop
+
+### Permission Gaps Documented (not fixed — product decisions)
+1. Score entry has zero role gating — any user can submit scores (LiveLeaderboard missing viewerRole prop)
+2. Members cannot comment on ideas — commenting only in IdeaComparison view which requires canEdit to access
+3. Quick Info Tiles gated by isOwner — Planners cannot manage them
+4. CURRENT_USER never switches with role switcher — all mutations use zach's identity regardless of role
+5. No self-service RSVP for Members — cannot update own attendance status
+6. Dashboard doesn't filter trips by membership — Rob sees trips he's not on (trip-new-deciding)
+
+### Dead Ends
+- `hasComp` state in TripDetail is local — toggling competition on, navigating away, and coming back resets it unless `trip.eventId` is set
+- Sabotage and Skins score entry formats are stubbed — active round (r3) can't be scored
 
 ## In Progress
 - (none)
@@ -227,10 +268,12 @@
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
 - ICONS dict: any missing icon fails silently (empty SVG, no error)
+- CURRENT_USER is hardcoded to 'zach' — role switcher only changes viewerRole UI gating, not data identity
 
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
+Next task: 4.4 — Add a "completed" trip to mock data (Sonnet recommended — consider switching models)
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.
