@@ -981,19 +981,19 @@ function fmtDateRange(start, end) {
 // ── SCREEN: Dashboard ────────────────────────────────────────────
 function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }) {
   const [pastExpanded, setPastExpanded] = useState(false)
-  const live     = trips.filter(t => getTripStatus(t) === 'active')
-  const ready    = trips.filter(t => getTripStatus(t) === 'ready')
-  const upcoming = trips.filter(t => getTripStatus(t) === 'planning')
-  const past     = trips.filter(t => getTripStatus(t) === 'completed')
-  const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
-
   const roleUserIds = { owner: 'brad', planner: 'zach', member: 'rob' }
+  const viewerUserId = roleUserIds[viewerRole] || CURRENT_USER._id
+  const myTrips  = trips.filter(t => t.attendees.some(a => a.userId === viewerUserId))
+  const live     = myTrips.filter(t => getTripStatus(t) === 'active')
+  const ready    = myTrips.filter(t => getTripStatus(t) === 'ready')
+  const upcoming = myTrips.filter(t => getTripStatus(t) === 'planning')
+  const past     = myTrips.filter(t => getTripStatus(t) === 'completed')
+  const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
 
   function TripCard({ trip }) {
     const isLive  = getTripStatus(trip) === 'active'
     const isReady = getTripStatus(trip) === 'ready'
     const accentColor = isLive ? 'var(--bt-accent)' : isReady ? 'var(--bt-purple)' : null
-    const viewerUserId = roleUserIds[viewerRole] || CURRENT_USER._id
     const myRole = trip.attendees.find(a => a.userId === viewerUserId)?.role || 'Member'
     return (
       <div onClick={() => navigate('trip-detail', { tripId: trip._id })}
@@ -2163,7 +2163,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
         ) : null}
 
         {/* Quick Info Tiles */}
-        {tiles.length === 0 && isOwner && !addingTile ? (
+        {tiles.length === 0 && canEdit && !addingTile ? (
           <button onClick={() => { setAddingTile(true); setTileDraft({ label: '', value: '' }) }}
             style={{ width: '100%', borderRadius: 12, padding: 16, textAlign: 'left', cursor: 'pointer', background: 'var(--bt-card)', border: '1px dashed var(--bt-border)' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--bt-accent)'}
@@ -2177,15 +2177,15 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
               <span style={{ marginLeft: 'auto', color: 'var(--bt-text-3)' }}>›</span>
             </div>
           </button>
-        ) : (tiles.length > 0 || isOwner) && (
+        ) : (tiles.length > 0 || canEdit) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {tiles.map(tile => (
               <div key={tile.id} style={{ position: 'relative', flex: '1 1 calc(33% - 8px)', maxWidth: 160, minWidth: 90, borderRadius: 12, padding: '10px 12px', background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}
-                onMouseEnter={e => { if (isOwner) { const btns = e.currentTarget.querySelectorAll('.tile-btn'); btns.forEach(b => b.style.display = 'flex') } }}
+                onMouseEnter={e => { if (canEdit) { const btns = e.currentTarget.querySelectorAll('.tile-btn'); btns.forEach(b => b.style.display = 'flex') } }}
                 onMouseLeave={e => { const btns = e.currentTarget.querySelectorAll('.tile-btn'); btns.forEach(b => b.style.display = 'none') }}>
                 <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--bt-text-3)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tile.label}</div>
                 <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 16, color: 'var(--bt-accent)' }}>{tile.value}</div>
-                {isOwner && (
+                {canEdit && (
                   <div style={{ position: 'absolute', top: 6, right: 6, gap: 4, display: 'none' }} className="tile-btn">
                     <button onClick={() => { setEditTile(tile.id); setTileDraft({ label: tile.label, value: tile.value }) }} style={{ width: 20, height: 20, borderRadius: 4, background: 'var(--bt-base)', border: '1px solid var(--bt-border)', cursor: 'pointer', fontSize: 10, color: 'var(--bt-text-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✏</button>
                     <button onClick={() => setTiles(ts => ts.filter(t => t.id !== tile.id))} style={{ width: 20, height: 20, borderRadius: 4, background: 'var(--bt-base)', border: '1px solid var(--bt-border)', cursor: 'pointer', fontSize: 10, color: 'var(--bt-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
@@ -2193,7 +2193,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                 )}
               </div>
             ))}
-            {isOwner && !addingTile && (
+            {canEdit && !addingTile && (
               <button onClick={() => { setAddingTile(true); setTileDraft({ label: '', value: '' }) }}
                 style={{ flex: '0 0 72px', minHeight: 64, borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, background: 'transparent', border: '1px dashed var(--bt-border)', cursor: 'pointer' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--bt-accent)'}
@@ -2635,6 +2635,33 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                     {history.years.map(y => (
                       <span key={y} style={{ fontSize: 10, fontFamily: 'monospace', padding: '2px 6px', borderRadius: 4, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)20' }}>{y}</span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* RSVP — self-service for the current user */}
+              {isMe && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-text-3)', marginBottom: 8 }}>Your RSVP</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {[
+                      { value: 'in',     label: "✅ I'm in",    accent: 'var(--bt-accent)' },
+                      { value: 'likely', label: "🤙 Likely",    accent: 'var(--bt-text-2)' },
+                      { value: 'maybe',  label: "🤷 Maybe",     accent: 'var(--bt-text-2)' },
+                      { value: 'out',    label: "❌ Can't go",  accent: 'var(--bt-danger)'  },
+                    ].map(opt => {
+                      const isSelected = member.status === opt.value
+                      return (
+                        <button key={opt.value}
+                          onClick={() => {
+                            setRoster(r => r.map(a => a.userId === member.userId ? { ...a, status: opt.value } : a))
+                            showToast(`RSVP updated: ${opt.label.replace(/^.+?\s/, '')}`)
+                          }}
+                          style={{ fontSize: 12, fontWeight: isSelected ? 700 : 500, padding: '5px 12px', borderRadius: 7, cursor: 'pointer', border: `1px solid ${isSelected ? opt.accent : 'var(--bt-border)'}`, background: isSelected ? `${opt.accent}18` : 'transparent', color: isSelected ? opt.accent : 'var(--bt-text-2)', transition: 'all .15s' }}>
+                          {opt.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -3326,14 +3353,12 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                 )}
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {canEdit && (
-                  <button onClick={() => navigate('idea-comparison', { tripId: trip._id })}
-                    style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bt-accent)'; e.currentTarget.style.color = 'var(--bt-accent)' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bt-border)'; e.currentTarget.style.color = 'var(--bt-text-3)' }}>
-                    <Ic n="LayoutGrid" size={11} color="currentColor" /> Full view
-                  </button>
-                )}
+                <button onClick={() => navigate('idea-comparison', { tripId: trip._id })}
+                  style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bt-accent)'; e.currentTarget.style.color = 'var(--bt-accent)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bt-border)'; e.currentTarget.style.color = 'var(--bt-text-3)' }}>
+                  <Ic n="LayoutGrid" size={11} color="currentColor" /> Full view
+                </button>
               </div>
             </div>
 
