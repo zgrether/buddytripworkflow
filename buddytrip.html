@@ -976,7 +976,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
           })()}
           {/* Live — scoreboard strip */}
           {isLive && (
-            <div onClick={e => { e.stopPropagation(); navigate('live-leaderboard') }}
+            <div onClick={e => { e.stopPropagation(); navigate('live-leaderboard', { tripId: trip._id }) }}
               style={{ marginTop: 12, borderRadius: 8, padding: '10px 14px', cursor: 'pointer', background: '#0a1a14', border: '1px solid rgba(0,212,170,.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,170,.5)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(0,212,170,.2)'}>
@@ -1220,7 +1220,7 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
       <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
       <div style={{ maxWidth: 512, margin: '0 auto', padding: '24px 16px' }}>
-        <Breadcrumb items={[{ label: 'Dashboard', screen: 'trips' }, { label: 'New Trip' }]} navigate={navigate} />
+        <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: 'New Trip' }]} navigate={navigate} />
 
         {/* ── STEP 1: BASICS ─────────────────────────────────────── */}
         {step === 1 && (
@@ -2048,7 +2048,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
         {/* Competition hero or CTA */}
         {hasComp ? (
-          <div onClick={() => navigate('live-leaderboard')} style={{ borderRadius: 12, cursor: 'pointer', overflow: 'hidden', background: '#0a1a14', border: '1px solid var(--bt-accent)40' }}
+          <div onClick={() => navigate('live-leaderboard', { tripId: trip._id })} style={{ borderRadius: 12, cursor: 'pointer', overflow: 'hidden', background: '#0a1a14', border: '1px solid var(--bt-accent)40' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--bt-accent)80'}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--bt-accent)40'}>
             <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--bt-accent)20', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2695,7 +2695,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
               </span>
             </div>
             {trip.eventId ? (
-              <button onClick={() => navigate('live-leaderboard')}
+              <button onClick={() => navigate('live-leaderboard', { tripId: trip._id })}
                 style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 6, border: '1px solid var(--bt-accent)60', background: 'transparent', color: 'var(--bt-accent)', cursor: 'pointer' }}>
                 Leaderboard →
               </button>
@@ -3695,6 +3695,9 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
                   <span style={{ color: 'var(--bt-text-3)', fontSize: 20, flexShrink: 0, alignSelf: 'center' }}>›</span>
                 </button>
               ))}
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <Btn variant="secondary" onClick={() => navigate('trip-detail', { tripId: trip._id })}>← Cancel</Btn>
             </div>
           </>
         )}
@@ -4990,7 +4993,7 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
 }
 
 // ── SCREEN: LiveLeaderboard (compact) ────────────────────────────
-function LiveLeaderboard({ navigate, showToast, notify, notifications, onMarkAllRead }) {
+function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, onMarkAllRead }) {
   const { teams, rounds, sides } = BBMI_EVENT
   const [tab, setTab] = useState('overview')
   const [scoreNonce, setScoreNonce] = useState(0)
@@ -5030,7 +5033,7 @@ function LiveLeaderboard({ navigate, showToast, notify, notifications, onMarkAll
               <LiveDot />
               <span style={{ fontSize: 11, fontFamily: 'monospace', letterSpacing: 2, color: 'var(--bt-accent)' }}>LIVE · BBMI 2025</span>
             </div>
-            <button onClick={() => navigate('trip-detail', { tripId: 'trip-bbmi-live' })}
+            <button onClick={() => navigate('trip-detail', { tripId: tripId || 'trip-bbmi-live' })}
               style={{ fontSize: 11, fontFamily: 'monospace', letterSpacing: 1, color: 'var(--bt-text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', display: 'flex', alignItems: 'center', gap: 4 }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--bt-accent)'}
               onMouseLeave={e => e.currentTarget.style.color = 'var(--bt-text-3)'}>
@@ -5342,7 +5345,7 @@ function App() {
       {screen === 'comp-setup'       && <CompetitionSetup navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} {...navProps} />}
       {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} setTrips={setTrips} notify={notifyAndRefresh} {...navProps} />}
       {screen === 'trip-messages'    && <TripMessages navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
-      {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} notify={notifyAndRefresh} {...navProps} />}
+      {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} tripId={tripId} notify={notifyAndRefresh} {...navProps} />}
 
       {/* Dev role switcher */}
       <div style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
