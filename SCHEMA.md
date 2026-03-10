@@ -375,27 +375,41 @@ Non-golf side competitions within an event (e.g., Hammerschlagen).
 
 ## `group_results`
 
-Per-group scores for a round. The source of truth for scoring.
+Per-group score submission header for a round. Paired with `group_result_scores` rows for the actual points.
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
 | `round_id` | `text` | `FK → rounds.id`, `idx`, `NN`, `*` | |
 | `group_id` | `text` | `FK → play_groups.id`, `NN`, `*` | |
-| `team_a_points` | `numeric(3,1)` | `NN`, `*` | `0`, `0.5`, or `1` |
-| `team_b_points` | `numeric(3,1)` | `NN`, `*` | `0`, `0.5`, or `1`. Must equal `1 - team_a_points`. |
 | `submitted_by` | `text` | `FK → users.id`, `NN`, `*` | |
 | `created_at` | `timestamptz` | `NN`, `auto` | `DEFAULT now()` |
 | `updated_at` | `timestamptz` | `NN`, `auto` | Updated by trigger |
 
 **Primary key:** `(round_id, group_id)`
 
-**Indexes:** `round_id` (aggregate all groups for a round)
+**Indexes:** `round_id`
 
-**Constraint:** `CHECK (team_a_points + team_b_points = 1)`
+---
+
+## `group_result_scores`
+
+Per-team points for a group result. Supports any number of teams (2-team Ryder Cup, 4-team scramble, 64-team tournament, etc.).
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `round_id` | `text` | `FK → group_results.round_id`, `NN`, `*` | Composite FK |
+| `group_id` | `text` | `FK → group_results.group_id`, `NN`, `*` | Composite FK |
+| `team_id` | `text` | `FK → teams.id`, `NN`, `*` | |
+| `points` | `numeric(3,1)` | `NN`, `*` | `0`, `0.5`, or `1` |
+
+**Primary key:** `(round_id, group_id, team_id)`
+
+**Constraint:** `CHECK (points IN (0, 0.5, 1))`
 
 **Notes:**
-- `team_a_points` and `team_b_points` are hardcoded column names for two-team Ryder Cup format. If multi-team events are ever needed, normalize into `group_result_scores(round_id, group_id, team_id, points)`.
-- `round_results` from the prototype (the aggregated totals) should be a **computed view**, not a stored table: `CREATE VIEW round_results AS SELECT round_id, SUM(team_a_points), SUM(team_b_points) FROM group_results GROUP BY round_id`
+- One row per team per group per round. Total points across all teams for a group must sum to 1 (enforced at the application layer or via a trigger).
+- For a 2-team event: 2 rows per group. For a 4-team scramble: 4 rows per group, etc.
+- `round_results` view aggregates across all groups: `CREATE VIEW round_results AS SELECT round_id, team_id, SUM(points) AS total_points FROM group_result_scores GROUP BY round_id, team_id`
 
 ---
 
@@ -557,7 +571,7 @@ These are computed in the application layer in the prototype. In production, imp
 | Name | Derived From | Description |
 |------|-------------|-------------|
 | `trip_status` | `trips`, `date_polls`, `date_windows` | `'planning' \| 'ready' \| 'active' \| 'completed'` — never stored |
-| `round_results` | `group_results` | Aggregated team points per round — implement as a view |
+| `round_results` | `group_result_scores` | Aggregated team points per round — implement as a view |
 | `score_summary` | `round_results`, `side_events` | Total points + remaining per team — computed at query time |
 | `unread_count` | `notification_events`, `notification_reads` | Per-user unread notification count |
 | `trip_unread_messages` | `messages`, last-seen cursor | Per-user unread message count per trip channel |
@@ -608,19 +622,20 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 9. `rounds` (refs `events`)
 10. `side_events` (refs `events`)
 11. `group_results` (refs `rounds`, `play_groups`, `users`)
-12. `trip_members` (refs `trips`, `users`)
-13. `ideas` (refs `trips`)
-14. `idea_votes` (refs `trips`, `ideas`, `users`)
-15. `idea_comments` (refs `trips`, `ideas`, `users`)
-16. `date_polls` (refs `trips`)
-17. `date_windows` (refs `trips`)
-18. `date_poll_votes` (refs `date_windows`, `users`)
-19. `reservations` (refs `trips`)
-20. `expenses` (refs `trips`, `users`)
-21. `expense_splits` (refs `expenses`, `users`)
-22. `messages` (refs `trips`, `users`, `teams`)
-23. `notification_events` (refs `trips`, `users`)
-24. `notification_reads` (refs `notification_events`, `users`)
-25. `quick_info_tiles` (refs `trips`, `users`)
+12. `group_result_scores` (refs `group_results`, `teams`)
+13. `trip_members` (refs `trips`, `users`)
+14. `ideas` (refs `trips`)
+15. `idea_votes` (refs `trips`, `ideas`, `users`)
+16. `idea_comments` (refs `trips`, `ideas`, `users`)
+17. `date_polls` (refs `trips`)
+18. `date_windows` (refs `trips`)
+19. `date_poll_votes` (refs `date_windows`, `users`)
+20. `reservations` (refs `trips`)
+21. `expenses` (refs `trips`, `users`)
+22. `expense_splits` (refs `expenses`, `users`)
+23. `messages` (refs `trips`, `users`, `teams`)
+24. `notification_events` (refs `trips`, `users`)
+25. `notification_reads` (refs `notification_events`, `users`)
+26. `quick_info_tiles` (refs `trips`, `users`)
 
 **Circular dependency note:** `trips.event_id → events.id` and `events.trip_id → trips.id` form a cycle. Resolve by creating both tables without the FK, then adding the constraints with `ALTER TABLE ... ADD CONSTRAINT ... FOREIGN KEY ... DEFERRABLE INITIALLY DEFERRED`.
