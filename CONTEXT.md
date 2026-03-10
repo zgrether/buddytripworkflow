@@ -1,10 +1,10 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 4.1 complete
+2026-03-10 — Task 4.2 complete
 
 ## Current State
-- buddytrip.html: ~5235 lines — 3 empty state fixes (Past Trips section, no-trips Dashboard state, Schedule tab bookings)
+- buddytrip.html: ~5240 lines — navigation fixes + empty states
 - types.ts: ~300 lines — complete TypeScript interfaces for all entities
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
@@ -210,7 +210,16 @@
 - Empty state for no trips only fires when all three sections (live/ready/upcoming) are empty — past trips section renders separately below
 - Schedule tab Add button was already visible for canEdit; the empty state message now points to it explicitly
 - All other sections already had appropriate empty states (expenses, messages, description, ideas, date panel, competition)
-- Next task: 4.2 — Verify all navigation paths work round-trip (Sonnet recommended)
+## Completed Tasks (continued)
+- [x] 4.2 — Audited all 7 screen navigation paths; fixed 4 bugs: (1) LiveLeaderboard "← TRIP HOME" hardcoded 'trip-bbmi-live' — now accepts tripId prop with fallback; (2) all 3 navigate('live-leaderboard') call sites now pass tripId; (3) TripNew breadcrumb root changed 'Dashboard' → 'Trips' for consistency; (4) CompetitionSetup mode picker had no Cancel button — added "← Cancel" back to trip-detail
+
+## Notes from 4.2
+- Navigation audit: 7 screens × multiple entry/exit points checked
+- All breadcrumbs now consistent: root always "Trips" (screen: 'trips')
+- LiveLeaderboard is tightly coupled to BBMI mock data but tripId is now wired through; 'trip-bbmi-live' fallback handles direct URL access
+- CompetitionSetup already had breadcrumb "Trips > {trip} > Competition Setup" and correct post-submit navigation; the only gap was the mode picker had no explicit Cancel
+- All other paths (TripDetail tabs, IdeaComparison, TripMessages, TripNew) had correct round-trip navigation already
+- Next task: 4.3 — Test the complete user journey per role (Opus recommended — consider switching models)
 
 ## In Progress
 - (none)
