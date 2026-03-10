@@ -1,10 +1,11 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 4.4 complete
+2026-03-10 — Task 5.1 complete
 
 ## Current State
-- buddytrip.html: ~5240 lines — navigation fixes + empty states
+- buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
+- README.md: fully updated screen inventory, navigation graph, data architecture, permission model
 - types.ts: ~300 lines — complete TypeScript interfaces for all entities
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
@@ -273,6 +274,17 @@
 - TripCard renders cleanly for completed trips: no accent bar, no scoreboard strip, "Done" StatusBadge in muted color
 - Past Trips section was already wired (task 4.1) — toggle now shows (1) on first load
 
+## Completed Tasks (continued)
+- [x] 5.1 — Rewrote README.md: full screen inventory with route keys and props for all 7 screens; TripDetail tab breakdown; navigation graph (BottomNav context-awareness, breadcrumb patterns, visual flow diagram); data architecture (14 module-level objects, 5 helper functions, trip-level state, messages shape, notification types); design system CSS vars; permission model summary; reference document index; corrected stale info (DESTINATION_LOCK/DATE_POLL globals → trip-level state, team messages shape, member role user name, mock trips table with BBMI 2024, 4-status model including completed)
+
+## Notes from 5.1
+- README now serves as the definitive handoff document — a migration dev can read it and understand every screen, route, data object, and interaction pattern
+- Corrected multiple stale references: DESTINATION_LOCK/DATE_POLL globals (eliminated in 3.2), messages team shape (changed in 2.5), member user 'Buddy' → 'Rob' (fixed in 4.3), missing 'completed' status (added in 2.2/4.4)
+- Added note about mock trip dates vs real-time derivation: BBMI 2025 shows as 'completed' after March 2025 because getTripStatus uses new Date()
+- Navigation graph section is new — documents BottomNav context switching (3 items outside trip, 4 inside), which screens show/hide BottomNav, and a visual flow diagram
+- Data architecture section replaces scattered mentions — consolidated all 14 module-level objects, helper functions, and the trip-level state pattern into one reference
+- Added Key Engineering Rules #3 (state via setTrips) and #4 (module-level arrays need nonces) — these patterns caused bugs before and the migration dev needs to know
+
 ## In Progress
 - (none)
 
@@ -284,7 +296,7 @@
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
-Next task: 5.1 — Update the README with current screen inventory (Opus recommended)
+Next task: 5.2 — Create SCHEMA.md from the TypeScript interfaces (Opus recommended)
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.
