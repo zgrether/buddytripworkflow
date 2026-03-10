@@ -291,6 +291,37 @@ const BBMI_EVENT = {
   ],
 }
 
+const THREESOME_EVENT = {
+  _id: 'threesome-test', tripId: 'trip-threesome',
+  title: '3-Team Test Event', subtitle: '3-Team Match Play', motto: '"Three\'s Company"',
+  location: 'Pinehurst, NC', dates: 'April 5–7, 2025', status: 'active',
+  teams: [
+    { _id: 'team-red',   name: 'Red Team',   shortName: 'Red',   color: '#ef4444', colorDim: '#2a0a0a' },
+    { _id: 'team-green', name: 'Green Team', shortName: 'Green', color: '#22c55e', colorDim: '#0a2a0f' },
+    { _id: 'team-blue',  name: 'Blue Team',  shortName: 'Blue',  color: '#3b82f6', colorDim: '#0a1a2a' },
+  ],
+  players: [
+    { _id: 'r1', name: 'Ryan Red',     nickname: 'Ryan',    handicap: 10 },
+    { _id: 'r2', name: 'Rick Red',     nickname: 'Rick',    handicap: 14 },
+    { _id: 'r3', name: 'Rory Red',     nickname: 'Rory',    handicap: 8  },
+    { _id: 'g1', name: 'Greg Green',   nickname: 'Greg',    handicap: 12 },
+    { _id: 'g2', name: 'Gary Green',   nickname: 'Gary',    handicap: 15 },
+    { _id: 'g3', name: 'Grant Green',  nickname: 'Grant',   handicap: 9  },
+    { _id: 'b1', name: 'Blake Blue',   nickname: 'Blake',   handicap: 11 },
+    { _id: 'b2', name: 'Brett Blue',   nickname: 'Brett',   handicap: 13 },
+    { _id: 'b3', name: 'Brian Blue',   nickname: 'Brian',   handicap: 16 },
+  ],
+  groups: [
+    { _id: 'tg1', name: 'Group 1', teeTime: '8:00 AM', playerIds: ['r1','g1','b1'] },
+    { _id: 'tg2', name: 'Group 2', teeTime: '8:12 AM', playerIds: ['r2','g2','b2'] },
+    { _id: 'tg3', name: 'Group 3', teeTime: '8:24 AM', playerIds: ['r3','g3','b3'] },
+  ],
+  rounds: [
+    { _id: 'tr1', day: 1, title: 'Match Play', course: 'Pinehurst No. 2', format: 'match_play', status: 'active', pointsAvailable: 3, modifiers: null },
+  ],
+  sides: [],
+}
+
 // Normalized team membership — separate from the player roster.
 // One row per player per event; join on eventId + userId to find a player's team.
 const TEAM_ASSIGNMENTS = [
@@ -310,11 +341,28 @@ const TEAM_ASSIGNMENTS = [
   { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'buddy'   },
   { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'frank'   },
   { eventId: 'bbmi-2025', teamId: 'team-b', userId: 'taj'     },
+  // 3-team event assignments
+  { eventId: 'threesome-test', teamId: 'team-red',   userId: 'r1' },
+  { eventId: 'threesome-test', teamId: 'team-red',   userId: 'r2' },
+  { eventId: 'threesome-test', teamId: 'team-red',   userId: 'r3' },
+  { eventId: 'threesome-test', teamId: 'team-green', userId: 'g1' },
+  { eventId: 'threesome-test', teamId: 'team-green', userId: 'g2' },
+  { eventId: 'threesome-test', teamId: 'team-green', userId: 'g3' },
+  { eventId: 'threesome-test', teamId: 'team-blue',  userId: 'b1' },
+  { eventId: 'threesome-test', teamId: 'team-blue',  userId: 'b2' },
+  { eventId: 'threesome-test', teamId: 'team-blue',  userId: 'b3' },
 ]
 
 // Return the teamId for a player in a given event, or null if not assigned.
 function getTeamId(eventId, userId) {
   return TEAM_ASSIGNMENTS.find(a => a.eventId === eventId && a.userId === userId)?.teamId || null
+}
+
+// Resolve event object from an eventId. Returns BBMI_EVENT or THREESOME_EVENT.
+const EVENTS_BY_ID = { [BBMI_EVENT._id]: BBMI_EVENT, [THREESOME_EVENT._id]: THREESOME_EVENT }
+function getEventForTrip(tripId, trips) {
+  const trip = (trips || MOCK_TRIPS).find(t => t._id === tripId)
+  return trip?.eventId ? (EVENTS_BY_ID[trip.eventId] || null) : null
 }
 
 // Single source of truth for user display info.
@@ -336,6 +384,16 @@ const USERS = {
   'buddy':   { _id: 'buddy',   name: 'Buddy Banks',      nickname: 'Buddy',   email: 'buddy.banks@gmail.com'       },
   'frank':   { _id: 'frank',   name: 'Frank Damen',      nickname: 'Frank',   email: 'frank.damen@gmail.com'       },
   'taj':     { _id: 'taj',     name: 'Tajar Varghese',   nickname: 'Taj',     email: 'taj.varghese@gmail.com'      },
+  // 3-team event players
+  'r1':      { _id: 'r1',      name: 'Ryan Red',         nickname: 'Ryan',    email: 'ryan.red@gmail.com'          },
+  'r2':      { _id: 'r2',      name: 'Rick Red',         nickname: 'Rick',    email: 'rick.red@gmail.com'          },
+  'r3':      { _id: 'r3',      name: 'Rory Red',         nickname: 'Rory',    email: 'rory.red@gmail.com'          },
+  'g1':      { _id: 'g1',      name: 'Greg Green',       nickname: 'Greg',    email: 'greg.green@gmail.com'        },
+  'g2':      { _id: 'g2',      name: 'Gary Green',       nickname: 'Gary',    email: 'gary.green@gmail.com'        },
+  'g3':      { _id: 'g3',      name: 'Grant Green',      nickname: 'Grant',   email: 'grant.green@gmail.com'       },
+  'b1':      { _id: 'b1',      name: 'Blake Blue',       nickname: 'Blake',   email: 'blake.blue@gmail.com'        },
+  'b2':      { _id: 'b2',      name: 'Brett Blue',       nickname: 'Brett',   email: 'brett.blue@gmail.com'        },
+  'b3':      { _id: 'b3',      name: 'Brian Blue',       nickname: 'Brian',   email: 'brian.blue@gmail.com'        },
   // Non-player crew (known accounts for invite flow)
   'mike':    { _id: 'mike',    name: 'Mike Donovan',     nickname: 'Mike',    email: 'mike.donovan@gmail.com'      },
   'paul':    { _id: 'paul',    name: 'Paul Schaefer',    nickname: 'Paul',    email: 'paul.s@outlook.com'          },
@@ -508,6 +566,25 @@ const MOCK_TRIPS = [
     lockedDestination: { title: 'Pebble Beach', location: 'Pebble Beach, CA', createdAt: new Date('2023-03-01') },
     datePoll: null,
   },
+  {
+    _id: 'trip-threesome', title: '3-Team Test', location: 'Pinehurst, NC',
+    costTier: '$$$',
+    imageUrl: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80',
+    description: '3-team match play test event — 9 players, 3 threesomes.',
+    startDate: '2025-04-05', endDate: '2025-04-07',
+    accommodation: 'Pinehurst Resort',
+    notes: '3-team format test.',
+    activities: ['Golf'],
+    golfCourses: ['Pinehurst No. 2'],
+    attendees: THREESOME_EVENT.players.map(p => ({
+      name: p.name, userId: p._id, status: 'in',
+      role: p._id === 'r1' ? 'Owner' : 'Member',
+      joinedAt: new Date('2025-01-15'),
+    })),
+    comparisonMode: false, ideas: [], proposedDates: [], eventId: 'threesome-test', seriesId: null,
+    lockedDestination: { title: 'Pinehurst', location: 'Pinehurst, NC', createdAt: new Date('2025-01-15') },
+    datePoll: null,
+  },
 ]
 
 
@@ -612,14 +689,17 @@ const GROUP_RESULTS = {
 }
 
 // Recompute ROUND_RESULTS from GROUP_RESULTS for a given round.
+// N-team compatible: discovers team IDs dynamically from group result keys.
 function aggregateGroupResults(roundId) {
   const groups = GROUP_RESULTS[roundId]
   if (!groups) return
-  const totals = { 'team-a': 0, 'team-b': 0 }
+  const totals = {}
   let latestSubmitter = null, latestTime = null
   Object.values(groups).forEach(g => {
-    if (typeof g['team-a'] === 'number') totals['team-a'] += g['team-a']
-    if (typeof g['team-b'] === 'number') totals['team-b'] += g['team-b']
+    Object.entries(g).forEach(([k, v]) => {
+      if (k === 'submittedBy' || k === 'createdAt') return
+      if (typeof v === 'number') totals[k] = (totals[k] || 0) + v
+    })
     if (!latestTime || g.createdAt > latestTime) { latestTime = g.createdAt; latestSubmitter = g.submittedBy }
   })
   ROUND_RESULTS[roundId] = { ...totals, submittedBy: latestSubmitter, createdAt: latestTime }
@@ -3988,8 +4068,8 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
   // ── Shared state ────────────────────────────────────────────────
   const [mode, setMode] = useState(null)           // null | 'manual' | 'draft'
   const [teamCount, setTeamCount] = useState(2)
-  const [teamNames, setTeamNames] = useState(['Team Alpha', 'Team Bravo', 'Team Charlie', 'Team Delta'])
-  const [teamColors] = useState(['#00d4aa', '#f97316', '#8b5cf6', '#3b82f6'])
+  const [teamNames, setTeamNames] = useState(['Team Alpha', 'Team Bravo', 'Team Charlie', 'Team Delta', 'Team Echo', 'Team Foxtrot', 'Team Golf', 'Team Hotel'])
+  const [teamColors] = useState(['#00d4aa', '#f97316', '#8b5cf6', '#3b82f6', '#ef4444', '#22c55e', '#eab308', '#ec4899'])
 
   // ── Manual assignment state ──────────────────────────────────────
   // assignments: { [userId]: 0 | 1 | null }  (0 = team A, 1 = team B, null = unassigned)
@@ -5336,10 +5416,13 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
 function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResult }) {
   const { useState, useMemo } = React
   const PARS = [4,4,3,4,5,3,4,5,4, 4,3,5,4,4,3,5,4,4]
-  const [teamA, teamB] = event.teams
+  const { teams } = event
+  const teamCount = teams.length
   const groupPlayers = event.players.filter(p => group.playerIds.includes(p._id))
-  const teamAPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamA._id)
-  const teamBPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamB._id)
+  const teamPlayersMap = teams.map(team => ({
+    team,
+    players: groupPlayers.filter(p => getTeamId(event._id, p._id) === team._id)
+  }))
 
   const defaultScoringType = round.format === 'scramble' || round.format === 'stableford' ? 'stroke' : 'match'
   const [scoringType, setScoringType] = useState(defaultScoringType)
@@ -5355,42 +5438,57 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
     setHoles(hs => hs.map((h, i) => i !== hi ? h : { ...h, strokes: { ...h.strokes, [playerId]: val } }))
   }
 
+  // N-team: compute per-team totals and completion status for a hole
   function holeTeamTotals(hole) {
-    const aStrokes = teamAPlayers.map(p => Number(hole.strokes[p._id]) || 0)
-    const bStrokes = teamBPlayers.map(p => Number(hole.strokes[p._id]) || 0)
-    const aFilled = teamAPlayers.every(p => hole.strokes[p._id] !== '')
-    const bFilled = teamBPlayers.every(p => hole.strokes[p._id] !== '')
-    return {
-      aTotal: aStrokes.reduce((s, n) => s + n, 0),
-      bTotal: bStrokes.reduce((s, n) => s + n, 0),
-      complete: aFilled && bFilled
-    }
+    const result = {}
+    let complete = true
+    teams.forEach(team => {
+      const tp = teamPlayersMap.find(t => t.team._id === team._id).players
+      const filled = tp.every(p => hole.strokes[p._id] !== '')
+      const total = tp.reduce((s, p) => s + (Number(hole.strokes[p._id]) || 0), 0)
+      result[team._id] = { total, filled }
+      if (!filled) complete = false
+    })
+    result.complete = complete
+    return result
   }
 
+  // N-team match state: track holes won per team
   const matchState = useMemo(() => {
     if (scoringType !== 'match') return null
-    let balance = 0 // positive = team-a leads by N holes
-    let played = 0
+    const holesWon = Object.fromEntries(teams.map(t => [t._id, 0]))
+    let played = 0, deadHoles = 0
     holes.forEach(hole => {
-      const { aTotal, bTotal, complete } = holeTeamTotals(hole)
-      if (!complete) return
+      const totals = holeTeamTotals(hole)
+      if (!totals.complete) return
       played++
-      if (aTotal < bTotal) balance++
-      else if (bTotal < aTotal) balance--
+      const teamTotals = teams.map(t => ({ team: t, total: totals[t._id].total }))
+      const minTotal = Math.min(...teamTotals.map(tt => tt.total))
+      const winners = teamTotals.filter(tt => tt.total === minTotal)
+      if (winners.length === 1) {
+        holesWon[winners[0].team._id]++
+      } else if (winners.length === teamCount) {
+        deadHoles++
+      }
+      // If only some teams tie for lowest, no one wins (dead)
+      else { deadHoles++ }
     })
     const remaining = 18 - played
-    const absUp = Math.abs(balance)
-    const leader = balance > 0 ? 'team-a' : balance < 0 ? 'team-b' : null
-    const leadTeam = leader === 'team-a' ? teamA : leader === 'team-b' ? teamB : null
-    const isDormie = !!leader && absUp === remaining && remaining > 0
-    const isMatchOver = !!leader && absUp > remaining
-    return { leader, absUp, remaining, played, leadTeam, isDormie, isMatchOver }
+    const sorted = teams.map(t => ({ team: t, won: holesWon[t._id] })).sort((a, b) => b.won - a.won)
+    const leadTeam = sorted[0].won > (sorted[1]?.won || 0) ? sorted[0].team : null
+    const absUp = leadTeam ? sorted[0].won - sorted[1].won : 0
+    const isDormie = !!leadTeam && absUp === remaining && remaining > 0
+    const isMatchOver = !!leadTeam && absUp > remaining
+    return { holesWon, deadHoles, remaining, played, leadTeam, absUp, isDormie, isMatchOver, sorted }
   }, [holes, scoringType])
 
+  // N-team stroke totals
   const strokeTotals = useMemo(() => {
-    const aTotal = teamAPlayers.reduce((sum, p) => sum + holes.reduce((s, h) => s + (Number(h.strokes[p._id]) || 0), 0), 0)
-    const bTotal = teamBPlayers.reduce((sum, p) => sum + holes.reduce((s, h) => s + (Number(h.strokes[p._id]) || 0), 0), 0)
-    return { aTotal, bTotal }
+    const totals = {}
+    teamPlayersMap.forEach(({ team, players }) => {
+      totals[team._id] = players.reduce((sum, p) => sum + holes.reduce((s, h) => s + (Number(h.strokes[p._id]) || 0), 0), 0)
+    })
+    return totals
   }, [holes])
 
   const anyScored = holes.some(h => groupPlayers.some(p => h.strokes[p._id] !== ''))
@@ -5402,9 +5500,12 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
     let carry = 1
     holes.forEach(hole => {
       pots.push(carry)
-      const { aTotal, bTotal, complete } = holeTeamTotals(hole)
-      if (complete) {
-        carry = (aTotal !== bTotal) ? 1 : carry + 1  // winner resets, halve accumulates
+      const totals = holeTeamTotals(hole)
+      if (totals.complete) {
+        const teamTotals = teams.map(t => totals[t._id].total)
+        const min = Math.min(...teamTotals)
+        const winners = teamTotals.filter(v => v === min)
+        carry = winners.length === 1 ? 1 : carry + 1  // single winner resets, tie/dead accumulates
       }
     })
     return pots
@@ -5454,18 +5555,30 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
     // Save hole-by-hole data
     if (!HOLE_RESULTS[round._id]) HOLE_RESULTS[round._id] = {}
     HOLE_RESULTS[round._id][group._id] = { holes: holes.map(h => ({ ...h, strokes: { ...h.strokes } })) }
-    // Derive team result
-    let teamAPts, teamBPts
+    // Derive team result — N-team compatible
+    const teamScores = {}
     if (scoringType === 'match') {
-      const leader = matchState?.leader
-      teamAPts = leader === 'team-a' ? 1 : leader === null ? 0.5 : 0
-      teamBPts = leader === 'team-b' ? 1 : leader === null ? 0.5 : 0
+      const lt = matchState?.leadTeam
+      if (lt) {
+        teams.forEach(t => { teamScores[t._id] = t._id === lt._id ? 1 : 0 })
+      } else if (teamCount === 2) {
+        teams.forEach(t => { teamScores[t._id] = 0.5 })
+      } else {
+        teams.forEach(t => { teamScores[t._id] = 0 }) // dead — no leader
+      }
     } else {
-      const { aTotal, bTotal } = strokeTotals
-      teamAPts = aTotal < bTotal ? 1 : aTotal === bTotal ? 0.5 : 0
-      teamBPts = bTotal < aTotal ? 1 : aTotal === bTotal ? 0.5 : 0
+      const vals = teams.map(t => ({ id: t._id, total: strokeTotals[t._id] }))
+      const minTotal = Math.min(...vals.map(v => v.total))
+      const winners = vals.filter(v => v.total === minTotal)
+      if (winners.length === 1) {
+        teams.forEach(t => { teamScores[t._id] = t._id === winners[0].id ? 1 : 0 })
+      } else if (teamCount === 2) {
+        teams.forEach(t => { teamScores[t._id] = 0.5 })
+      } else {
+        teams.forEach(t => { teamScores[t._id] = 0 }) // dead
+      }
     }
-    onSubmit({ roundId: round._id, groupId: group._id, teamA: teamAPts, teamB: teamBPts })
+    onSubmit({ roundId: round._id, groupId: group._id, teamScores })
   }
 
   const dormieStyle = matchState?.isDormie
@@ -5511,7 +5624,7 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
                 <div style={{ fontSize: 13, fontWeight: 900, color: matchState.leadTeam.color, letterSpacing: 1 }}>DORMIE — {matchState.leadTeam.shortName} {matchState.absUp}UP</div>
                 <div style={{ fontSize: 11, color: 'var(--bt-text-2)', marginTop: 2 }}>{matchState.remaining} hole{matchState.remaining !== 1 ? 's' : ''} left · can't lose · must win every hole</div>
               </div>
-            ) : matchState.leader ? (
+            ) : matchState.leadTeam ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: matchState.leadTeam.color }}>{matchState.leadTeam.shortName} {matchState.absUp}UP</span>
                 <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>thru {matchState.played} · {matchState.remaining} to play</span>
@@ -5528,10 +5641,10 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
         )}
         {scoringType === 'stroke' && (
           <div style={{ display: 'flex', gap: 10 }}>
-            {[{ team: teamA, total: strokeTotals.aTotal, players: teamAPlayers }, { team: teamB, total: strokeTotals.bTotal, players: teamBPlayers }].map(({ team, total, players }) => (
+            {teamPlayersMap.map(({ team }) => (
               <div key={team._id} style={{ flex: 1, borderRadius: 8, padding: '8px 12px', background: `${team.color}15`, border: `1px solid ${team.color}40`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: team.color }}>{team.shortName}</span>
-                <span style={{ fontSize: 20, fontWeight: 900, color: team.color }}>{total || '—'}</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: team.color }}>{strokeTotals[team._id] || '—'}</span>
               </div>
             ))}
           </div>
@@ -5561,57 +5674,53 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
         )}
         {/* Player name row with current tee box pill (when moving tees active) */}
         {movingTees && (
-          <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `36px 28px ${teamPlayersMap.map(() => 'auto').join(' ')} 20px`, gap: 4, marginBottom: 6 }}>
             <span /><span />
-            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
-              {teamAPlayers.map(p => {
-                const currentHole = teeBoxLiveIdx >= 0 ? teeBoxLiveIdx : 17
-                const box = teeBoxColor(p._id, currentHole)
-                return box ? (
-                  <div key={p._id} style={{ width: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                    <span style={{ fontSize: 8, fontWeight: 700, color: teamA.color, lineHeight: 1 }}>{p.nickname.slice(0, 3)}</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '1px 4px', borderRadius: 6, background: box.color + '25', border: `1px solid ${box.color}60` }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none' }} />
-                      <span style={{ fontSize: 7, fontWeight: 700, color: box.id === 'black' ? '#888' : box.color }}>{box.label}</span>
-                    </span>
-                  </div>
-                ) : null
-              })}
-            </div>
-            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
-              {teamBPlayers.map(p => {
-                const currentHole = teeBoxLiveIdx >= 0 ? teeBoxLiveIdx : 17
-                const box = teeBoxColor(p._id, currentHole)
-                return box ? (
-                  <div key={p._id} style={{ width: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                    <span style={{ fontSize: 8, fontWeight: 700, color: teamB.color, lineHeight: 1 }}>{p.nickname.slice(0, 3)}</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '1px 4px', borderRadius: 6, background: box.color + '25', border: `1px solid ${box.color}60` }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none' }} />
-                      <span style={{ fontSize: 7, fontWeight: 700, color: box.id === 'black' ? '#888' : box.color }}>{box.label}</span>
-                    </span>
-                  </div>
-                ) : null
-              })}
-            </div>
+            {teamPlayersMap.map(({ team, players }) => (
+              <div key={team._id} style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+                {players.map(p => {
+                  const currentHole = teeBoxLiveIdx >= 0 ? teeBoxLiveIdx : 17
+                  const box = teeBoxColor(p._id, currentHole)
+                  return box ? (
+                    <div key={p._id} style={{ width: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: team.color, lineHeight: 1 }}>{p.nickname.slice(0, 3)}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '1px 4px', borderRadius: 6, background: box.color + '25', border: `1px solid ${box.color}60` }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none' }} />
+                        <span style={{ fontSize: 7, fontWeight: 700, color: box.id === 'black' ? '#888' : box.color }}>{box.label}</span>
+                      </span>
+                    </div>
+                  ) : null
+                })}
+              </div>
+            ))}
             <span />
           </div>
         )}
-        {/* Column headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
+        {/* Column headers — one per team */}
+        <div style={{ display: 'grid', gridTemplateColumns: `36px 28px ${teamPlayersMap.map(() => 'auto').join(' ')} 20px`, gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
           <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
           <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>PAR</span>
-          <span style={{ fontSize: 10, color: teamA.color, fontWeight: 700, textAlign: 'center' }}>{teamA.shortName}</span>
-          <span style={{ fontSize: 10, color: teamB.color, fontWeight: 700, textAlign: 'center' }}>{teamB.shortName}</span>
+          {teamPlayersMap.map(({ team }) => (
+            <span key={team._id} style={{ fontSize: 10, color: team.color, fontWeight: 700, textAlign: 'center' }}>{team.shortName}</span>
+          ))}
           <span />
         </div>
         {holes.map((hole, hi) => {
-          const { aTotal, bTotal, complete } = holeTeamTotals(hole)
-          const holeWinner = complete && scoringType === 'match' ? (aTotal < bTotal ? 'a' : bTotal < aTotal ? 'b' : 'halve') : null
+          const totals = holeTeamTotals(hole)
+          const complete = totals.complete
+          let holeWinnerTeam = null, isDead = false
+          if (complete && scoringType === 'match') {
+            const teamTotals = teams.map(t => ({ team: t, total: totals[t._id].total }))
+            const minTotal = Math.min(...teamTotals.map(tt => tt.total))
+            const winners = teamTotals.filter(tt => tt.total === minTotal)
+            if (winners.length === 1) holeWinnerTeam = winners[0].team
+            else isDead = true
+          }
           const isDormieHole = matchState?.isDormie && !complete
           const pot = carryPots ? carryPots[hi] : 1
           const isLiveHole = carryPots && hi === liveHoleIdx
           return (
-            <div key={hi} style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)', background: isDormieHole ? 'rgba(255,80,80,.04)' : isLiveHole ? '#1a120015' : 'transparent', borderLeft: isDormieHole ? '2px solid rgba(255,80,80,.25)' : isLiveHole ? '2px solid #f59e0b60' : '2px solid transparent', paddingLeft: isDormieHole || isLiveHole ? 6 : 0 }}>
+            <div key={hi} style={{ display: 'grid', gridTemplateColumns: `36px 28px ${teamPlayersMap.map(() => 'auto').join(' ')} 20px`, gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)', background: isDormieHole ? 'rgba(255,80,80,.04)' : isLiveHole ? '#1a120015' : 'transparent', borderLeft: isDormieHole ? '2px solid rgba(255,80,80,.25)' : isLiveHole ? '2px solid #f59e0b60' : '2px solid transparent', paddingLeft: isDormieHole || isLiveHole ? 6 : 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: isLiveHole ? '#f59e0b' : 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
                 {carryPots && pot > 1 && (
@@ -5619,41 +5728,27 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
                 )}
               </div>
               <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
-              {/* Team A player inputs */}
-              <div style={{ display: 'flex', gap: 3 }}>
-                {teamAPlayers.map(p => {
-                  const box = teeBoxColor(p._id, hi)
-                  const isFuture = movingTees && hi > teeBoxLiveIdx && teeBoxLiveIdx >= 0
-                  return (
-                    <div key={p._id} style={{ position: 'relative', width: 36, height: 32 }}>
-                      <input type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
-                        title={p.nickname}
-                        style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamA.color + '60' : 'var(--bt-border)'}`, color: teamA.color, outline: 'none' }} />
-                      {box && <span style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none', opacity: isFuture ? 0.35 : 0.85 }} />}
-                    </div>
-                  )
-                })}
-              </div>
-              {/* Team B player inputs */}
-              <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
-                {teamBPlayers.map(p => {
-                  const box = teeBoxColor(p._id, hi)
-                  const isFuture = movingTees && hi > teeBoxLiveIdx && teeBoxLiveIdx >= 0
-                  return (
-                    <div key={p._id} style={{ position: 'relative', width: 36, height: 32 }}>
-                      <input type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
-                        title={p.nickname}
-                        style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamB.color + '60' : 'var(--bt-border)'}`, color: teamB.color, outline: 'none' }} />
-                      {box && <span style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none', opacity: isFuture ? 0.35 : 0.85 }} />}
-                    </div>
-                  )
-                })}
-              </div>
+              {/* Per-team player inputs */}
+              {teamPlayersMap.map(({ team, players }, ti) => (
+                <div key={team._id} style={{ display: 'flex', gap: 3, justifyContent: ti === teamPlayersMap.length - 1 ? 'flex-end' : ti === 0 ? 'flex-start' : 'center' }}>
+                  {players.map(p => {
+                    const box = teeBoxColor(p._id, hi)
+                    const isFuture = movingTees && hi > teeBoxLiveIdx && teeBoxLiveIdx >= 0
+                    return (
+                      <div key={p._id} style={{ position: 'relative', width: 36, height: 32 }}>
+                        <input type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
+                          title={p.nickname}
+                          style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? team.color + '60' : 'var(--bt-border)'}`, color: team.color, outline: 'none' }} />
+                        {box && <span style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none', opacity: isFuture ? 0.35 : 0.85 }} />}
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
               {/* Hole result indicator */}
               <div style={{ textAlign: 'center' }}>
-                {holeWinner === 'a' && <span style={{ fontSize: 10, fontWeight: 700, color: teamA.color }}>▲</span>}
-                {holeWinner === 'b' && <span style={{ fontSize: 10, fontWeight: 700, color: teamB.color }}>▼</span>}
-                {holeWinner === 'halve' && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>–</span>}
+                {holeWinnerTeam && <span style={{ fontSize: 10, fontWeight: 700, color: holeWinnerTeam.color }}>●</span>}
+                {isDead && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>–</span>}
               </div>
             </div>
           )
@@ -5690,13 +5785,16 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
 // ── ScoreEntry — bottom-sheet overlay for entering group scores ──
 function ScoreEntry({ group, round, event, onSubmit, onClose }) {
   const { useState } = React
+  const { teams } = event
+  const teamCount = teams.length
   const groupPlayers = event.players.filter(p => group.playerIds.includes(p._id))
-  const [teamA, teamB] = event.teams
   const existingResult = GROUP_RESULTS[round._id]?.[group._id]
 
   // Determine which team each player in this group is on
-  const teamAPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamA._id)
-  const teamBPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamB._id)
+  const teamPlayers = teams.map(team => ({
+    team,
+    players: groupPlayers.filter(p => getTeamId(event._id, p._id) === team._id)
+  }))
 
   // Carry-over: compute current pot from HOLE_RESULTS if available
   const carryOver = !!round.modifiers?.carryOver
@@ -5706,12 +5804,16 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
     if (!holeData) return 1
     let carry = 1
     for (const hole of holeData) {
-      const aFilled = teamAPlayers.every(p => hole.strokes[p._id] !== '')
-      const bFilled = teamBPlayers.every(p => hole.strokes[p._id] !== '')
-      if (!aFilled || !bFilled) break
-      const aTotal = teamAPlayers.reduce((s, p) => s + (Number(hole.strokes[p._id]) || 0), 0)
-      const bTotal = teamBPlayers.reduce((s, p) => s + (Number(hole.strokes[p._id]) || 0), 0)
-      carry = (aTotal !== bTotal) ? 1 : carry + 1
+      const teamTotals = teams.map(team => {
+        const tp = groupPlayers.filter(p => getTeamId(event._id, p._id) === team._id)
+        const filled = tp.every(p => hole.strokes[p._id] !== '')
+        const total = tp.reduce((s, p) => s + (Number(hole.strokes[p._id]) || 0), 0)
+        return { filled, total }
+      })
+      if (!teamTotals.every(t => t.filled)) break
+      const min = Math.min(...teamTotals.map(t => t.total))
+      const winners = teamTotals.filter(t => t.total === min)
+      carry = winners.length < teamCount ? 1 : carry + 1
     }
     return carry
   })()
@@ -5719,26 +5821,43 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
   // Skins: track skins won per team (integer entry instead of 3-way result)
   const isSkins = round.format === 'skins'
 
-  // For scramble, stableford, sabotage: 3-way result (1-0 / 0.5-0.5 / 0-1 per group)
-  const [result, setResult] = useState(
-    existingResult ? (existingResult['team-a'] === 1 ? 'team-a' : existingResult['team-a'] === 0.5 ? 'halve' : 'team-b')
-      : null
-  )
+  // Result: team ID of winner, 'halve' (2-team only), 'dead' (no winner), or null
+  const [result, setResult] = useState(() => {
+    if (!existingResult) return null
+    if (teamCount === 2) {
+      const a = existingResult[teams[0]._id]
+      return a === 1 ? teams[0]._id : a === 0.5 ? 'halve' : a === 0 ? teams[1]._id : null
+    }
+    // N-team: find team with 1 point
+    const winner = teams.find(t => existingResult[t._id] === 1)
+    if (winner) return winner._id
+    // All zeros means dead hole
+    if (teams.every(t => existingResult[t._id] === 0)) return 'dead'
+    return null
+  })
 
-  // For skins: integer skin counts
-  const [skinsA, setSkinsA] = useState(existingResult ? String(existingResult['team-a']) : '')
-  const [skinsB, setSkinsB] = useState(existingResult ? String(existingResult['team-b']) : '')
-  const skinsValid = skinsA !== '' && skinsB !== '' && Number(skinsA) >= 0 && Number(skinsB) >= 0
+  // For skins: per-team skin counts
+  const [skinCounts, setSkinCounts] = useState(() =>
+    Object.fromEntries(teams.map(t => [t._id, existingResult ? String(existingResult[t._id] ?? '') : '']))
+  )
+  const skinsValid = teams.every(t => skinCounts[t._id] !== '' && Number(skinCounts[t._id]) >= 0)
 
   const handleSubmit = () => {
     if (isSkins) {
       if (!skinsValid) return
-      onSubmit({ roundId: round._id, groupId: group._id, teamA: Number(skinsA), teamB: Number(skinsB) })
+      const teamScores = Object.fromEntries(teams.map(t => [t._id, Number(skinCounts[t._id])]))
+      onSubmit({ roundId: round._id, groupId: group._id, teamScores })
     } else {
       if (!result) return
-      const teamAPts = result === 'team-a' ? 1 : result === 'halve' ? 0.5 : 0
-      const teamBPts = result === 'team-b' ? 1 : result === 'halve' ? 0.5 : 0
-      onSubmit({ roundId: round._id, groupId: group._id, teamA: teamAPts, teamB: teamBPts })
+      const teamScores = {}
+      if (result === 'halve') {
+        teams.forEach(t => { teamScores[t._id] = 0.5 })
+      } else if (result === 'dead') {
+        teams.forEach(t => { teamScores[t._id] = 0 })
+      } else {
+        teams.forEach(t => { teamScores[t._id] = t._id === result ? 1 : 0 })
+      }
+      onSubmit({ roundId: round._id, groupId: group._id, teamScores })
     }
   }
 
@@ -5761,8 +5880,8 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
         </div>
 
         {/* Players in this group by team */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-          {[{ team: teamA, players: teamAPlayers }, { team: teamB, players: teamBPlayers }].map(({ team, players }) => (
+        <div style={{ display: 'grid', gridTemplateColumns: teams.map(() => '1fr').join(' '), gap: 12, marginBottom: 20 }}>
+          {teamPlayers.map(({ team, players }) => (
             <div key={team._id} style={{ borderRadius: 10, padding: '10px 12px', background: team.colorDim, border: `1px solid ${team.color}30` }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: team.color, marginBottom: 6 }}>{team.shortName}</div>
               {players.map(p => (
@@ -5781,11 +5900,11 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
           <>
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-2)', marginBottom: 12 }}>Skins won by each team</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {[{ team: teamA, val: skinsA, set: setSkinsA }, { team: teamB, val: skinsB, set: setSkinsB }].map(({ team, val, set }) => (
+              <div style={{ display: 'grid', gridTemplateColumns: teams.map(() => '1fr').join(' '), gap: 12 }}>
+                {teams.map(team => (
                   <div key={team._id} style={{ borderRadius: 10, padding: '14px', background: team.colorDim, border: `1px solid ${team.color}30`, textAlign: 'center' }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: team.color, marginBottom: 8 }}>{team.shortName}</div>
-                    <input type="number" min="0" value={val} onChange={e => set(e.target.value)}
+                    <input type="number" min="0" value={skinCounts[team._id]} onChange={e => setSkinCounts(sc => ({ ...sc, [team._id]: e.target.value }))}
                       placeholder="0"
                       style={{ width: 72, fontSize: 28, fontWeight: 900, textAlign: 'center', padding: '8px', borderRadius: 8, background: 'var(--bt-base)', border: `2px solid ${team.color}60`, color: team.color, outline: 'none' }} />
                     <div style={{ fontSize: 11, color: 'var(--bt-text-3)', marginTop: 4 }}>skins</div>
@@ -5813,7 +5932,7 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
           </>
         ) : (
           <>
-            {/* Result selector — used for scramble, stableford, sabotage */}
+            {/* Result selector — N team winner buttons + halve (2-team) / dead hole (3+) */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-2)', marginBottom: 4 }}>Who won this group?</div>
               {round.format === 'sabotage' && (
@@ -5821,31 +5940,56 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
                   Sabotage: record the net group result after any sabotage plays were used.
                 </div>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                {[
-                  { id: 'team-a', label: teamA.shortName + ' wins', color: teamA.color, icon: '🏆' },
-                  { id: 'halve', label: 'Halved', color: 'var(--bt-text-2)', icon: '🤝' },
-                  { id: 'team-b', label: teamB.shortName + ' wins', color: teamB.color, icon: '🏆' },
-                ].map(opt => {
-                  const selected = result === opt.id
+              <div style={{ display: 'grid', gridTemplateColumns: teams.map(() => '1fr').join(' '), gap: 8 }}>
+                {teams.map(team => {
+                  const selected = result === team._id
                   return (
-                    <button key={opt.id} onClick={() => setResult(opt.id)}
+                    <button key={team._id} onClick={() => setResult(team._id)}
                       style={{ padding: '14px 8px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
-                        background: selected ? (opt.id === 'halve' ? 'var(--bt-border)' : (opt.id === 'team-a' ? teamA.colorDim : teamB.colorDim)) : 'var(--bt-base)',
-                        border: `2px solid ${selected ? opt.color : 'var(--bt-border)'}`,
-                        color: selected ? opt.color : 'var(--bt-text-3)', transition: 'all .15s' }}>
-                      <div style={{ fontSize: 20, marginBottom: 4 }}>{opt.icon}</div>
-                      <div style={{ fontSize: 12, fontWeight: selected ? 700 : 400 }}>{opt.label}</div>
+                        background: selected ? team.colorDim : 'var(--bt-base)',
+                        border: `2px solid ${selected ? team.color : 'var(--bt-border)'}`,
+                        color: selected ? team.color : 'var(--bt-text-3)', transition: 'all .15s' }}>
+                      <div style={{ fontSize: 20, marginBottom: 4 }}>🏆</div>
+                      <div style={{ fontSize: 12, fontWeight: selected ? 700 : 400 }}>{team.shortName} wins</div>
                     </button>
                   )
                 })}
+              </div>
+              {/* Halve (2-team) or Dead hole (3+) */}
+              <div style={{ display: 'grid', gridTemplateColumns: teamCount === 2 ? '1fr 1fr' : '1fr', gap: 8, marginTop: 8 }}>
+                {teamCount === 2 && (() => {
+                  const selected = result === 'halve'
+                  return (
+                    <button onClick={() => setResult('halve')}
+                      style={{ padding: '12px 8px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+                        background: selected ? 'var(--bt-border)' : 'var(--bt-base)',
+                        border: `2px solid ${selected ? 'var(--bt-text-2)' : 'var(--bt-border)'}`,
+                        color: selected ? 'var(--bt-text-2)' : 'var(--bt-text-3)', transition: 'all .15s' }}>
+                      <div style={{ fontSize: 16, marginBottom: 2 }}>🤝</div>
+                      <div style={{ fontSize: 12, fontWeight: selected ? 700 : 400 }}>Halved</div>
+                    </button>
+                  )
+                })()}
+                {(() => {
+                  const selected = result === 'dead'
+                  return (
+                    <button onClick={() => setResult('dead')}
+                      style={{ padding: '12px 8px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+                        background: selected ? 'var(--bt-border)' : 'var(--bt-base)',
+                        border: `2px solid ${selected ? 'var(--bt-text-2)' : 'var(--bt-border)'}`,
+                        color: selected ? 'var(--bt-text-2)' : 'var(--bt-text-3)', transition: 'all .15s' }}>
+                      <div style={{ fontSize: 16, marginBottom: 2 }}>💀</div>
+                      <div style={{ fontSize: 12, fontWeight: selected ? 700 : 400 }}>Dead hole</div>
+                    </button>
+                  )
+                })()}
               </div>
             </div>
 
             {/* Carry-over note */}
             {carryOver && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: '#1a120030', border: '1px solid #f59e0b30' }}>
-                <span style={{ fontSize: 11, color: '#f59e0b' }}>⊕ Halved holes carry over.</span>
+                <span style={{ fontSize: 11, color: '#f59e0b' }}>⊕ {teamCount === 2 ? 'Halved' : 'Dead'} holes carry over.</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>Current pot: ×{currentPot}</span>
               </div>
             )}
@@ -5853,15 +5997,15 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
             {/* Points preview */}
             {result && (
               <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 20, padding: '12px', borderRadius: 10, background: 'var(--bt-base)' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: teamA.color, fontWeight: 700 }}>{teamA.shortName}</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: teamA.color }}>{result === 'team-a' ? '1' : result === 'halve' ? '½' : '0'}</div>
-                </div>
+                {teams.map(team => (
+                  <div key={team._id} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: team.color, fontWeight: 700 }}>{team.shortName}</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: team.color }}>
+                      {result === team._id ? '1' : result === 'halve' ? '½' : '0'}
+                    </div>
+                  </div>
+                ))}
                 <div style={{ display: 'flex', alignItems: 'center', color: 'var(--bt-text-3)', fontSize: 12 }}>pt</div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: teamB.color, fontWeight: 700 }}>{teamB.shortName}</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: teamB.color }}>{result === 'team-b' ? '1' : result === 'halve' ? '½' : '0'}</div>
-                </div>
               </div>
             )}
 
@@ -5890,10 +6034,12 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
 // ── SCREEN: LiveLeaderboard (compact) ────────────────────────────
 function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, onMarkAllRead, viewerRole = 'planner', theme, onToggleTheme }) {
   const canScore = viewerRole === 'owner' || viewerRole === 'planner'
-  const { teams, rounds, sides } = BBMI_EVENT
+  const event = getEventForTrip(tripId) || BBMI_EVENT
+  const { teams, rounds, sides } = event
+  const teamCount = teams.length
   const [tab, setTab] = useState('overview')
   const [scoreNonce, setScoreNonce] = useState(0)
-  const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
+  const scores = computeScores(event, ROUND_RESULTS)
   const [scoreEntryGroup, setScoreEntryGroup] = useState(null)
   const [scoreEntryRound, setScoreEntryRound] = useState(null)
   const [holeByHoleGroup, setHoleByHoleGroup] = useState(null)
@@ -5901,23 +6047,28 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
   const [editMode, setEditMode] = useState(false)
   const [showModifiers, setShowModifiers] = useState(false)
   const [handicapOn, setHandicapOn] = useState(false)
-  const [roundEdits, setRoundEdits] = useState({}) // { [roundId]: { a: string, b: string } }
-  const [roundMultipliers, setRoundMultipliers] = useState(Object.fromEntries((BBMI_EVENT.rounds || []).map(r => [r._id, '1'])))
+  const [roundEdits, setRoundEdits] = useState({}) // { [roundId]: { [teamId]: string } }
+  const [roundMultipliers, setRoundMultipliers] = useState(Object.fromEntries((event.rounds || []).map(r => [r._id, '1'])))
   const activeRound = rounds.find(r => r.status === 'active') || rounds[rounds.length - 1]
 
-  const handleScoreSubmit = ({ roundId, groupId, teamA: taPts, teamB: tbPts }) => {
+  const handleScoreSubmit = ({ roundId, groupId, teamScores }) => {
     if (!GROUP_RESULTS[roundId]) GROUP_RESULTS[roundId] = {}
-    GROUP_RESULTS[roundId][groupId] = { 'team-a': taPts, 'team-b': tbPts, submittedBy: CURRENT_USER._id, createdAt: new Date() }
+    const result = { submittedBy: CURRENT_USER._id, createdAt: new Date() }
+    Object.entries(teamScores).forEach(([tid, pts]) => { result[tid] = pts })
+    GROUP_RESULTS[roundId][groupId] = result
     aggregateGroupResults(roundId)
-    if (notify) notify({ type: 'score_submitted', tripId: 'trip-bbmi-live', actorId: CURRENT_USER._id, payload: { roundTitle: activeRound.title } })
+    if (notify) notify({ type: 'score_submitted', tripId, actorId: CURRENT_USER._id, payload: { roundTitle: activeRound.title } })
     setScoreEntryGroup(null)
     setScoreNonce(n => n + 1)
-    const group = BBMI_EVENT.groups.find(g => g._id === groupId)
+    const group = event.groups.find(g => g._id === groupId)
     showToast(`${group.name} score submitted`)
   }
-  const [teamA, teamB] = teams
-  const ptsA = scores[teamA._id], ptsB = scores[teamB._id]
+  const teamPts = teams.map(t => ({ team: t, pts: scores[t._id] || 0 }))
+  const totalPts = teamPts.reduce((s, tp) => s + tp.pts, 0)
   const remaining = scores.remaining
+  const sortedTeams = [...teamPts].sort((a, b) => b.pts - a.pts)
+  const leader = sortedTeams[0]
+  const leadMargin = sortedTeams.length > 1 ? sortedTeams[0].pts - sortedTeams[1].pts : 0
 
   const HISTORY = [
     { year: 2025, team: 'Ham, Egg & Cheese Biscuit', location: 'Bandon Dunes, OR' },
@@ -5935,7 +6086,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <LiveDot />
-              <span style={{ fontSize: 11, fontFamily: 'monospace', letterSpacing: 2, color: 'var(--bt-accent)' }}>LIVE · BBMI 2025</span>
+              <span style={{ fontSize: 11, fontFamily: 'monospace', letterSpacing: 2, color: 'var(--bt-accent)' }}>LIVE · {event.title}</span>
             </div>
             <button onClick={() => navigate('trip-detail', { tripId: tripId || 'trip-bbmi-live' })}
               style={{ fontSize: 11, fontFamily: 'monospace', letterSpacing: 1, color: 'var(--bt-text-3)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', display: 'flex', alignItems: 'center', gap: 4 }}
@@ -5944,7 +6095,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
               ← TRIP HOME
             </button>
           </div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--bt-text-1)', marginBottom: 12 }}>Day 3 of 4 · Pacific Dunes</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--bt-text-1)', marginBottom: 12 }}>Day {activeRound.day} of {rounds.length} · {activeRound.course}</h1>
           <div style={{ display: 'flex' }}>
             {[{ id: 'overview', label: 'Overview' }, { id: 'groups', label: 'Groups' }, { id: 'info', label: 'Trip Info' }, { id: 'history', label: 'History' }].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: '10px 4px', border: 'none', cursor: 'pointer', background: 'transparent', borderBottom: `2px solid ${tab === t.id ? 'var(--bt-accent)' : 'transparent'}`, color: tab === t.id ? 'var(--bt-accent)' : 'var(--bt-text-2)', fontSize: 12, fontWeight: tab === t.id ? 700 : 400 }}>{t.label}</button>
@@ -5955,24 +6106,27 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
         <div style={{ padding: '16px' }}>
           {tab === 'overview' && (
             <>
-              {/* Hero */}
+              {/* Hero — N-team score display */}
               <Card style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, marginBottom: 14 }}>
-                  {[{ t: teamA, pts: ptsA }, { t: teamB, pts: ptsB }].map((item, idx) => (
-                    <div key={item.t._id} style={{ flex: 1, textAlign: idx === 0 ? 'left' : 'right' }}>
-                      <div style={{ color: item.t.color, fontSize: 12, fontWeight: 800 }}>{item.t.name.toUpperCase()}</div>
-                      <div style={{ color: item.t.color, fontSize: 64, fontWeight: 900, lineHeight: 1 }}>{item.pts}</div>
+                  {teamPts.map((tp, idx) => (
+                    <div key={tp.team._id} style={{ flex: 1, textAlign: teamCount === 2 ? (idx === 0 ? 'left' : 'right') : 'center' }}>
+                      <div style={{ color: tp.team.color, fontSize: 12, fontWeight: 800 }}>{tp.team.name.toUpperCase()}</div>
+                      <div style={{ color: tp.team.color, fontSize: teamCount <= 3 ? 48 : 36, fontWeight: 900, lineHeight: 1 }}>{tp.pts}</div>
                       <div style={{ color: 'var(--bt-text-3)', fontSize: 11 }}>points</div>
                     </div>
                   ))}
                 </div>
+                {/* Lead bar — proportional segments per team */}
                 <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', background: 'var(--bt-border)', display: 'flex', marginBottom: 8 }}>
-                  <div style={{ width: `${(ptsA / Math.max(ptsA + ptsB, 1)) * 100}%`, background: teamA.color, transition: 'width .6s', minWidth: 4 }} />
-                  <div style={{ flex: 1, background: teamB.color, minWidth: 4 }} />
+                  {teamPts.map(tp => (
+                    <div key={tp.team._id} style={{ width: `${(tp.pts / Math.max(totalPts, 1)) * 100}%`, background: tp.team.color, transition: 'width .6s', minWidth: totalPts > 0 ? 4 : 0 }} />
+                  ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                   <span style={{ color: 'var(--bt-text-3)' }}>{remaining} pts still in play</span>
-                  <span style={{ color: teamB.color, fontWeight: 700 }}>{teamB.shortName} leads +{Math.abs(ptsA - ptsB)}</span>
+                  {leadMargin > 0 && <span style={{ color: leader.team.color, fontWeight: 700 }}>{leader.team.shortName} leads +{leadMargin}</span>}
+                  {leadMargin === 0 && totalPts > 0 && <span style={{ color: 'var(--bt-text-2)', fontWeight: 600 }}>Tied</span>}
                 </div>
               </Card>
 
@@ -5988,10 +6142,17 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                       <button onClick={() => {
                         rounds.filter(r => !ROUND_RESULTS[r._id]).forEach(r => {
                           if (!GROUP_RESULTS[r._id]) GROUP_RESULTS[r._id] = {}
-                          BBMI_EVENT.groups.forEach(g => {
-                            const toss = Math.random()
-                            const a = toss < .4 ? 1 : toss < .6 ? 0.5 : 0
-                            GROUP_RESULTS[r._id][g._id] = { 'team-a': a, 'team-b': 1 - a, submittedBy: 'sim', createdAt: new Date() }
+                          event.groups.forEach(g => {
+                            const result = { submittedBy: 'sim', createdAt: new Date() }
+                            if (teamCount === 2) {
+                              const toss = Math.random()
+                              const a = toss < .4 ? 1 : toss < .6 ? 0.5 : 0
+                              result[teams[0]._id] = a; result[teams[1]._id] = 1 - a
+                            } else {
+                              const winner = teams[Math.floor(Math.random() * teamCount)]
+                              teams.forEach(t => { result[t._id] = t._id === winner._id ? 1 : 0 })
+                            }
+                            GROUP_RESULTS[r._id][g._id] = result
                           })
                           aggregateGroupResults(r._id)
                         })
@@ -6052,10 +6213,11 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                   const edit = roundEdits[r._id] || {}
                   const rowBg = isActive ? '#0d1a10' : isSubmitted ? '#1a120008' : 'transparent'
                   const borderColor = isActive ? 'var(--bt-accent)' : isSubmitted ? '#f59e0b' : isClosed ? 'var(--bt-border)' : 'transparent'
+                  const teamCols = teams.map(() => '54px').join(' ')
                   return (
                     <div key={r._id}
                       onClick={isClickable ? () => { if (isActive) setTab('groups'); else setRoundSummaryId(r._id) } : undefined}
-                      style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px 40px', padding: isActive ? '12px 14px' : '10px 14px', borderBottom: i < rounds.length - 1 ? '1px solid var(--bt-base)' : 'none', alignItems: 'center', opacity: r.status === 'upcoming' && !editMode ? .4 : 1, background: rowBg, borderLeft: `3px solid ${borderColor}`, cursor: isClickable ? 'pointer' : 'default', transition: 'background .15s' }}
+                      style={{ display: 'grid', gridTemplateColumns: `1fr ${teamCols} 40px`, padding: isActive ? '12px 14px' : '10px 14px', borderBottom: i < rounds.length - 1 ? '1px solid var(--bt-base)' : 'none', alignItems: 'center', opacity: r.status === 'upcoming' && !editMode ? .4 : 1, background: rowBg, borderLeft: `3px solid ${borderColor}`, cursor: isClickable ? 'pointer' : 'default', transition: 'background .15s' }}
                       onMouseEnter={e => { if (isClickable) e.currentTarget.style.background = isActive ? '#112518' : 'var(--bt-base)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = rowBg }}>
                       <div>
@@ -6067,7 +6229,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                           {isClickable && !isSubmitted && <span style={{ fontSize: 11, color: 'var(--bt-text-3)', marginLeft: 'auto' }}>{isActive ? 'Groups →' : '›'}</span>}
                           {isSubmitted && <span style={{ fontSize: 11, color: '#f59e0b', marginLeft: 'auto' }}>›</span>}
                           {editMode && res && (
-                            <button onClick={() => { delete ROUND_RESULTS[r._id]; delete GROUP_RESULTS[r._id]; setRoundEdits(e => ({ ...e, [r._id]: { a: '', b: '' } })); setScoreNonce(n => n + 1) }}
+                            <button onClick={() => { delete ROUND_RESULTS[r._id]; delete GROUP_RESULTS[r._id]; setRoundEdits(e => ({ ...e, [r._id]: {} })); setScoreNonce(n => n + 1) }}
                               style={{ marginLeft: 'auto', fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>
                               Clear
                             </button>
@@ -6081,57 +6243,54 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                       </div>
                       {editMode ? (
                         <>
-                          <div style={{ textAlign: 'center' }}>
-                            <input type="number" min="0" step="0.5" value={edit.a !== undefined ? edit.a : (res ? res['team-a'] : '')} placeholder="—"
-                              onChange={e => {
-                                const val = e.target.value
-                                setRoundEdits(re => ({ ...re, [r._id]: { ...re[r._id], a: val } }))
-                                if (val !== '') {
-                                  if (!ROUND_RESULTS[r._id]) ROUND_RESULTS[r._id] = {}
-                                  ROUND_RESULTS[r._id]['team-a'] = Number(val)
-                                  setScoreNonce(n => n + 1)
-                                }
-                              }}
-                              style={{ width: 48, fontSize: 15, fontWeight: 700, textAlign: 'center', padding: '4px', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${teamA.color}60`, color: teamA.color, outline: 'none' }} />
-                          </div>
-                          <div style={{ textAlign: 'center' }}>
-                            <input type="number" min="0" step="0.5" value={edit.b !== undefined ? edit.b : (res ? res['team-b'] : '')} placeholder="—"
-                              onChange={e => {
-                                const val = e.target.value
-                                setRoundEdits(re => ({ ...re, [r._id]: { ...re[r._id], b: val } }))
-                                if (val !== '') {
-                                  if (!ROUND_RESULTS[r._id]) ROUND_RESULTS[r._id] = {}
-                                  ROUND_RESULTS[r._id]['team-b'] = Number(val)
-                                  setScoreNonce(n => n + 1)
-                                }
-                              }}
-                              style={{ width: 48, fontSize: 15, fontWeight: 700, textAlign: 'center', padding: '4px', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${teamB.color}60`, color: teamB.color, outline: 'none' }} />
-                          </div>
+                          {teams.map(team => (
+                            <div key={team._id} style={{ textAlign: 'center' }}>
+                              <input type="number" min="0" step="0.5" value={edit[team._id] !== undefined ? edit[team._id] : (res ? res[team._id] : '')} placeholder="—"
+                                onChange={e => {
+                                  const val = e.target.value
+                                  setRoundEdits(re => ({ ...re, [r._id]: { ...re[r._id], [team._id]: val } }))
+                                  if (val !== '') {
+                                    if (!ROUND_RESULTS[r._id]) ROUND_RESULTS[r._id] = {}
+                                    ROUND_RESULTS[r._id][team._id] = Number(val)
+                                    setScoreNonce(n => n + 1)
+                                  }
+                                }}
+                                style={{ width: 44, fontSize: 15, fontWeight: 700, textAlign: 'center', padding: '4px', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${team.color}60`, color: team.color, outline: 'none' }} />
+                            </div>
+                          ))}
                         </>
                       ) : (
                         <>
-                          <div style={{ textAlign: 'center' }}><span style={{ color: res ? (res['team-a'] > res['team-b'] ? teamA.color : 'var(--bt-text-3)') : 'var(--bt-text-3)', fontWeight: 700, fontSize: 16 }}>{res ? res['team-a'] : '—'}</span></div>
-                          <div style={{ textAlign: 'center' }}><span style={{ color: res ? (res['team-b'] > res['team-a'] ? teamB.color : 'var(--bt-text-3)') : 'var(--bt-text-3)', fontWeight: 700, fontSize: 16 }}>{res ? res['team-b'] : '—'}</span></div>
+                          {teams.map(team => {
+                            const pts = res ? res[team._id] : null
+                            const maxPts = res ? Math.max(...teams.map(t => res[t._id] || 0)) : 0
+                            return (
+                              <div key={team._id} style={{ textAlign: 'center' }}>
+                                <span style={{ color: pts != null ? (pts === maxPts && pts > 0 ? team.color : 'var(--bt-text-3)') : 'var(--bt-text-3)', fontWeight: 700, fontSize: 16 }}>{pts != null ? pts : '—'}</span>
+                              </div>
+                            )
+                          })}
                         </>
                       )}
                       <div style={{ textAlign: 'center', color: 'var(--bt-text-3)', fontSize: 12 }}>{r.pointsAvailable}{roundMultipliers[r._id] !== '1' ? <span style={{ color: 'var(--bt-accent)', fontSize: 10 }}> {roundMultipliers[r._id]}×</span> : ''}</div>
                     </div>
                   )
                 })}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px 40px', padding: '12px 14px', background: 'var(--bt-base)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `1fr ${teams.map(() => '54px').join(' ')} 40px`, padding: '12px 14px', background: 'var(--bt-base)' }}>
                   <span style={{ color: 'var(--bt-text-3)', fontSize: 12, fontWeight: 700 }}>TOTAL</span>
-                  <span style={{ color: teamA.color, fontWeight: 900, fontSize: 22, textAlign: 'center' }}>{ptsA}</span>
-                  <span style={{ color: teamB.color, fontWeight: 900, fontSize: 22, textAlign: 'center' }}>{ptsB}</span>
-                  <span style={{ color: 'var(--bt-text-3)', fontSize: 12, textAlign: 'center' }}>{ptsA + ptsB + remaining}</span>
+                  {teams.map(team => (
+                    <span key={team._id} style={{ color: team.color, fontWeight: 900, fontSize: 22, textAlign: 'center' }}>{scores[team._id] || 0}</span>
+                  ))}
+                  <span style={{ color: 'var(--bt-text-3)', fontSize: 12, textAlign: 'center' }}>{totalPts + remaining}</span>
                 </div>
               </Card>
 
               {/* Team rosters */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: teamCount <= 3 ? teams.map(() => '1fr').join(' ') : '1fr 1fr', gap: 10 }}>
                 {teams.map(team => (
                   <Card key={team._id} style={{ border: `1px solid ${team.color}25` }}>
                     <div style={{ color: team.color, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>{team.name}</div>
-                    {BBMI_EVENT.players.filter(p => getTeamId(BBMI_EVENT._id, p._id) === team._id).map(p => (
+                    {event.players.filter(p => getTeamId(event._id, p._id) === team._id).map(p => (
                       <div key={p._id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                         <div style={{ width: 18, height: 18, borderRadius: '50%', background: team.color + '25', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: team.color, flexShrink: 0 }}>{p.nickname.slice(0, 2).toUpperCase()}</div>
                         <span style={{ color: 'var(--bt-text-1)', fontSize: 12 }}>{p.nickname}</span>
@@ -6147,9 +6306,9 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
           {tab === 'groups' && (
             <div>
               <p style={{ fontSize: 13, color: 'var(--bt-text-2)', marginBottom: 16 }}>Day {activeRound.day} · {activeRound.title} · {activeRound.course}</p>
-              {BBMI_EVENT.groups.map(group => {
-                const groupPlayers = BBMI_EVENT.players.filter(p => group.playerIds.includes(p._id))
-                const isMyGroup = group._id === 'g2'
+              {event.groups.map(group => {
+                const groupPlayers = event.players.filter(p => group.playerIds.includes(p._id))
+                const isMyGroup = group.playerIds.includes(CURRENT_USER._id)
                 const groupResult = GROUP_RESULTS[activeRound._id]?.[group._id]
                 return (
                   <Card key={group._id} onClick={() => canScore && setHoleByHoleGroup(group)} style={{ marginBottom: 10, cursor: canScore ? 'pointer' : 'default', background: isMyGroup ? '#0f1f14' : 'var(--bt-card)', border: `1px solid ${isMyGroup ? 'var(--bt-accent)50' : 'var(--bt-border)'}`, transition: 'border-color .15s' }}>
@@ -6166,15 +6325,21 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                         <div style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>⏰ {group.teeTime}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        {groupResult ? (
+                        {groupResult ? (() => {
+                          const grScores = teams.map(t => ({ team: t, pts: groupResult[t._id] ?? 0 }))
+                          const maxGrPts = Math.max(...grScores.map(s => s.pts))
+                          const grWinner = grScores.filter(s => s.pts === maxGrPts)
+                          const winColor = grWinner.length === 1 ? grWinner[0].team.color : 'var(--bt-text-3)'
+                          return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
                               <Ic n="Check" size={12} color="var(--bt-accent)" /> Scored
                             </span>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: groupResult['team-a'] > groupResult['team-b'] ? teams[0].color : groupResult['team-b'] > groupResult['team-a'] ? teams[1].color : 'var(--bt-text-3)' }}>
-                              {groupResult['team-a']}–{groupResult['team-b']}
+                            <span style={{ fontSize: 12, fontWeight: 700, color: winColor }}>
+                              {grScores.map(s => s.pts).join('–')}
                             </span>
-                          </div>
+                          </div>)
+                        })()
                         ) : canScore ? (
                           <div style={{ fontSize: 12, color: 'var(--bt-accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                             <Ic n="Edit2" size={12} color="var(--bt-accent)" /> Enter score
@@ -6188,7 +6353,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {groupPlayers.map(p => {
-                        const team = BBMI_EVENT.teams.find(t => t._id === getTeamId(BBMI_EVENT._id, p._id))
+                        const team = event.teams.find(t => t._id === getTeamId(event._id, p._id))
                         return (
                           <div key={p._id} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--bt-base)', border: `1px solid ${team.color}30`, borderRadius: 6, padding: '4px 8px' }}>
                             <div style={{ width: 14, height: 14, borderRadius: '50%', background: team.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#0d1117', flexShrink: 0 }}>{p.nickname.slice(0, 2).toUpperCase()}</div>
@@ -6252,7 +6417,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
         <HoleByHoleEntry
           group={holeByHoleGroup}
           round={activeRound}
-          event={BBMI_EVENT}
+          event={event}
           onSubmit={handleScoreSubmit}
           onClose={() => setHoleByHoleGroup(null)}
           onOfflineResult={() => { setScoreEntryGroup(holeByHoleGroup); setScoreEntryRound(activeRound); setHoleByHoleGroup(null) }}
@@ -6262,7 +6427,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
         <ScoreEntry
           group={scoreEntryGroup}
           round={scoreEntryRound || activeRound}
-          event={BBMI_EVENT}
+          event={event}
           onSubmit={handleScoreSubmit}
           onClose={() => { setScoreEntryGroup(null); setScoreEntryRound(null) }}
         />
@@ -6311,9 +6476,9 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
               {/* Per-group results */}
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--bt-text-3)', marginBottom: 10 }}>Group Results</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {BBMI_EVENT.groups.map(group => {
+                {event.groups.map(group => {
                   const gr = groupResults[group._id]
-                  const players = BBMI_EVENT.players.filter(p => group.playerIds.includes(p._id))
+                  const players = event.players.filter(p => group.playerIds.includes(p._id))
                   return (
                     <div key={group._id} style={{ borderRadius: 10, padding: '12px 14px', background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -6352,8 +6517,9 @@ function CourseSetup({ navigate, showToast, tripId, roundId, viewerRole, trips, 
   const trip = trips.find(t => t._id === tripId) || trips[1]
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
 
-  // Look up round from BBMI event or trip's comp setup rounds
-  const eventRound = BBMI_EVENT.rounds.find(r => r._id === roundId)
+  // Look up round from event or trip's comp setup rounds
+  const eventForTrip = getEventForTrip(tripId, trips)
+  const eventRound = (eventForTrip || BBMI_EVENT).rounds.find(r => r._id === roundId)
   const roundLabel = eventRound ? `Day ${eventRound.day}: ${eventRound.title}` : 'Round'
 
   const [step, setStep] = useState(1)

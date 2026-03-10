@@ -274,6 +274,10 @@ Teams within a competition event.
 
 **Indexes:** `event_id`
 
+**Notes:**
+- No upper limit on team count per event; color is stored per team and is user-configurable.
+- The application supports 2-team (Ryder Cup), 3-team, and beyond. UI adapts dynamically.
+
 ---
 
 ## `players`
@@ -346,7 +350,7 @@ Rounds of competition within an event.
 | `day` | `integer` | `NN`, `*` | 1-indexed |
 | `title` | `text` | `NN`, `*` | "Day 1 — Scramble" |
 | `course` | `text` | `NN`, `*` | "Bandon Dunes" |
-| `format` | `text` | `NN`, `*` | `'scramble' \| 'stableford' \| 'sabotage' \| 'skins'` |
+| `format` | `text` | `NN`, `*` | `'scramble' \| 'stableford' \| 'sabotage' \| 'skins' \| 'match_play' \| 'singles'` |
 | `status` | `text` | `NN`, `auto` | `'upcoming' \| 'active' \| 'submitted' \| 'closed'`. Defaults to `'upcoming'`. |
 | `points_available` | `numeric(5,1)` | `NN`, `*` | Total Ryder Cup points for this round |
 | `closed_at` | `timestamptz` | nullable | Set when an owner/planner closes the round via "Close Round" action |
@@ -466,7 +470,9 @@ Per-team points for a group result. Supports any number of teams (2-team Ryder C
 **Constraint:** `CHECK (points IN (0, 0.5, 1))`
 
 **Notes:**
-- One row per team per group per round. Total points across all teams for a group must sum to 1 (enforced at the application layer or via a trigger).
+- `0.5` (halve) is only applicable in 2-team events. Application enforces this — DB allows it for all events.
+- In events with 3+ teams, a dead hole (all teams tied) results in `0` for every team. Total points for that group will be `0`, not `1` — this is intentional.
+- One row per team per group per round. Total points across all teams for a group must sum to 1 (enforced at the application layer or via a trigger), except for dead holes where the total is 0.
 - For a 2-team event: 2 rows per group. For a 4-team scramble: 4 rows per group, etc.
 - `round_results` view aggregates across all groups: `CREATE VIEW round_results AS SELECT round_id, team_id, SUM(points) AS total_points FROM group_result_scores GROUP BY round_id, team_id`
 
