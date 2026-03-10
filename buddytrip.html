@@ -331,6 +331,8 @@ const MOCK_TRIPS = [
       joinedAt: new Date('2024-10-15'),
     })),
     comparisonMode: false, ideas: [], proposedDates: [], eventId: 'bbmi-2025',
+    lockedDestination: { title: 'Bandon Dunes', location: 'Bandon Dunes, OR', createdAt: new Date('2024-08-20T11:00:00') },
+    datePoll: null,
   },
   {
     _id: 'trip-bbmi', title: 'BBMI 2026', location: 'Scottsdale, AZ',
@@ -384,6 +386,27 @@ const MOCK_TRIPS = [
       { _id: 'pd-oct-2026', start: '2026-10-05', end: '2026-10-08' },
     ],
     eventId: null,
+    lockedDestination: null,
+    datePoll: {
+      open: false,
+      lockedId: 'dw-oct-2026',
+      windows: [
+        { _id: 'dw-mar-2026', start: '2026-03-09', end: '2026-03-12' },
+        { _id: 'dw-oct-2026', start: '2026-10-05', end: '2026-10-08' },
+      ],
+      votes: [
+        { windowId: 'dw-mar-2026', userId: 'brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:00:00') },
+        { windowId: 'dw-mar-2026', userId: 'zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:30:00') },
+        { windowId: 'dw-mar-2026', userId: 'jd',      answer: 'no',  createdAt: new Date('2026-02-07T14:15:00') },
+        { windowId: 'dw-oct-2026', userId: 'brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:02:00') },
+        { windowId: 'dw-oct-2026', userId: 'zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:32:00') },
+        { windowId: 'dw-oct-2026', userId: 'jd',      answer: 'yes', createdAt: new Date('2026-02-07T14:18:00') },
+        { windowId: 'dw-oct-2026', userId: 'rob',     answer: 'yes', createdAt: new Date('2026-02-10T19:45:00') },
+        { windowId: 'dw-oct-2026', userId: 'charlie', answer: 'yes', createdAt: new Date('2026-02-11T08:55:00') },
+        { windowId: 'dw-mar-2026', userId: 'tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:20:00') },
+        { windowId: 'dw-oct-2026', userId: 'tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:22:00') },
+      ],
+    },
   },
   {
     _id: 'trip-new-deciding', title: 'BBMI 2027', location: null,
@@ -412,44 +435,11 @@ const MOCK_TRIPS = [
       },
     ],
     proposedDates: [], eventId: null,
+    lockedDestination: null,
+    datePoll: { open: false, lockedId: null, windows: [], votes: [] },
   },
 ]
 
-// Shared mutable store — destination lock state survives navigation
-// In a real app this would be server state; here it's module-level
-const DESTINATION_LOCK = {
-  'trip-bbmi-live': { title: 'Bandon Dunes', location: 'Bandon Dunes, OR', createdAt: new Date('2024-08-20T11:00:00') },
-}  // { [tripId]: { title, location, createdAt } | null }
-
-// Date poll store — survives navigation between TripDetail and back
-const DATE_POLL = {
-  'trip-bbmi': {
-    open: false,
-    lockedId: 'dw-oct-2026',
-    windows: [
-      { _id: 'dw-mar-2026', start: '2026-03-09', end: '2026-03-12' },
-      { _id: 'dw-oct-2026', start: '2026-10-05', end: '2026-10-08' },
-    ],
-    votes: [
-      { windowId: 'dw-mar-2026', userId: 'brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:00:00') },
-      { windowId: 'dw-mar-2026', userId: 'zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:30:00') },
-      { windowId: 'dw-mar-2026', userId: 'jd',      answer: 'no',  createdAt: new Date('2026-02-07T14:15:00') },
-      { windowId: 'dw-oct-2026', userId: 'brad',    answer: 'yes', createdAt: new Date('2026-02-05T10:02:00') },
-      { windowId: 'dw-oct-2026', userId: 'zach',    answer: 'yes', createdAt: new Date('2026-02-06T09:32:00') },
-      { windowId: 'dw-oct-2026', userId: 'jd',      answer: 'yes', createdAt: new Date('2026-02-07T14:18:00') },
-      { windowId: 'dw-oct-2026', userId: 'rob',     answer: 'yes', createdAt: new Date('2026-02-10T19:45:00') },
-      { windowId: 'dw-oct-2026', userId: 'charlie', answer: 'yes', createdAt: new Date('2026-02-11T08:55:00') },
-      { windowId: 'dw-mar-2026', userId: 'tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:20:00') },
-      { windowId: 'dw-oct-2026', userId: 'tyler',   answer: 'yes', createdAt: new Date('2026-02-06T17:22:00') },
-    ],
-  },
-  'trip-new-deciding': {
-    open: false,
-    lockedId: null,
-    windows: [],
-    votes: [],
-  },
-}
 
 const IDEA_VOTES = [
   { tripId: 'trip-bbmi', ideaId: 'idea-scottsdale', userId: 'brad',    createdAt: new Date('2026-01-20T09:15:00') },
@@ -562,9 +552,9 @@ function getTripStatus(trip) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const datePoll     = DATE_POLL[trip._id]
+  const datePoll     = trip.datePoll
   const lockedWindow = datePoll?.lockedId
-    ? datePoll.windows.find(w => w._id === datePoll.lockedId)
+    ? datePoll.windows?.find(w => w._id === datePoll.lockedId)
     : null
 
   const effectiveStart = lockedWindow?.start || trip.startDate || null
@@ -573,7 +563,7 @@ function getTripStatus(trip) {
   if (effectiveEnd   && today > new Date(effectiveEnd))   return 'completed'
   if (effectiveStart && today >= new Date(effectiveStart)) return 'active'
 
-  const hasLockedDest  = !!DESTINATION_LOCK[trip._id] || (!trip.comparisonMode && !!trip.location)
+  const hasLockedDest  = !!trip.lockedDestination || (!trip.comparisonMode && !!trip.location)
   const hasLockedDates = !!datePoll?.lockedId || !!trip.startDate
 
   if (hasLockedDest && hasLockedDates) return 'ready'
@@ -1150,6 +1140,8 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
         : [],
       proposedDates: [],
       eventId: null,
+      lockedDestination: destKnown ? { title: knownDest.trim(), location: knownDest.trim(), createdAt: now } : null,
+      datePoll: null,
     }
 
     setTrips(ts => [...ts, newTrip])
@@ -1908,7 +1900,7 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
   )
 }
 
-function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips, notify, notifications, onMarkAllRead }) {
+function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips, setTrips, notify, notifications, onMarkAllRead }) {
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const isOwner = viewerRole === 'owner'
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
@@ -1916,7 +1908,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
   const [tab, setTab] = useState('home')
   const [hasComp, setHasComp] = useState(!!trip.eventId)
-  const [destVoteOpen, setDestVoteOpen] = useState(trip.comparisonMode && !DESTINATION_LOCK[trip._id])
+  const [destVoteOpen, setDestVoteOpen] = useState(trip.comparisonMode && !trip.lockedDestination)
   const [inlineVotes, setInlineVotes] = useState(IDEA_VOTES.filter(v => v.tripId === trip._id))
   const [inlineMyVote, setInlineMyVote] = useState(() => {
     const v = IDEA_VOTES.find(v => v.tripId === trip._id && v.userId === CURRENT_USER._id)
@@ -1925,20 +1917,22 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   const [inlineIdeas, setInlineIdeas] = useState(trip.ideas || [])
   const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
 
-  // Destination lock — pulled from shared store, refreshes on each render
-  const [lockedDest, setLockedDest] = useState(DESTINATION_LOCK[tripId] || null)
+  // Destination lock — stored on the trip object
+  const lockedDest = trip.lockedDestination || null
+  const setLockedDest = (val) => setTrips(ts => ts.map(t => t._id === tripId ? { ...t, lockedDestination: val } : t))
   const effectiveLockedDest = lockedDest
   const effectiveLocation = effectiveLockedDest ? effectiveLockedDest.location : trip.location
   const effectiveComparisonMode = trip.comparisonMode && !effectiveLockedDest
 
-  // Date poll state — driven from shared DATE_POLL store
-  const [datePoll, setDatePoll] = React.useState(() => DATE_POLL[trip._id] || { open: false, lockedId: null, windows: [], votes: [] })
+  // Date poll state — stored on the trip object
+  const datePoll = trip.datePoll || { open: false, lockedId: null, windows: [], votes: [] }
   const syncDatePoll = (updater) => {
-    setDatePoll(prev => {
+    setTrips(ts => ts.map(t => {
+      if (t._id !== tripId) return t
+      const prev = t.datePoll || { open: false, lockedId: null, windows: [], votes: [] }
       const next = typeof updater === 'function' ? updater(prev) : updater
-      DATE_POLL[trip._id] = next
-      return next
-    })
+      return { ...t, datePoll: next }
+    }))
   }
   // 'choose' | 'known' | 'poll' | null — controls which date entry UI shows
   const [dateMode, setDateMode] = useState(null)
@@ -3033,7 +3027,6 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
               <div style={{ fontSize: 14, color: 'var(--bt-text-2)', display:'flex', alignItems:'center', gap:5 }}><Ic n="MapPin" size={14} color="var(--bt-text-3)" />{effectiveLocation}</div>
               {effectiveLockedDest && isOwner && (
                 <button onClick={() => {
-                  delete DESTINATION_LOCK[trip._id]
                   setLockedDest(null)
                   setInlineIdeas(trip.ideas || [])
                   setInlineVotes(IDEA_VOTES.filter(v => v.tripId === trip._id))
@@ -3172,7 +3165,6 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                         {isOwner && (
                           <button onClick={() => {
                             const lock = { title: idea.title, location: idea.location || idea.title, createdAt: new Date() }
-                            DESTINATION_LOCK[trip._id] = lock
                             setLockedDest(lock)
                             if (notify) notify({ type: 'destination_locked', tripId: trip._id, actorId: CURRENT_USER._id, payload: { destination: idea.title } })
                             showToast(`🎯 Locked in: ${idea.title}`)
@@ -3970,7 +3962,7 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
 }
 
 // ── SCREEN: IdeaComparison ───────────────────────────────────────
-function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips, notify, notifications, onMarkAllRead }) {
+function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips, setTrips, notify, notifications, onMarkAllRead }) {
   const trip = trips.find(t => t._id === (tripId || 'trip-bbmi')) || trips[1]
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
   const isOwner = viewerRole === 'owner'
@@ -3983,7 +3975,7 @@ function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips, notify
   const [openComments, setOpenComments] = useState(new Set(IDEA_COMMENTS.filter(c => c.tripId === trip._id).map(c => c.ideaId)))
   const [commentTexts, setCommentTexts] = useState({})
   const [lockedIn, setLockedIn] = useState(
-    DESTINATION_LOCK[trip._id] ? (localIdeas.find(i => i.title === DESTINATION_LOCK[trip._id]?.title)?._id || null) : null
+    trip.lockedDestination ? (localIdeas.find(i => i.title === trip.lockedDestination?.title)?._id || null) : null
   )
   const [showReopenConfirm, setShowReopenConfirm] = useState(false)
   const [manualDest, setManualDest] = useState('')
@@ -4742,7 +4734,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => {
                   const idea = localIdeas.find(i => i._id === showLockConfirm)
-                  DESTINATION_LOCK[trip._id] = { title: idea.title, location: idea.location || idea.title, createdAt: new Date() }
+                  setTrips(ts => ts.map(t => t._id === trip._id ? { ...t, lockedDestination: { title: idea.title, location: idea.location || idea.title, createdAt: new Date() } } : t))
                   setLockedIn(showLockConfirm)
                   setShowLockConfirm(false)
                   if (notify) notify({ type: 'destination_locked', tripId: trip._id, actorId: CURRENT_USER._id, payload: { destination: idea.title } })
@@ -4779,7 +4771,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                   Unlocks the destination and lets the crew weigh in again. Everyone gets notified.
                 </div>
                 <button onClick={() => {
-                  DESTINATION_LOCK[trip._id] = null
+                  setTrips(ts => ts.map(t => t._id === trip._id ? { ...t, lockedDestination: null } : t))
                   setLockedIn(null)
                   setShowReopenConfirm(false)
                   setManualDest('')
@@ -4802,7 +4794,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                     style={{ flex: 1, fontSize: 13, padding: '8px 10px', borderRadius: 7, background: 'var(--bt-input)', border: `1px solid ${manualDest ? 'var(--bt-accent)' : 'var(--bt-border-input)'}`, color: 'var(--bt-text-1)', outline: 'none' }} />
                   <button onClick={() => {
                     if (!manualDest.trim()) return
-                    DESTINATION_LOCK[trip._id] = { title: manualDest.trim(), location: manualDest.trim(), createdAt: new Date() }
+                    setTrips(ts => ts.map(t => t._id === trip._id ? { ...t, lockedDestination: { title: manualDest.trim(), location: manualDest.trim(), createdAt: new Date() } } : t))
                     setLockedIn(null)
                     setShowReopenConfirm(false)
                     if (notify) notify({ type: 'destination_locked', tripId: trip._id, actorId: CURRENT_USER._id, payload: { destination: manualDest.trim() } })
@@ -5314,9 +5306,9 @@ function App() {
     <>
       {screen === 'trips'            && <Dashboard navigate={navigate} viewerRole={viewerRole} trips={trips} {...navProps} />}
       {screen === 'trip-new'         && <TripNew navigate={navigate} showToast={showToast} setTrips={setTrips} {...navProps} />}
-      {screen === 'trip-detail'      && <TripDetail navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
+      {screen === 'trip-detail'      && <TripDetail navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} setTrips={setTrips} notify={notifyAndRefresh} {...navProps} />}
       {screen === 'comp-setup'       && <CompetitionSetup navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} {...navProps} />}
-      {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
+      {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} setTrips={setTrips} notify={notifyAndRefresh} {...navProps} />}
       {screen === 'trip-messages'    && <TripMessages navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
       {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} notify={notifyAndRefresh} {...navProps} />}
 

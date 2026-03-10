@@ -1,13 +1,14 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 3.1 complete
+2026-03-09 — Task 3.2 complete
 
 ## Current State
-- buddytrip.html: ~5200 lines (grew ~200 lines with score entry)
+- buddytrip.html: ~5200 lines (net ~flat — removed globals, added trip-level fields)
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
+- DESTINATION_LOCK and DATE_POLL globals eliminated — data now lives on trip objects as `lockedDestination` and `datePoll`
 - All user IDs unified — single format (plain IDs, no prefixes)
 - All votes, comments, and date polls reference stable IDs instead of array indexes
 - Trip status is now derived dynamically via getTripStatus(trip) — no status field on trip objects
@@ -158,6 +159,21 @@
 - The `remaining` key in the return object doesn't collide with any team ID since team IDs are 'team-a'/'team-b'
 - LiveLeaderboard previously computed totalPossible + remaining inline — those 2 lines removed, replaced with scores.remaining
 - scoreNonce still needed to force LiveLeaderboard re-render when GROUP_RESULTS mutates (computeScores is pure but LiveLeaderboard is a plain function call, not a hook)
+
+## Completed Tasks (continued)
+- [x] 3.2 — Replaced DESTINATION_LOCK / DATE_POLL globals with trip-level state: added `lockedDestination` and `datePoll` fields to all 3 MOCK_TRIPS entries and TripNew template; updated getTripStatus() to read from trip object; TripDetail lockedDest/setLockedDest now derived from trip state via setTrips; syncDatePoll now writes via setTrips; IdeaComparison lock/unlock/override all write via setTrips; removed both module-level globals; passed setTrips prop to TripDetail and IdeaComparison from App
+
+## Notes from 3.2
+- `lockedDestination` shape: `{ title, location, createdAt }` or `null` — same shape as old DESTINATION_LOCK values
+- `datePoll` shape: `{ open, lockedId, windows: [], votes: [] }` or `null` — same shape as old DATE_POLL values
+- TripDetail's `lockedDest` is now a derived value (`trip.lockedDestination || null`), not useState — avoids stale state divergence
+- TripDetail's `setLockedDest` is a convenience function that calls `setTrips(ts => ts.map(...))`
+- TripDetail's `syncDatePoll` now calls `setTrips` instead of mutating the module-level DATE_POLL object
+- IdeaComparison writes destination lock directly via `setTrips` (3 write sites: lock confirm, reopen vote, manual override)
+- TripNew sets `lockedDestination` on new trips with known destination (title + location from form input)
+- getTripStatus() now reads `trip.lockedDestination` and `trip.datePoll` instead of globals — no functional change
+- No `scoreNonce` equivalent needed — destination lock and date poll changes now trigger React re-renders naturally via `setTrips`
+- Next task: 3.3 — Document the permission model (Opus recommended)
 
 ## In Progress
 - (none)
