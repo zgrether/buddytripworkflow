@@ -218,9 +218,20 @@ export interface PlayGroup {
   playerIds: string[]               // FK[] → Player._id (User._id)
 }
 
+/** Configuration for moving tee boxes — per-player tee shifts based on score vs par. */
+export interface MovingTeesConfig {
+  enabled: boolean
+  startBox: 'black' | 'blue' | 'white' | 'gold' | 'red'
+  eagleShift: number                // Negative = toward black (harder). e.g., -2
+  birdieShift: number               // e.g., -1
+  parShift: number                  // e.g., 0
+  bogeyShift: number                // e.g., +1 (forward = toward red / easier)
+  doublePlusShift: number           // All bogey+ treated the same for simplicity
+}
+
 export interface RoundModifiers {
   carryOver?: boolean               // Halved holes accumulate — pot carries to next hole
-  movingTees?: MovingTeesConfig     // Per-player tee box shifts based on score vs par (Task C)
+  movingTees?: MovingTeesConfig     // Per-player tee box shifts based on score vs par
 }
 
 /** A round of competition. Maps to `rounds` table. */

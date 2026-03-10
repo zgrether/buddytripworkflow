@@ -359,6 +359,8 @@ Rounds of competition within an event.
 - `submitted` means all group scores have been entered but the round has not been officially closed. Score corrections are still allowed.
 - `closed` means the round is officially finalized. No further edits are permitted. Use `closed_at` / `closed_by` for audit trail.
 - `modifiers` is a JSONB object for optional per-round rule variants. Both keys are optional; null means no modifiers active.
+  - `carryOver?: boolean` — halved holes accumulate into the next pot
+  - `movingTees?: { enabled: bool, startBox: string, eagleShift: int, birdieShift: int, parShift: int, bogeyShift: int, doublePlusShift: int }` — per-player tee box shifts based on score vs par each hole. `startBox` is one of `'black' | 'blue' | 'white' | 'gold' | 'red'`. Shift values are bounded -3 to +3.
 
 ---
 
@@ -382,6 +384,30 @@ Per-hole carry state for a group's round. Written when scorer uses hole-by-hole 
 - A `carry_value` > 1 means prior holes were halved and the pot accumulated.
 - When `winner_team_id IS NOT NULL`, the carry resets to 1 on the next hole.
 - This table is only populated when the scorer uses hole-by-hole entry. For offline/quick-entry results, this table has no rows for that group/round.
+
+---
+
+## `player_hole_scores`
+
+Per-player stroke data for each hole in a group's round. Written when the scorer uses hole-by-hole entry. Also stores the computed tee box when the `movingTees` modifier is active.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `round_id` | `text` | `FK → rounds.id`, `NN`, `*` | |
+| `group_id` | `text` | `FK → play_groups.id`, `NN`, `*` | |
+| `hole_number` | `integer` | `NN`, `*` | 1–18 |
+| `player_id` | `text` | `FK → users.id`, `NN`, `*` | |
+| `strokes` | `integer` | `NN`, `*` | Raw stroke count for this hole |
+| `tee_box` | `text` | nullable | Current tee box COLOR ID for this hole: `'black' \| 'blue' \| 'white' \| 'gold' \| 'red'`. Null when moving tees is not active. |
+
+**Primary key:** `(round_id, group_id, hole_number, player_id)`
+
+**Indexes:** `(round_id, group_id)` (fetch all player scores for a group's round)
+
+**Notes:**
+- Read-only access: when `round.status` is `closed`, clients must not allow stroke edits. When `submitted`, only owner/planner can edit.
+- `tee_box` is computed client-side from the round's `movingTees` modifier config and prior hole scores. It is stored for historical replay — once a round is closed, the tee box history is frozen.
+- **TEE_BOXES reference** (app-level config, not a DB table): `['black', 'blue', 'white', 'gold', 'red']` — index 0 = hardest (Black), index 4 = easiest (Red). Moving back = lower index. Moving forward = higher index. Clamp at both ends.
 
 ---
 
@@ -657,6 +683,7 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 11. `group_results` (refs `rounds`, `play_groups`, `users`)
 12. `group_result_scores` (refs `group_results`, `teams`)
 12a. `hole_results` (refs `rounds`, `play_groups`, `teams`)
+12b. `player_hole_scores` (refs `rounds`, `play_groups`, `users`)
 13. `trip_members` (refs `trips`, `users`)
 14. `ideas` (refs `trips`)
 15. `idea_votes` (refs `trips`, `ideas`, `users`)

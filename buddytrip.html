@@ -233,6 +233,17 @@ const Ic = ({ n, size=16, color='currentColor', sw=1.75, style={}, className='' 
 // ── Mock Data ────────────────────────────────────────────────────
 const CURRENT_USER = { _id: 'zach', name: 'Zach Grether', firstName: 'Zach', nickname: 'Grether', email: 'zgrether@gmail.com' }
 
+// Tee box color order (standard golf convention). Index 0 = hardest, 4 = easiest.
+// Moving back = lower index (harder). Moving forward = higher index (easier). Clamp at both ends.
+const TEE_BOXES = [
+  { id: 'black',  label: 'Black',  color: '#1a1a1a' },
+  { id: 'blue',   label: 'Blue',   color: '#3b82f6' },
+  { id: 'white',  label: 'White',  color: '#e5e7eb' },
+  { id: 'gold',   label: 'Gold',   color: '#f59e0b' },
+  { id: 'red',    label: 'Red',    color: '#ef4444' },
+]
+const TEE_BOX_IDS = TEE_BOXES.map(t => t.id)
+
 const BBMI_EVENT = {
   _id: 'bbmi-2025', tripId: 'trip-bbmi-live',
   title: 'BBMI 2025', subtitle: 'Buddy Banks Memorial Invitational',
@@ -270,7 +281,7 @@ const BBMI_EVENT = {
     { _id: 'r1', day: 1, title: 'Scramble',   course: 'Bandon Dunes',  format: 'scramble',   status: 'closed',    pointsAvailable: 4, modifiers: null },
     { _id: 'r2', day: 2, title: 'Stableford', course: 'Bandon Trails', format: 'stableford', status: 'submitted', pointsAvailable: 4, modifiers: null },
     { _id: 'r3', day: 3, title: 'Sabotage',   course: 'Pacific Dunes', format: 'sabotage',   status: 'active',   pointsAvailable: 4, modifiers: { carryOver: true } },
-    { _id: 'r4', day: 4, title: 'Skins',      course: 'Old Macdonald', format: 'skins',      status: 'upcoming', pointsAvailable: 4, modifiers: null },
+    { _id: 'r4', day: 4, title: 'Skins',      course: 'Old Macdonald', format: 'skins',      status: 'upcoming', pointsAvailable: 4, modifiers: { movingTees: { enabled: true, startBox: 'white', eagleShift: -2, birdieShift: -1, parShift: 0, bogeyShift: 1, doublePlusShift: 1 } } },
   ],
   sides: [
     { _id: 's1', name: 'Pool',           icon: '🎱', pointsAvailable: 5, status: 'complete', result: { 'team-a': 2, 'team-b': 3 } },
@@ -3005,7 +3016,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
         { id: 'r4', name: 'Skins',      format: 'Skins',      course: 'Old Macdonald',  pts: 4 },
       ] : [])
       const [addingRound, setAddingRound] = useState(false)
-      const [roundDraft, setRoundDraft] = useState({ name: '', format: 'Scramble', course: '', pts: 4 })
+      const [roundDraft, setRoundDraft] = useState({ name: '', format: 'Scramble', course: '', pts: 4, movingTees: false, startBox: 'white', eagleShift: -2, birdieShift: -1, parShift: 0, bogeyShift: 1 })
       const FORMATS = ['Scramble', 'Stableford', 'Skins', 'Sabotage', 'Match Play', 'Stroke Play']
 
       // Inline mock state for sides
@@ -3086,7 +3097,11 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                             {isSubmitted && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 9999, background: '#1a120030', color: '#f59e0b', border: '1px solid #f59e0b40' }}>⚠ Pending Close</span>}
                             {isClosed && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 9999, background: 'var(--bt-base)', color: 'var(--bt-text-3)', border: '1px solid var(--bt-border)' }}>✓ Closed</span>}
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{r.format} · {r.course} · {r.pointsAvailable} pts</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--bt-text-3)' }}>
+                            <span>{r.format} · {r.course} · {r.pointsAvailable} pts</span>
+                            {r.modifiers?.carryOver && <span style={{ fontSize: 9, fontWeight: 700, color: '#f59e0b', background: '#f59e0b20', borderRadius: 3, padding: '1px 4px' }}>⊕ carry</span>}
+                            {r.modifiers?.movingTees?.enabled && <span style={{ fontSize: 9, fontWeight: 700, color: '#8b5cf6', background: '#8b5cf620', borderRadius: 3, padding: '1px 4px' }}>↕ tees · {r.modifiers.movingTees.startBox}</span>}
+                          </div>
                         </div>
                       </div>
                       {/* Close Round button for submitted rounds */}
@@ -3144,8 +3159,61 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                       <input type="number" min="1" max="20" value={roundDraft.pts} onChange={e => setRoundDraft(d => ({...d, pts: +e.target.value}))}
                         style={{ width: 52, fontSize: 13, padding: '7px 8px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none', textAlign: 'center' }} />
                     </div>
+                    {/* Moving Tees modifier toggle */}
+                    <div style={{ borderRadius: 8, padding: '10px 12px', background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: roundDraft.movingTees ? 10 : 0 }}>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-1)' }}>↕ Moving Tee Boxes</div>
+                          <div style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>Tees shift based on score vs par each hole</div>
+                        </div>
+                        <button onClick={() => setRoundDraft(d => ({ ...d, movingTees: !d.movingTees }))}
+                          style={{ width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', background: roundDraft.movingTees ? 'var(--bt-accent)' : 'var(--bt-border)', position: 'relative', transition: 'background .15s' }}>
+                          <span style={{ position: 'absolute', top: 2, left: roundDraft.movingTees ? 20 : 2, width: 18, height: 18, borderRadius: '50%', background: 'white', transition: 'left .15s', boxShadow: '0 1px 3px #0003' }} />
+                        </button>
+                      </div>
+                      {roundDraft.movingTees && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {/* Starting tee box selector */}
+                          <div>
+                            <div style={{ fontSize: 11, color: 'var(--bt-text-2)', marginBottom: 6 }}>Starting Tee Box</div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              {TEE_BOXES.map(box => (
+                                <button key={box.id} onClick={() => setRoundDraft(d => ({ ...d, startBox: box.id }))}
+                                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 4px', borderRadius: 8, cursor: 'pointer', border: roundDraft.startBox === box.id ? `2px solid ${box.id === 'white' ? '#999' : box.color}` : '2px solid var(--bt-border)', background: roundDraft.startBox === box.id ? `${box.color}15` : 'var(--bt-card)', transition: 'all .15s' }}>
+                                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none' }} />
+                                  <span style={{ fontSize: 10, fontWeight: roundDraft.startBox === box.id ? 700 : 400, color: roundDraft.startBox === box.id ? (box.id === 'white' || box.id === 'black' ? 'var(--bt-text-1)' : box.color) : 'var(--bt-text-3)' }}>{box.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Shift values */}
+                          <div>
+                            <div style={{ fontSize: 11, color: 'var(--bt-text-2)', marginBottom: 6 }}>Tee Shifts (negative = harder, positive = easier)</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                              {[
+                                { key: 'eagleShift', label: 'Eagle (≤-2)', val: roundDraft.eagleShift },
+                                { key: 'birdieShift', label: 'Birdie (-1)', val: roundDraft.birdieShift },
+                                { key: 'parShift', label: 'Par (0)', val: roundDraft.parShift },
+                                { key: 'bogeyShift', label: 'Bogey+ (+1)', val: roundDraft.bogeyShift },
+                              ].map(({ key, label, val }) => (
+                                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 6, background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}>
+                                  <span style={{ fontSize: 11, color: 'var(--bt-text-2)', flex: 1 }}>{label}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <button onClick={() => setRoundDraft(d => ({ ...d, [key]: Math.max(-3, d[key] - 1) }))}
+                                      style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid var(--bt-border)', background: 'var(--bt-base)', color: 'var(--bt-text-2)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: val < 0 ? '#3b82f6' : val > 0 ? '#ef4444' : 'var(--bt-text-2)', width: 24, textAlign: 'center' }}>{val > 0 ? '+' : ''}{val}</span>
+                                    <button onClick={() => setRoundDraft(d => ({ ...d, [key]: Math.min(3, d[key] + 1) }))}
+                                      style={{ width: 22, height: 22, borderRadius: 4, border: '1px solid var(--bt-border)', background: 'var(--bt-base)', color: 'var(--bt-text-2)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => { if (!roundDraft.name.trim()) return; setRounds(rs => [...rs, { id: `r${Date.now()}`, ...roundDraft }]); setRoundDraft({ name: '', format: 'Scramble', course: '', pts: 4 }); setAddingRound(false); showToast('Round added') }}
+                      <button onClick={() => { if (!roundDraft.name.trim()) return; setRounds(rs => [...rs, { id: `r${Date.now()}`, ...roundDraft }]); setRoundDraft({ name: '', format: 'Scramble', course: '', pts: 4, movingTees: false, startBox: 'white', eagleShift: -2, birdieShift: -1, parShift: 0, bogeyShift: 1 }); setAddingRound(false); showToast('Round added') }}
                         style={{ fontSize: 13, fontWeight: 700, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117' }}>Save</button>
                       <button onClick={() => setAddingRound(false)}
                         style={{ fontSize: 13, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>Cancel</button>
@@ -5345,6 +5413,43 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
   // Index of the first incomplete hole (the "live" hole) — used for carry-over highlight
   const liveHoleIdx = carryPots ? holes.findIndex(h => !holeTeamTotals(h).complete) : -1
 
+  // Moving tee box state — per-player tee box at each hole. Only computed when movingTees is active.
+  const movingTees = round.modifiers?.movingTees?.enabled ? round.modifiers.movingTees : null
+  const teeBoxState = useMemo(() => {
+    if (!movingTees) return null
+    const startIdx = TEE_BOX_IDS.indexOf(movingTees.startBox)
+    const state = {} // { [playerId]: string[] } — tee box id per hole (index 0..17)
+    groupPlayers.forEach(p => {
+      const boxes = []
+      let currentIdx = startIdx
+      holes.forEach((hole, hi) => {
+        boxes.push(TEE_BOX_IDS[currentIdx])
+        const strokes = Number(hole.strokes[p._id])
+        if (!strokes) { /* no data yet — project par-out for future holes */ return }
+        const diff = strokes - hole.par
+        let shift = 0
+        if (diff <= -2) shift = movingTees.eagleShift
+        else if (diff === -1) shift = movingTees.birdieShift
+        else if (diff === 0) shift = movingTees.parShift
+        else if (diff === 1) shift = movingTees.bogeyShift
+        else shift = movingTees.doublePlusShift
+        currentIdx = Math.max(0, Math.min(4, currentIdx + shift))
+      })
+      state[p._id] = boxes
+    })
+    return state
+  }, [holes, movingTees])
+
+  // The first hole without all strokes entered — used for tee box "current" vs "future" styling
+  const teeBoxLiveIdx = movingTees ? holes.findIndex(h => groupPlayers.some(p => h.strokes[p._id] === '')) : -1
+
+  // Helper: get tee box color for a player at a hole
+  function teeBoxColor(playerId, holeIdx) {
+    if (!teeBoxState) return null
+    const boxId = teeBoxState[playerId]?.[holeIdx]
+    return TEE_BOXES.find(t => t.id === boxId) || null
+  }
+
   function handleSubmit() {
     // Save hole-by-hole data
     if (!HOLE_RESULTS[round._id]) HOLE_RESULTS[round._id] = {}
@@ -5442,6 +5547,55 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
             <span style={{ fontSize: 11, color: '#f59e0b' }}>Carry-over active — halved holes accumulate into the next pot</span>
           </div>
         )}
+        {/* Moving tees legend */}
+        {movingTees && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '7px 10px', borderRadius: 8, background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}>
+            <span style={{ fontSize: 11, color: 'var(--bt-text-2)', fontWeight: 600, marginRight: 4 }}>Tees:</span>
+            {TEE_BOXES.map(box => (
+              <span key={box.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid var(--bt-text-3)' : 'none', display: 'inline-block' }} />
+                <span style={{ fontSize: 9, color: 'var(--bt-text-3)' }}>{box.label}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        {/* Player name row with current tee box pill (when moving tees active) */}
+        {movingTees && (
+          <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 6 }}>
+            <span /><span />
+            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+              {teamAPlayers.map(p => {
+                const currentHole = teeBoxLiveIdx >= 0 ? teeBoxLiveIdx : 17
+                const box = teeBoxColor(p._id, currentHole)
+                return box ? (
+                  <div key={p._id} style={{ width: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <span style={{ fontSize: 8, fontWeight: 700, color: teamA.color, lineHeight: 1 }}>{p.nickname.slice(0, 3)}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '1px 4px', borderRadius: 6, background: box.color + '25', border: `1px solid ${box.color}60` }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none' }} />
+                      <span style={{ fontSize: 7, fontWeight: 700, color: box.id === 'black' ? '#888' : box.color }}>{box.label}</span>
+                    </span>
+                  </div>
+                ) : null
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+              {teamBPlayers.map(p => {
+                const currentHole = teeBoxLiveIdx >= 0 ? teeBoxLiveIdx : 17
+                const box = teeBoxColor(p._id, currentHole)
+                return box ? (
+                  <div key={p._id} style={{ width: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <span style={{ fontSize: 8, fontWeight: 700, color: teamB.color, lineHeight: 1 }}>{p.nickname.slice(0, 3)}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '1px 4px', borderRadius: 6, background: box.color + '25', border: `1px solid ${box.color}60` }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none' }} />
+                      <span style={{ fontSize: 7, fontWeight: 700, color: box.id === 'black' ? '#888' : box.color }}>{box.label}</span>
+                    </span>
+                  </div>
+                ) : null
+              })}
+            </div>
+            <span />
+          </div>
+        )}
         {/* Column headers */}
         <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
           <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
@@ -5467,19 +5621,33 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
               <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
               {/* Team A player inputs */}
               <div style={{ display: 'flex', gap: 3 }}>
-                {teamAPlayers.map(p => (
-                  <input key={p._id} type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
-                    title={p.nickname}
-                    style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamA.color + '60' : 'var(--bt-border)'}`, color: teamA.color, outline: 'none' }} />
-                ))}
+                {teamAPlayers.map(p => {
+                  const box = teeBoxColor(p._id, hi)
+                  const isFuture = movingTees && hi > teeBoxLiveIdx && teeBoxLiveIdx >= 0
+                  return (
+                    <div key={p._id} style={{ position: 'relative', width: 36, height: 32 }}>
+                      <input type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
+                        title={p.nickname}
+                        style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamA.color + '60' : 'var(--bt-border)'}`, color: teamA.color, outline: 'none' }} />
+                      {box && <span style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none', opacity: isFuture ? 0.35 : 0.85 }} />}
+                    </div>
+                  )
+                })}
               </div>
               {/* Team B player inputs */}
               <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
-                {teamBPlayers.map(p => (
-                  <input key={p._id} type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
-                    title={p.nickname}
-                    style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamB.color + '60' : 'var(--bt-border)'}`, color: teamB.color, outline: 'none' }} />
-                ))}
+                {teamBPlayers.map(p => {
+                  const box = teeBoxColor(p._id, hi)
+                  const isFuture = movingTees && hi > teeBoxLiveIdx && teeBoxLiveIdx >= 0
+                  return (
+                    <div key={p._id} style={{ position: 'relative', width: 36, height: 32 }}>
+                      <input type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
+                        title={p.nickname}
+                        style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamB.color + '60' : 'var(--bt-border)'}`, color: teamB.color, outline: 'none' }} />
+                      {box && <span style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none', opacity: isFuture ? 0.35 : 0.85 }} />}
+                    </div>
+                  )
+                })}
               </div>
               {/* Hole result indicator */}
               <div style={{ textAlign: 'center' }}>
@@ -5908,6 +6076,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: isActive ? 'var(--bt-accent)' : isSubmitted ? '#f59e0b80' : 'var(--bt-text-3)', paddingLeft: isActive || isClosed || isSubmitted ? 14 : 0 }}>
                           <span>{r.course}</span>
                           {r.modifiers?.carryOver && <span style={{ fontSize: 9, fontWeight: 700, color: '#f59e0b', background: '#f59e0b20', borderRadius: 3, padding: '1px 4px', letterSpacing: '.04em' }}>⊕ carry</span>}
+                          {r.modifiers?.movingTees?.enabled && <span style={{ fontSize: 9, fontWeight: 700, color: '#8b5cf6', background: '#8b5cf620', borderRadius: 3, padding: '1px 4px', letterSpacing: '.04em' }}>↕ tees</span>}
                         </div>
                       </div>
                       {editMode ? (
