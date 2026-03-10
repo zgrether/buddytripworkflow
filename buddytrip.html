@@ -979,7 +979,7 @@ function fmtDateRange(start, end) {
 }
 
 // ── SCREEN: Dashboard ────────────────────────────────────────────
-function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }) {
+function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const [pastExpanded, setPastExpanded] = useState(false)
   const roleUserIds = { owner: 'brad', planner: 'zach', member: 'rob' }
   const viewerUserId = roleUserIds[viewerRole] || CURRENT_USER._id
@@ -1063,7 +1063,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} theme={theme} onToggleTheme={onToggleTheme} />
       <div style={{ maxWidth: 672, margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
@@ -1139,7 +1139,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
 }
 
 // ── SCREEN: TripNew — 2-step creation flow ───────────────────────
-function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }) {
+function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const [step, setStep]               = useState(1)   // 1 = basics, 2 = destination
   const [tripName, setTripName]       = useState('')
   const [tripNameTouched, setTripNameTouched] = useState(false)
@@ -1297,7 +1297,7 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} theme={theme} onToggleTheme={onToggleTheme} />
       <div style={{ maxWidth: 512, margin: '0 auto', padding: '24px 16px' }}>
         <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: 'New Trip' }]} navigate={navigate} />
 
@@ -2012,7 +2012,7 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
   )
 }
 
-function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips, setTrips, notify, notifications, onMarkAllRead }) {
+function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips, setTrips, notify, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const isOwner = viewerRole === 'owner'
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
@@ -3264,7 +3264,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} theme={theme} onToggleTheme={onToggleTheme} />
       <div style={{ maxWidth: 672, margin: '0 auto', padding: '20px 16px' }}>
         <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: trip.title }]} navigate={navigate} />
 
@@ -3771,7 +3771,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 }
 
 // ── SCREEN: CompetitionSetup ─────────────────────────────────────
-function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, notifications, onMarkAllRead }) {
+function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const trip = trips.find(t => t._id === tripId) || trips[1]
   const roster = trip.attendees.filter(a => a.status === 'in')
 
@@ -3887,7 +3887,7 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
   // ── Shared header / layout ───────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 40, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} theme={theme} onToggleTheme={onToggleTheme} />
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '24px 16px' }}>
         <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: trip.title, screen: 'trip-detail', extra: { tripId: trip._id } }, { label: 'Competition Setup' }]} navigate={navigate} />
 
@@ -4232,7 +4232,7 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
 }
 
 // ── SCREEN: IdeaComparison ───────────────────────────────────────
-function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips, setTrips, notify, notifications, onMarkAllRead }) {
+function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips, setTrips, notify, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const trip = trips.find(t => t._id === (tripId || 'trip-bbmi')) || trips[1]
   const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
   const isOwner = viewerRole === 'owner'
@@ -4596,7 +4596,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} theme={theme} onToggleTheme={onToggleTheme} />
 
       {/* ── Constrained header ── */}
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 0' }}>
@@ -5256,7 +5256,7 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
 }
 
 // ── SCREEN: LiveLeaderboard (compact) ────────────────────────────
-function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, onMarkAllRead, viewerRole = 'planner' }) {
+function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, onMarkAllRead, viewerRole = 'planner', theme, onToggleTheme }) {
   const canScore = viewerRole === 'owner' || viewerRole === 'planner'
   const { teams, rounds, sides } = BBMI_EVENT
   const [tab, setTab] = useState('overview')
@@ -5289,7 +5289,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} theme={theme} onToggleTheme={onToggleTheme} />
       <div style={{ maxWidth: 540, margin: '0 auto', padding: '0 0 24px' }}>
         <div style={{ padding: '16px 16px 0', borderBottom: '1px solid var(--bt-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -5501,7 +5501,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
 }
 
 // ── SCREEN: TripMessages ─────────────────────────────────────────
-function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, notifications, onMarkAllRead }) {
+function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const { useState } = React
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const hasComp = !!trip.eventId
@@ -5522,7 +5522,7 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, 
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 96, background: 'var(--bt-base)' }}>
-      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} />
+      <TopNav navigate={navigate} notifications={notifications} onMarkAllRead={onMarkAllRead} theme={theme} onToggleTheme={onToggleTheme} />
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '16px 16px 0' }}>
         <Breadcrumb items={[{ label: 'Trips', screen: 'trips' }, { label: trip.title, screen: 'trip-detail', extra: { tripId } }, { label: 'Messages' }]} navigate={navigate} />
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--bt-text-1)', margin: '12px 0 16px' }}>Messages</h1>
