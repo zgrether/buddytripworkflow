@@ -1114,6 +1114,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
 function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }) {
   const [step, setStep]               = useState(1)   // 1 = basics, 2 = destination
   const [tripName, setTripName]       = useState('')
+  const [tripNameTouched, setTripNameTouched] = useState(false)
   const [inviteInput, setInviteInput] = useState('')
   const [invites, setInvites]         = useState([])
   const inviteRef = useRef(null)
@@ -1281,12 +1282,13 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
               {/* Trip Name */}
               <div>
                 <Label required>Trip Name</Label>
-                <input autoFocus value={tripName} onChange={e => setTripName(e.target.value)}
+                <input autoFocus value={tripName} onChange={e => { setTripName(e.target.value); if (tripNameTouched) setTripNameTouched(false) }}
                   onKeyDown={e => e.key === 'Enter' && canAdvance && setStep(2)}
                   placeholder="e.g. BBMI 2027"
-                  style={inputStyle}
+                  style={{ ...inputStyle, borderColor: (tripNameTouched && !tripName.trim()) ? 'var(--bt-danger)' : undefined }}
                   onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
-                  onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+                  onBlur={e => { setTripNameTouched(true); e.target.style.borderColor = (tripNameTouched && !tripName.trim()) ? 'var(--bt-danger)' : 'var(--bt-border-input)' }} />
+                {tripNameTouched && !tripName.trim() && <div style={{ fontSize: 12, color: 'var(--bt-danger)', marginTop: 4 }}>Trip name is required</div>}
               </div>
 
               {/* Co-Planners */}
@@ -1381,7 +1383,7 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24, gap: 12 }}>
               <Btn variant="secondary" onClick={() => navigate('trips')}>Cancel</Btn>
-              <button onClick={() => setStep(2)} disabled={!canAdvance}
+              <button onClick={() => { if (!canAdvance) { setTripNameTouched(true); return } setStep(2) }}
                 style={{ fontSize: 14, fontWeight: 700, padding: '11px 28px', borderRadius: 8, border: 'none', cursor: canAdvance ? 'pointer' : 'not-allowed', background: canAdvance ? 'var(--bt-accent)' : 'var(--bt-border)', color: canAdvance ? '#0d1117' : 'var(--bt-text-3)', boxShadow: canAdvance ? '0 0 20px var(--bt-accent)30' : 'none', transition: 'all .2s' }}>
                 Next →
               </button>
@@ -1979,7 +1981,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   const isLive = getTripStatus(trip) === 'active'
 
   const [tab, setTab] = useState('home')
-  const [hasComp, setHasComp] = useState(!!trip.eventId)
+  const hasComp = !!trip.eventId || !!trip.hasComp
+  const setHasComp = (val) => setTrips(ts => ts.map(t => t._id === tripId ? { ...t, hasComp: val } : t))
   const [destVoteOpen, setDestVoteOpen] = useState(trip.comparisonMode && !trip.lockedDestination)
   const [inlineVotes, setInlineVotes] = useState(IDEA_VOTES.filter(v => v.tripId === trip._id))
   const [inlineMyVote, setInlineMyVote] = useState(() => {
@@ -2294,12 +2297,105 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   }
 
   function ScheduleTab() {
-    const reservations = RESERVATIONS.filter(r => r.tripId === trip._id)
     const RES_ICONS = { accommodation: 'Building2', 'tee-time': 'Flag', restaurant: 'UtensilsCrossed', transportation: 'Car', activity: 'Target', other: 'ClipboardList' }
+    const RES_TYPES = [
+      { value: 'accommodation', label: 'Lodging' },
+      { value: 'tee-time',      label: 'Tee Time' },
+      { value: 'restaurant',    label: 'Restaurant' },
+      { value: 'transportation',label: 'Transportation' },
+      { value: 'activity',      label: 'Activity' },
+      { value: 'other',         label: 'Other' },
+    ]
+    const [resList, setResList] = useState(RESERVATIONS.filter(r => r.tripId === trip._id))
+    const [addBookingOpen, setAddBookingOpen] = useState(false)
     const dateVotes = DATE_VOTES.filter(v => v.tripId === trip._id)
     const getDateScore = dateId => {
       const vs = dateVotes.filter(v => v.dateId === dateId)
       return { yes: vs.filter(v => v.availability === 'yes').length, maybe: vs.filter(v => v.availability === 'maybe').length, no: vs.filter(v => v.availability === 'no').length }
+    }
+
+    function AddBookingForm({ onClose }) {
+      const [type,   setType]   = useState('tee-time')
+      const [title,  setTitle]  = useState('')
+      const [date,   setDate]   = useState('')
+      const [time,   setTime]   = useState('')
+      const [conf,   setConf]   = useState('')
+      const [cost,   setCost]   = useState('')
+      const [notes,  setNotes]  = useState('')
+      const canSubmit = title.trim() && date
+      function handleSubmit() {
+        const newRes = {
+          _id: 'res-' + Date.now(),
+          tripId: trip._id,
+          type,
+          title: title.trim(),
+          date,
+          startTime: time.trim() || null,
+          confirmationNumber: conf.trim() || null,
+          cost: parseFloat(cost) || 0,
+          notes: notes.trim() || null,
+          createdAt: new Date(),
+        }
+        RESERVATIONS.push(newRes)
+        setResList(RESERVATIONS.filter(r => r.tripId === trip._id))
+        showToast(title.trim() + ' added')
+        onClose()
+      }
+      const inp = { fontSize: 14, padding: '9px 12px', borderRadius: 8, outline: 'none', background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', width: '100%', transition: 'border-color .15s' }
+      return (
+        <Card style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-text-1)', marginBottom: 2 }}>Add Booking</div>
+            {/* Type selector */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {RES_TYPES.map(rt => (
+                <button key={rt.value} onClick={() => setType(rt.value)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 10px', borderRadius: 9999, cursor: 'pointer', border: `1px solid ${type === rt.value ? 'var(--bt-accent)' : 'var(--bt-border)'}`, background: type === rt.value ? 'var(--bt-tag-bg)' : 'transparent', color: type === rt.value ? 'var(--bt-accent)' : 'var(--bt-text-2)' }}>
+                  <Ic n={RES_ICONS[rt.value]} size={12} color={type === rt.value ? 'var(--bt-accent)' : 'var(--bt-text-3)'} />
+                  {rt.label}
+                </button>
+              ))}
+            </div>
+            {/* Title + Date row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <input placeholder="Title *" value={title} onChange={e => setTitle(e.target.value)}
+                style={inp}
+                onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                style={{ ...inp, colorScheme: 'dark' }}
+                onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+            </div>
+            {/* Time + Confirmation row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <input placeholder="Start time (optional)" value={time} onChange={e => setTime(e.target.value)}
+                style={inp}
+                onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+              <input placeholder="Confirmation # (optional)" value={conf} onChange={e => setConf(e.target.value)}
+                style={inp}
+                onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+            </div>
+            {/* Cost + Notes row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 8 }}>
+              <input placeholder="Cost $" type="number" min="0" value={cost} onChange={e => setCost(e.target.value)}
+                style={inp}
+                onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+              <input placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)}
+                style={inp}
+                onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+              <Btn variant="secondary" onClick={onClose} style={{ flex: 1 }}>Cancel</Btn>
+              <Btn onClick={handleSubmit} disabled={!canSubmit} style={{ flex: 2, opacity: canSubmit ? 1 : 0.4, cursor: canSubmit ? 'pointer' : 'default' }}>Add Booking</Btn>
+            </div>
+          </div>
+        </Card>
+      )
     }
 
     return (
@@ -2307,15 +2403,16 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SectionLabel>Bookings & Tee Times</SectionLabel>
-            {canEdit && <Btn variant="secondary" onClick={() => showToast('Add booking — coming soon')}>+ Add</Btn>}
+            {canEdit && !addBookingOpen && <Btn variant="secondary" onClick={() => setAddBookingOpen(true)}>+ Add</Btn>}
           </div>
-          {reservations.length === 0
+          {addBookingOpen && <AddBookingForm onClose={() => setAddBookingOpen(false)} />}
+          {resList.length === 0
             ? <Card><div style={{ textAlign: 'center', padding: '32px 0' }}>
                 <Ic n="ClipboardList" size={28} color="var(--bt-text-3)" style={{ marginBottom: 8 }} />
                 <p style={{ fontSize: 14, color: 'var(--bt-text-3)', margin: '0 0 4px' }}>No bookings yet</p>
                 {canEdit && <p style={{ fontSize: 12, color: 'var(--bt-text-3)', margin: 0 }}>Use + Add to log lodging, tee times, and more.</p>}
               </div></Card>
-            : reservations.map(r => (
+            : resList.map(r => (
               <Card key={r._id} style={{ marginBottom: 8, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <Ic n={RES_ICONS[r.type] || 'ClipboardList'} size={18} color="var(--bt-text-3)" style={{ marginTop: 2 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -2344,13 +2441,6 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
       { userId: 'nick',   name: 'Nick Paulson',  hasAccount: false },
     ]
 
-    // ── Email-only account lookup ────────────────────────────────
-    const KNOWN_ACCOUNTS = [
-      { userId: 'mike',  name: 'Mike Donovan',  email: 'mike.donovan@gmail.com' },
-      { userId: 'paul',  name: 'Paul Schaefer', email: 'paul.s@outlook.com'     },
-      { userId: 'lance', name: 'Lance Watts',   email: 'lwatts@gmail.com'       },
-    ]
-
     // ── Local roster state now lifted to TripDetail ──────────────
     const currentIds = new Set(roster.map(a => a.userId))
 
@@ -2364,11 +2454,11 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
       if (!name) { setAddError('Name is required'); return }
       const id = 'ghost-' + Date.now()
       const emailTrimmed = addEmail.trim()
-      // Check if email matches a known account
-      const account = emailTrimmed ? KNOWN_ACCOUNTS.find(a => a.email.toLowerCase() === emailTrimmed.toLowerCase()) : null
+      // Check if email matches a known account in USERS
+      const account = emailTrimmed ? Object.values(USERS).find(u => u.email?.toLowerCase() === emailTrimmed.toLowerCase()) : null
       setRoster(r => [...r, {
         name,
-        userId: account ? account.userId : id,
+        userId: account ? account._id : id,
         status: 'maybe',
         role: 'Member',
         hasAccount: !!account,
@@ -2404,6 +2494,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
     const [expandedId, setExpandedId] = useState(null)
     const [editEmailId, setEditEmailId] = useState(null)
     const [editEmailVal, setEditEmailVal] = useState('')
+    // Confirm state: { type: 'demote'|'remove', userId, name }
+    const [confirmAction, setConfirmAction] = useState(null)
 
     function saveEmail(userId) {
       setRoster(r => r.map(m => m.userId === userId ? { ...m, email: editEmailVal.trim() || m.email } : m))
@@ -2559,23 +2651,44 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
               {/* Role management — owner only, not self */}
               {isOwner && !isMe && (
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: canEdit ? 10 : 0, borderTop: canEdit ? '1px solid var(--bt-border)' : 'none' }}>
-                  {member.role === 'Member' && (
-                    <button onClick={() => promoteToPlanner(member.userId)}
-                      style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 7, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-2)' }}>
-                      ⬆️ Promote to Planner
-                    </button>
+                <div style={{ paddingTop: canEdit ? 10 : 0, borderTop: canEdit ? '1px solid var(--bt-border)' : 'none' }}>
+                  {confirmAction?.userId === member.userId ? (
+                    /* Inline confirmation prompt */
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: 'var(--bt-danger-bg)', border: '1px solid var(--bt-danger-border)' }}>
+                      <span style={{ fontSize: 12, color: 'var(--bt-text-2)', flex: 1 }}>
+                        {confirmAction.type === 'remove' ? `Remove ${confirmAction.name} from this trip?` : `Move ${confirmAction.name} to Member?`}
+                      </span>
+                      <button onClick={() => {
+                        if (confirmAction.type === 'remove') removeMember(confirmAction.userId)
+                        else demoteToMember(confirmAction.userId)
+                        setConfirmAction(null)
+                      }} style={{ fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'var(--bt-danger)', color: '#fff' }}>
+                        Confirm
+                      </button>
+                      <button onClick={() => setConfirmAction(null)} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {member.role === 'Member' && (
+                        <button onClick={() => promoteToPlanner(member.userId)}
+                          style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 7, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-2)' }}>
+                          ⬆️ Promote to Planner
+                        </button>
+                      )}
+                      {member.role === 'Planner' && (
+                        <button onClick={() => setConfirmAction({ type: 'demote', userId: member.userId, name: member.name.split(' ')[0] })}
+                          style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 7, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-2)' }}>
+                          ⬇️ Move to Member
+                        </button>
+                      )}
+                      <button onClick={() => setConfirmAction({ type: 'remove', userId: member.userId, name: member.name.split(' ')[0] })}
+                        style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 7, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-danger)40', color: 'var(--bt-danger)' }}>
+                        🚫 Remove
+                      </button>
+                    </div>
                   )}
-                  {member.role === 'Planner' && (
-                    <button onClick={() => demoteToMember(member.userId)}
-                      style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 7, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-2)' }}>
-                      ⬇️ Move to Member
-                    </button>
-                  )}
-                  <button onClick={() => removeMember(member.userId)}
-                    style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 7, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-danger)40', color: 'var(--bt-danger)' }}>
-                    🚫 Remove
-                  </button>
                 </div>
               )}
             </div>
@@ -3011,7 +3124,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                 <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--bt-text-1)' }}>${exp.amount.toLocaleString()}</div>
                 <div style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>${perPerson}/ea</div>
               </div>
-              {isOwner && <button onClick={() => setEditing(e => !e)} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: editing ? 'var(--bt-tag-bg)' : 'transparent', border: `1px solid ${editing ? 'var(--bt-accent)50' : 'var(--bt-border)'}`, color: editing ? 'var(--bt-accent)' : 'var(--bt-text-3)', cursor: 'pointer' }}>{editing ? 'Done' : 'Edit'}</button>}
+              {isOwner && <button onClick={() => { if (editing) showToast('Split updated'); setEditing(e => !e) }} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, background: editing ? 'var(--bt-tag-bg)' : 'transparent', border: `1px solid ${editing ? 'var(--bt-accent)50' : 'var(--bt-border)'}`, color: editing ? 'var(--bt-accent)' : 'var(--bt-text-3)', cursor: 'pointer' }}>{editing ? 'Done' : 'Edit'}</button>}
             </div>
           </div>
           {editing && (
@@ -4911,26 +5024,30 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
   const teamAPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamA._id)
   const teamBPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamB._id)
 
-  // Supported formats: scramble and stableford are team-point entry;
-  // sabotage and skins get a stub.
-  const isSupported = round.format === 'scramble' || round.format === 'stableford'
+  // Skins: track skins won per team (integer entry instead of 3-way result)
+  const isSkins = round.format === 'skins'
 
-  // Each group is worth 1 point. Result is one of: 1-0 (win), 0.5-0.5 (halve), 0-1 (loss).
+  // For scramble, stableford, sabotage: 3-way result (1-0 / 0.5-0.5 / 0-1 per group)
   const [result, setResult] = useState(
     existingResult ? (existingResult['team-a'] === 1 ? 'team-a' : existingResult['team-a'] === 0.5 ? 'halve' : 'team-b')
       : null
   )
 
+  // For skins: integer skin counts
+  const [skinsA, setSkinsA] = useState(existingResult ? String(existingResult['team-a']) : '')
+  const [skinsB, setSkinsB] = useState(existingResult ? String(existingResult['team-b']) : '')
+  const skinsValid = skinsA !== '' && skinsB !== '' && Number(skinsA) >= 0 && Number(skinsB) >= 0
+
   const handleSubmit = () => {
-    if (!result) return
-    const teamAPts = result === 'team-a' ? 1 : result === 'halve' ? 0.5 : 0
-    const teamBPts = result === 'team-b' ? 1 : result === 'halve' ? 0.5 : 0
-    onSubmit({
-      roundId: round._id,
-      groupId: group._id,
-      teamA: teamAPts,
-      teamB: teamBPts,
-    })
+    if (isSkins) {
+      if (!skinsValid) return
+      onSubmit({ roundId: round._id, groupId: group._id, teamA: Number(skinsA), teamB: Number(skinsB) })
+    } else {
+      if (!result) return
+      const teamAPts = result === 'team-a' ? 1 : result === 'halve' ? 0.5 : 0
+      const teamBPts = result === 'team-b' ? 1 : result === 'halve' ? 0.5 : 0
+      onSubmit({ roundId: round._id, groupId: group._id, teamA: teamAPts, teamB: teamBPts })
+    }
   }
 
   return (
@@ -4967,22 +5084,46 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
           ))}
         </div>
 
-        {!isSupported ? (
-          /* Stub for unsupported formats */
-          <div style={{ textAlign: 'center', padding: '24px 16px' }}>
-            <Ic n="AlertCircle" size={32} color="var(--bt-text-3)" />
-            <div style={{ fontSize: 14, color: 'var(--bt-text-2)', marginTop: 8 }}>
-              {round.title} scoring is not yet implemented
+        {isSkins ? (
+          /* Skins: enter skin counts per team */
+          <>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-2)', marginBottom: 12 }}>Skins won by each team</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {[{ team: teamA, val: skinsA, set: setSkinsA }, { team: teamB, val: skinsB, set: setSkinsB }].map(({ team, val, set }) => (
+                  <div key={team._id} style={{ borderRadius: 10, padding: '14px', background: team.colorDim, border: `1px solid ${team.color}30`, textAlign: 'center' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: team.color, marginBottom: 8 }}>{team.shortName}</div>
+                    <input type="number" min="0" value={val} onChange={e => set(e.target.value)}
+                      placeholder="0"
+                      style={{ width: 72, fontSize: 28, fontWeight: 900, textAlign: 'center', padding: '8px', borderRadius: 8, background: 'var(--bt-base)', border: `2px solid ${team.color}60`, color: team.color, outline: 'none' }} />
+                    <div style={{ fontSize: 11, color: 'var(--bt-text-3)', marginTop: 4 }}>skins</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--bt-text-3)', marginTop: 10, textAlign: 'center' }}>
+                Total skins are split across all holes in this round — each hole's lowest net score wins a skin.
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--bt-text-3)', marginTop: 4 }}>
-              {round.format === 'sabotage' ? 'Sabotage elimination tracking coming soon' : 'Skins payouts coming soon'}
-            </div>
-          </div>
+            <button onClick={handleSubmit} disabled={!skinsValid}
+              style={{ width: '100%', fontSize: 14, fontWeight: 700, padding: '14px', borderRadius: 10, border: 'none', cursor: skinsValid ? 'pointer' : 'not-allowed',
+                background: skinsValid ? 'var(--bt-accent)' : 'var(--bt-border)', color: skinsValid ? '#0d1117' : 'var(--bt-text-3)', transition: 'all .15s',
+                boxShadow: skinsValid ? '0 0 20px var(--bt-accent)30' : 'none' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <Ic n="Check" size={16} color={skinsValid ? '#0d1117' : 'var(--bt-text-3)'} />
+                {existingResult ? 'Update Score' : 'Submit Score'}
+              </span>
+            </button>
+          </>
         ) : (
           <>
-            {/* Result selector */}
+            {/* Result selector — used for scramble, stableford, sabotage */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-2)', marginBottom: 8 }}>Who won this group?</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-2)', marginBottom: 4 }}>Who won this group?</div>
+              {round.format === 'sabotage' && (
+                <div style={{ fontSize: 11, color: 'var(--bt-text-3)', marginBottom: 10 }}>
+                  Sabotage: record the net group result after any sabotage plays were used.
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                 {[
                   { id: 'team-a', label: teamA.shortName + ' wins', color: teamA.color, icon: '🏆' },
@@ -5037,7 +5178,8 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
 }
 
 // ── SCREEN: LiveLeaderboard (compact) ────────────────────────────
-function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, onMarkAllRead }) {
+function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, onMarkAllRead, viewerRole = 'planner' }) {
+  const canScore = viewerRole === 'owner' || viewerRole === 'planner'
   const { teams, rounds, sides } = BBMI_EVENT
   const [tab, setTab] = useState('overview')
   const [scoreNonce, setScoreNonce] = useState(0)
@@ -5171,7 +5313,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                 const isMyGroup = group._id === 'g2'
                 const groupResult = GROUP_RESULTS[activeRound._id]?.[group._id]
                 return (
-                  <Card key={group._id} onClick={() => setScoreEntryGroup(group)} style={{ marginBottom: 10, cursor: 'pointer', background: isMyGroup ? '#0f1f14' : 'var(--bt-card)', border: `1px solid ${isMyGroup ? 'var(--bt-accent)50' : 'var(--bt-border)'}`, transition: 'border-color .15s' }}>
+                  <Card key={group._id} onClick={() => canScore && setScoreEntryGroup(group)} style={{ marginBottom: 10, cursor: canScore ? 'pointer' : 'default', background: isMyGroup ? '#0f1f14' : 'var(--bt-card)', border: `1px solid ${isMyGroup ? 'var(--bt-accent)50' : 'var(--bt-border)'}`, transition: 'border-color .15s' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
@@ -5194,9 +5336,13 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                               {groupResult['team-a']}–{groupResult['team-b']}
                             </span>
                           </div>
-                        ) : (
+                        ) : canScore ? (
                           <div style={{ fontSize: 12, color: 'var(--bt-accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                             <Ic n="Edit2" size={12} color="var(--bt-accent)" /> Enter score
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: 'var(--bt-text-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Ic n="Lock" size={12} color="var(--bt-text-3)" /> Pending
                           </div>
                         )}
                       </div>
@@ -5389,7 +5535,7 @@ function App() {
       {screen === 'comp-setup'       && <CompetitionSetup navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} {...navProps} />}
       {screen === 'idea-comparison'  && <IdeaComparison navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} setTrips={setTrips} notify={notifyAndRefresh} {...navProps} />}
       {screen === 'trip-messages'    && <TripMessages navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} trips={trips} notify={notifyAndRefresh} {...navProps} />}
-      {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} tripId={tripId} notify={notifyAndRefresh} {...navProps} />}
+      {screen === 'live-leaderboard' && <LiveLeaderboard navigate={navigate} showToast={showToast} tripId={tripId} viewerRole={viewerRole} notify={notifyAndRefresh} {...navProps} />}
 
       {/* Dev role switcher */}
       <div style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
