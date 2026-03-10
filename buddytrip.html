@@ -928,10 +928,14 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
   const past     = trips.filter(t => getTripStatus(t) === 'completed')
   const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
 
+  const roleUserIds = { owner: 'brad', planner: 'zach', member: 'rob' }
+
   function TripCard({ trip }) {
     const isLive  = getTripStatus(trip) === 'active'
     const isReady = getTripStatus(trip) === 'ready'
     const accentColor = isLive ? 'var(--bt-accent)' : isReady ? '#a78bfa' : null
+    const viewerUserId = roleUserIds[viewerRole] || CURRENT_USER._id
+    const myRole = trip.attendees.find(a => a.userId === viewerUserId)?.role || 'Member'
     return (
       <div onClick={() => navigate('trip-detail', { tripId: trip._id })}
         style={{ position: 'relative', borderRadius: 12, cursor: 'pointer', overflow: 'hidden', background: 'var(--bt-card)',
@@ -959,7 +963,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <RoleBadge role="Planner" />
+            <RoleBadge role={myRole} />
             <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}><Ic n="Users" size={13} color="var(--bt-text-3)" style={{marginRight:4}} />{trip.attendees.length}</span>
             {trip.startDate && <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}><><Ic n="Calendar" size={12} color="var(--bt-text-3)" style={{marginRight:3}} />{fmtDateRange(trip.startDate, trip.endDate)}</></span>}
             {trip.comparisonMode && <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--bt-accent)' }}>{trip.ideas.length} destinations</span>}
@@ -1152,6 +1156,14 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
       activities: [], golfCourses: [],
       attendees: [
         { name: CURRENT_USER.name, userId: CURRENT_USER._id, status: 'in', role: 'Owner', joinedAt: now },
+        ...invites.map(inv => {
+          const knownUser = Object.values(USERS).find(u => u.name.toLowerCase() === inv.toLowerCase() || u.nickname.toLowerCase() === inv.toLowerCase())
+          return {
+            name: knownUser?.name || inv,
+            userId: knownUser?._id || ('ghost-' + inv.toLowerCase().replace(/\s+/g, '-')),
+            status: 'invited', role: 'Planner', joinedAt: now,
+          }
+        }),
       ],
       comparisonMode,
       ideas: comparisonMode
@@ -5097,7 +5109,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                   <span style={{ color: 'var(--bt-text-3)', fontSize: 12, fontWeight: 700 }}>TOTAL</span>
                   <span style={{ color: teamA.color, fontWeight: 900, fontSize: 22, textAlign: 'center' }}>{ptsA}</span>
                   <span style={{ color: teamB.color, fontWeight: 900, fontSize: 22, textAlign: 'center' }}>{ptsB}</span>
-                  <span style={{ color: 'var(--bt-text-3)', fontSize: 12, textAlign: 'center' }}>{totalPossible}</span>
+                  <span style={{ color: 'var(--bt-text-3)', fontSize: 12, textAlign: 'center' }}>{ptsA + ptsB + remaining}</span>
                 </div>
               </Card>
 
@@ -5304,7 +5316,7 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, 
 const ROLE_USERS = {
   owner:   { name: 'Brad',    desc: 'Full control' },
   planner: { name: 'Grether', desc: 'Can edit' },
-  member:  { name: 'Buddy',   desc: 'Read-only' },
+  member:  { name: 'Rob',     desc: 'Read-only' },
 }
 
 function App() {
