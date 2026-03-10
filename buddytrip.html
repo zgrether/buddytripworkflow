@@ -16,9 +16,25 @@
   --bt-blue-bg:#161e35;--bt-text-1:#e6edf3;--bt-text-2:#8b949e;--bt-text-3:#6e7681;
   --bt-danger:#f85149;--bt-danger-bg:#2d1517;--bt-danger-border:#6e2020;
   --bt-live:#00d4aa;--bt-planning:#7c93d4;--bt-owner:#f0a84a;--bt-owner-bg:#2a1f0d;
+  /* Purple (ready status, team chat) and blue (account indicator) */
+  --bt-purple:#a78bfa;--bt-purple-bg:#1e1333;--bt-blue:#3b82f6;
+  --bt-shadow:rgba(0,0,0,.5);
+}
+/* ── Light mode ─────────────────────────────────────────────────── */
+[data-theme="light"]{
+  --bt-base:#f6f8fa;--bt-card:#ffffff;--bt-card-hover:#f0f3f6;
+  --bt-input:#ffffff;--bt-border:#d0d7de;--bt-border-input:#9ea7b0;
+  /* Teal accent darkened to #007d67 for AA text contrast on white (4.6:1) */
+  --bt-accent:#007d67;--bt-accent-dim:#005a4a;--bt-tag-bg:#d4f5ef;
+  --bt-blue-bg:#eef2ff;--bt-text-1:#1a1f2e;--bt-text-2:#444d56;--bt-text-3:#6a737d;
+  --bt-danger:#d1242f;--bt-danger-bg:#fff0f0;--bt-danger-border:#f5c0c0;
+  --bt-live:#007d67;--bt-planning:#4a65b5;--bt-owner:#a05e08;--bt-owner-bg:#fff3e0;
+  /* Purple darkened to #6d3ec9 (6.6:1 on white); blue to #1a58bd (6.7:1 on white) */
+  --bt-purple:#6d3ec9;--bt-purple-bg:#f3eeff;--bt-blue:#1a58bd;
+  --bt-shadow:rgba(0,0,0,.15);
 }
 html{font-size:16px}
-body{background:var(--bt-base);color:var(--bt-text-1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:var(--bt-base);color:var(--bt-text-1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:background-color .2s,color .2s}
 input,button,select,textarea{font-family:inherit}
 .no-scrollbar::-webkit-scrollbar{display:none}
 .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
@@ -163,6 +179,7 @@ const ICONS = {
   Loader2:        <><path d="M21 12a9 9 0 1 1-6.219-8.56"/></>,
   Cloud:          <><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></>,
   Sun:            <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></>,
+  Moon:           <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></>,
   DollarSign:     <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>,
   BarChart2:      <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
   Ghost:          <><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></>,
@@ -706,7 +723,7 @@ function Avatar({ name, size = 'md' }) {
 function StatusBadge({ status }) {
   const cfg = {
     active:    { label: 'LIVE',     color: 'var(--bt-accent)',   bg: 'var(--bt-tag-bg)',  icon: '▶' },
-    ready:     { label: 'Ready',    color: '#a78bfa',            bg: '#1e1333',           icon: '✓' },
+    ready:     { label: 'Ready',    color: 'var(--bt-purple)',   bg: 'var(--bt-purple-bg)', icon: '✓' },
     planning:  { label: 'Planning', color: 'var(--bt-planning)', bg: 'var(--bt-blue-bg)', icon: '⊞' },
     completed: { label: 'Done',     color: 'var(--bt-text-3)',   bg: 'var(--bt-card)',    icon: '✓' },
   }
@@ -799,7 +816,7 @@ function TabBar({ tabs, active, onChange }) {
   )
 }
 
-function TopNav({ navigate, notifications, onMarkAllRead }) {
+function TopNav({ navigate, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const { useState, useRef, useEffect } = React
   const [open, setOpen] = useState(false)
   const panelRef = useRef(null)
@@ -846,6 +863,16 @@ function TopNav({ navigate, notifications, onMarkAllRead }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button onClick={() => navigate('trips')} style={{ background: 'none', border: '1px solid var(--bt-border)', borderRadius: 6, cursor: 'pointer', color: 'var(--bt-text-1)', fontSize: 13, padding: '6px 12px' }}><Ic n="LayoutGrid" size={14} color="currentColor" style={{marginRight:5}} /> Dashboard</button>
 
+        {/* ── Theme toggle ── */}
+        {onToggleTheme && (
+          <button onClick={onToggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{ background: 'none', border: '1px solid var(--bt-border)', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center', color: 'var(--bt-text-2)', transition: 'border-color .15s, color .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bt-accent)'; e.currentTarget.style.color = 'var(--bt-accent)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bt-border)'; e.currentTarget.style.color = 'var(--bt-text-2)' }}>
+            <Ic n={theme === 'dark' ? 'Sun' : 'Moon'} size={15} color="currentColor" />
+          </button>
+        )}
+
         {/* ── Bell icon with unread badge ── */}
         <div ref={panelRef} style={{ position: 'relative' }}>
           <button onClick={togglePanel} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}>
@@ -859,7 +886,7 @@ function TopNav({ navigate, notifications, onMarkAllRead }) {
 
           {/* ── Notification dropdown panel ── */}
           {open && (
-            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 340, maxHeight: 420, overflowY: 'auto', borderRadius: 12, background: 'var(--bt-card)', border: '1px solid var(--bt-border)', boxShadow: '0 8px 32px rgba(0,0,0,.5)', zIndex: 100 }}>
+            <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 340, maxHeight: 420, overflowY: 'auto', borderRadius: 12, background: 'var(--bt-card)', border: '1px solid var(--bt-border)', boxShadow: '0 8px 32px var(--bt-shadow)', zIndex: 100 }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--bt-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--bt-text-1)' }}>Notifications</span>
                 {recentNotifs.length > 0 && (
@@ -965,14 +992,14 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
   function TripCard({ trip }) {
     const isLive  = getTripStatus(trip) === 'active'
     const isReady = getTripStatus(trip) === 'ready'
-    const accentColor = isLive ? 'var(--bt-accent)' : isReady ? '#a78bfa' : null
+    const accentColor = isLive ? 'var(--bt-accent)' : isReady ? 'var(--bt-purple)' : null
     const viewerUserId = roleUserIds[viewerRole] || CURRENT_USER._id
     const myRole = trip.attendees.find(a => a.userId === viewerUserId)?.role || 'Member'
     return (
       <div onClick={() => navigate('trip-detail', { tripId: trip._id })}
         style={{ position: 'relative', borderRadius: 12, cursor: 'pointer', overflow: 'hidden', background: 'var(--bt-card)',
           border: `1px solid ${accentColor || 'var(--bt-border)'}`,
-          boxShadow: isReady ? '0 0 0 1px #a78bfa18' : 'none',
+          boxShadow: isReady ? '0 0 0 1px var(--bt-purple)18' : 'none',
           transition: 'border-color .15s' }}
         onMouseEnter={e => e.currentTarget.style.borderColor = accentColor || 'var(--bt-accent)'}
         onMouseLeave={e => e.currentTarget.style.borderColor = accentColor || 'var(--bt-border)'}>
@@ -1004,9 +1031,9 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
           {isReady && trip.startDate && (() => {
             const days = Math.ceil((new Date(trip.startDate) - new Date()) / 86400000)
             return days > 0 ? (
-              <div style={{ marginTop: 10, borderRadius: 8, padding: '8px 12px', background: '#1e1333', border: '1px solid #a78bfa25', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12, color: '#c4b5fd' }}>All set — departing in</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: '#a78bfa' }}>{days}d</span>
+              <div style={{ marginTop: 10, borderRadius: 8, padding: '8px 12px', background: 'var(--bt-purple-bg)', border: '1px solid var(--bt-purple)25', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, color: 'var(--bt-purple)' }}>All set — departing in</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--bt-purple)' }}>{days}d</span>
               </div>
             ) : null
           })()}
@@ -1061,7 +1088,7 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead }
 
         {ready.length > 0 && (
           <section style={{ marginBottom: 32 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12, color: '#a78bfa' }}>Ready to Go</p>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12, color: 'var(--bt-purple)' }}>Ready to Go</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {ready.map(t => <TripCard key={t._id} trip={t} />)}
             </div>
@@ -2569,7 +2596,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                   {member.name}{isMe ? ' (you)' : ''}
                 </span>
                 {/* BuddyTrip account dot */}
-                {!member.isGhost && <span title="BuddyTrip account" style={{ fontSize: 8, color: '#3b82f6' }}>●</span>}
+                {!member.isGhost && <span title="BuddyTrip account" style={{ fontSize: 8, color: 'var(--bt-blue)' }}>●</span>}
                 <RoleBadge role={member.role} />
                 {member.inviteSent && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)30' }}>Invited</span>}
               </div>
@@ -2702,7 +2729,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
         {/* BuddyTrip account legend */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 7, background: 'var(--bt-card)', border: '1px solid var(--bt-border)', alignSelf: 'flex-start' }}>
-          <span style={{ fontSize: 11, color: '#3b82f6', fontWeight: 900 }}>●</span>
+          <span style={{ fontSize: 11, color: 'var(--bt-blue)', fontWeight: 900 }}>●</span>
           <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>BuddyTrip account</span>
           <span style={{ fontSize: 11, color: 'var(--bt-text-3)', margin: '0 4px' }}>·</span>
           <Ic n="Ghost" size={14} color="var(--bt-text-3)" />
@@ -2754,7 +2781,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                       onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bt-border)'; e.currentTarget.style.color = 'var(--bt-text-2)' }}>
                       <Avatar name={p.name} size="xs" />
                       {p.name.split(' ')[0]}
-                      {p.hasAccount && <span style={{ fontSize: 10, color: '#3b82f6' }}>●</span>}
+                      {p.hasAccount && <span style={{ fontSize: 10, color: 'var(--bt-blue)' }}>●</span>}
                     </button>
                   ))}
                 </div>
@@ -5467,8 +5494,8 @@ function TripMessages({ navigate, showToast, tripId, viewerRole, trips, notify, 
         {hasTeams && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Ic n="Lock" size={14} color="#a78bfa" />
-              <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: '#a78bfa' }}>
+              <Ic n="Lock" size={14} color="var(--bt-purple)" />
+              <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-purple)' }}>
                 {myTeam?.name || 'Team Chat'}
               </span>
               <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>· Teammates only</span>
@@ -5513,6 +5540,17 @@ function App() {
     setNotifNonce(n => n + 1)
   }
 
+  // ── Theme — persisted to localStorage, defaults to prefers-color-scheme ──
+  const [theme, setTheme] = useState(() => {
+    try { const saved = localStorage.getItem('bt-theme'); if (saved) return saved } catch(_) {}
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+  })
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    try { localStorage.setItem('bt-theme', theme) } catch(_) {}
+  }, [theme])
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
+
   const navigate = (s, extra = {}) => {
     setScreen(s)
     setTripId(extra.tripId || null)
@@ -5525,7 +5563,7 @@ function App() {
   }
 
   // Common props passed to every screen that renders TopNav
-  const navProps = { notifications: NOTIFICATION_EVENTS, onMarkAllRead: markAllRead }
+  const navProps = { notifications: NOTIFICATION_EVENTS, onMarkAllRead: markAllRead, theme, onToggleTheme: toggleTheme }
 
   return (
     <>
@@ -5539,11 +5577,11 @@ function App() {
 
       {/* Dev role switcher */}
       <div style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 200, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ background: '#161b22', border: '1px solid #21262d', borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 16px #000' }}>
+        <div style={{ background: 'var(--bt-card)', border: '1px solid var(--bt-border)', borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 16px var(--bt-shadow)' }}>
           <div style={{ padding: '4px 10px', fontSize: 9, fontWeight: 700, color: 'var(--bt-text-3)', textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: '1px solid var(--bt-border)' }}>Viewing as</div>
           {Object.entries(ROLE_USERS).map(([role, info]) => (
             <button key={role} onClick={() => setViewerRole(role)}
-              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', cursor: 'pointer', fontSize: 12, background: viewerRole === role ? '#0d2a22' : 'transparent', color: viewerRole === role ? 'var(--bt-accent)' : 'var(--bt-text-2)', fontWeight: viewerRole === role ? 700 : 400, borderLeft: `2px solid ${viewerRole === role ? 'var(--bt-accent)' : 'transparent'}` }}>
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', cursor: 'pointer', fontSize: 12, background: viewerRole === role ? 'var(--bt-tag-bg)' : 'transparent', color: viewerRole === role ? 'var(--bt-accent)' : 'var(--bt-text-2)', fontWeight: viewerRole === role ? 700 : 400, borderLeft: `2px solid ${viewerRole === role ? 'var(--bt-accent)' : 'transparent'}` }}>
               {info.name} <span style={{ opacity: .6, fontSize: 10 }}>({info.desc})</span>
             </button>
           ))}

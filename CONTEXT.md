@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Post-5.4 bug/UX/hidden-requirements pass complete
+2026-03-10 — Task 7.1 light/dark theme toggle complete
 
 ## Current State
 - buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
@@ -331,6 +331,18 @@ Hidden requirements implemented (v1):
   - Skins: dedicated numeric input per team for total skins won this round; team-colored input boxes; `skinsA`/`skinsB` state; validation requires non-negative integers
 - H6: Score entry now role-gated — `viewerRole` prop added to LiveLeaderboard signature and passed from App; `const canScore = viewerRole === 'owner' || viewerRole === 'planner'`; group cards non-clickable for members (cursor:default); "Enter score" label replaced with "🔒 Pending" for non-scorers
 
+## Completed Tasks (continued)
+- [x] 7.1 — Light/dark theme toggle: added Moon icon to ICONS; `[data-theme="light"]` CSS block with full accessible WCAG-AA palette; `--bt-purple`, `--bt-purple-bg`, `--bt-blue` tokens added to both modes; body transition (.2s); App-level theme state with localStorage persistence and `prefers-color-scheme` OS default; `toggleTheme` passed to TopNav via navProps; sun/moon toggle button in TopNav with hover effects; fixed hardcoded colors throughout: notification dropdown shadow, dev role switcher, StatusBadge ready state, TripCard ready/countdown, TripDetail "Ready to Go" label, TripMessages team chat header, all BuddyTrip account indicator dots
+
+## Notes from 7.1
+- Light mode palette designed for WCAG 2.1 AA compliance: `#007d67` (teal, 4.6:1 on white), `#6d3ec9` (purple, 6.6:1), `#1a58bd` (blue, 6.7:1), `#a05e08` (owner amber, 4.7:1), `#d1242f` (danger, 5.1:1)
+- Dark mode vibrant `#00d4aa` teal NOT changed — it's decorative on dark backgrounds and passes AA there
+- `prefers-color-scheme: light` sets light mode as default on light OS; dark OS defaults to dark mode
+- localStorage key: `bt-theme` — persists across sessions
+- Pie chart `SEGMENT_COLORS` in IdeaComparison left hardcoded intentionally (decorative visualization)
+- `teamColorDim` values on team JS objects (`#0d2a22`, `#2a1200`) intentionally not tokenized — these are team identity colors
+- Field Mode (Option B — bumped font sizes + larger tap targets for outdoor scoring) logged for future work after user testing of light mode outdoors
+
 ## In Progress
 - (none)
 
@@ -342,8 +354,17 @@ Hidden requirements implemented (v1):
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
-All PLAYBOOK tasks and pre-migration UX pass complete. Prototype is ready for merge review.
-Next: resolve 3 blocking product decisions in MIGRATION_PLAN.md §Pre-Migration Product Decisions, then start Phase 0 (infra setup).
+All PLAYBOOK tasks, pre-migration UX pass, and theme toggle complete.
+Next priority items (Tier 1 functional gaps):
+- P2: Dashboard membership filter — Rob sees trips he's not on (filter by trip_members.user_id)
+- P3: Self-service RSVP — Members can't update own attendance status
+- P4: Members can comment on ideas — commenting requires canEdit; move comment UI out of IdeaComparison
+- P5: Quick Info Tiles gate — change isOwner → canEdit so Planners can manage
+- P6: Product decision #11 — co-planner validation (require account vs ghost user)
+- P7: Product decision #13 — series ownership (own column vs most-recent-trip owner)
+- P8: Product decision #16 — competition without trip (trip_id nullable on events)
+Tier 2 UX polish: Dates TBD badge, tab scrollbar, messageboard mobile fit
+Field Mode: logged as future improvement after user testing of light mode outdoors
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.
