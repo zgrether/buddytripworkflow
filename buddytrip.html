@@ -267,10 +267,10 @@ const BBMI_EVENT = {
     { _id: 'g4', name: 'Group 4', teeTime: '8:36 AM', playerIds: ['ben','llama','bj','taj'] },
   ],
   rounds: [
-    { _id: 'r1', day: 1, title: 'Scramble',   course: 'Bandon Dunes',  format: 'scramble',   status: 'complete', pointsAvailable: 4 },
-    { _id: 'r2', day: 2, title: 'Stableford', course: 'Bandon Trails', format: 'stableford', status: 'complete', pointsAvailable: 4 },
-    { _id: 'r3', day: 3, title: 'Sabotage',   course: 'Pacific Dunes', format: 'sabotage',   status: 'active',   pointsAvailable: 4 },
-    { _id: 'r4', day: 4, title: 'Skins',      course: 'Old Macdonald', format: 'skins',      status: 'upcoming', pointsAvailable: 4 },
+    { _id: 'r1', day: 1, title: 'Scramble',   course: 'Bandon Dunes',  format: 'scramble',   eventType: 'team',     scoringMode: 'stroke',   status: 'complete', pointsAvailable: 4 },
+    { _id: 'r2', day: 2, title: 'Stableford', course: 'Bandon Trails', format: 'stableford', eventType: 'personal', scoringMode: 'stroke',   status: 'complete', pointsAvailable: 4 },
+    { _id: 'r3', day: 3, title: 'Sabotage',   course: 'Pacific Dunes', format: 'sabotage',   eventType: 'personal', scoringMode: 'stroke',   status: 'active',   pointsAvailable: 4 },
+    { _id: 'r4', day: 4, title: 'Skins',      course: 'Old Macdonald', format: 'match play', eventType: 'team',     scoringMode: 'match',    status: 'upcoming', pointsAvailable: 4 },
   ],
   sides: [
     { _id: 's1', name: 'Pool',           icon: '🎱', pointsAvailable: 5, status: 'complete', result: { 'team-a': 2, 'team-b': 3 } },
@@ -2105,7 +2105,9 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
 function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips, setTrips, notify, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const trip = trips.find(t => t._id === tripId) || trips[0]
   const isOwner = viewerRole === 'owner'
-  const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
+  const isPast = getTripStatus(trip) === 'completed'
+  const canEdit = !isPast && (viewerRole === 'owner' || viewerRole === 'planner')
+  const canEditSocial = viewerRole === 'owner' || viewerRole === 'planner'
   const isLive = getTripStatus(trip) === 'active'
 
   const [tab, setTab] = useState('home')
@@ -2187,6 +2189,22 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+        {/* Past trip summary banner */}
+        {isPast && (
+          <div style={{ borderRadius: 12, padding: '14px 16px', background: 'var(--bt-card)', border: '1px solid var(--bt-border)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bt-tag-bg)', border: '1px solid var(--bt-accent)30', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Ic n="Archive" size={18} color="var(--bt-accent)" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-text-1)', marginBottom: 2 }}>Trip Archive</div>
+              <div style={{ fontSize: 12, color: 'var(--bt-text-3)', lineHeight: 1.5 }}>
+                This trip has ended. You can still view everything and add messages or expenses.
+                {canEditSocial && <span style={{ color: 'var(--bt-accent)' }}> Scheduling and team edits are locked.</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Competition explainer modal overlay */}
         {showCompExplainer && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000a', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
@@ -2230,9 +2248,9 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
             <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--bt-accent)20', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {isLive && <LiveDot />}
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--bt-accent)' }}>{isLive ? 'Competition Live · Day 3 of 4' : 'Competition Active'}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--bt-accent)' }}>{isPast ? 'Final Results' : isLive ? 'Competition Live · Day 3 of 4' : 'Competition Active'}</span>
               </div>
-              <span style={{ fontSize: 12, color: 'var(--bt-accent)' }}>Leaderboard →</span>
+              <span style={{ fontSize: 12, color: 'var(--bt-accent)' }}>{isPast ? 'View Archive →' : 'Leaderboard →'}</span>
             </div>
             <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
               {BBMI_EVENT.teams.map((team, i) => {
@@ -2440,9 +2458,10 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   }
 
   function ScheduleTab() {
-    const RES_ICONS = { accommodation: 'Building2', 'tee-time': 'Flag', restaurant: 'UtensilsCrossed', transportation: 'Car', activity: 'Target', other: 'ClipboardList' }
+    const RES_ICONS = { accommodation: 'Building2', 'tee-time': 'Flag', 'golf-round': 'Flag', restaurant: 'UtensilsCrossed', transportation: 'Car', activity: 'Target', other: 'ClipboardList' }
     const RES_TYPES = [
       { value: 'accommodation', label: 'Lodging' },
+      { value: 'golf-round',    label: 'Golf Round' },
       { value: 'tee-time',      label: 'Tee Time' },
       { value: 'restaurant',    label: 'Restaurant' },
       { value: 'transportation',label: 'Transportation' },
@@ -2458,20 +2477,25 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
     }
 
     function AddBookingForm({ onClose }) {
-      const [type,   setType]   = useState('tee-time')
-      const [title,  setTitle]  = useState('')
-      const [date,   setDate]   = useState('')
-      const [time,   setTime]   = useState('')
-      const [conf,   setConf]   = useState('')
-      const [cost,   setCost]   = useState('')
-      const [notes,  setNotes]  = useState('')
-      const canSubmit = title.trim() && date
+      const [type,       setType]       = useState('golf-round')
+      const [title,      setTitle]      = useState('')
+      const [courseName, setCourseName] = useState('')
+      const [teeBox,     setTeeBox]     = useState('blue')
+      const [date,       setDate]       = useState('')
+      const [time,       setTime]       = useState('')
+      const [conf,       setConf]       = useState('')
+      const [cost,       setCost]       = useState('')
+      const [notes,      setNotes]      = useState('')
+      const isGolfType = type === 'golf-round' || type === 'tee-time'
+      const canSubmit = (isGolfType ? courseName.trim() : title.trim()) && date
       function handleSubmit() {
         const newRes = {
           _id: 'res-' + Date.now(),
           tripId: trip._id,
           type,
-          title: title.trim(),
+          title: isGolfType ? (courseName.trim() || title.trim()) : title.trim(),
+          courseName: isGolfType ? courseName.trim() : null,
+          teeBox: isGolfType ? teeBox : null,
           date,
           startTime: time.trim() || null,
           confirmationNumber: conf.trim() || null,
@@ -2499,14 +2523,29 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                 </button>
               ))}
             </div>
-            {/* Title + Date row */}
+            {/* Golf round: course + tee box row */}
+            {isGolfType && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+                <input placeholder="Course name *" value={courseName} onChange={e => setCourseName(e.target.value)}
+                  style={inp}
+                  onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+                <select value={teeBox} onChange={e => setTeeBox(e.target.value)}
+                  style={{ ...inp, width: 90 }}>
+                  {['black', 'blue', 'white', 'gold', 'red'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)} tees</option>)}
+                </select>
+              </div>
+            )}
+            {/* Title (non-golf) + Date row */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <input placeholder="Title *" value={title} onChange={e => setTitle(e.target.value)}
-                style={inp}
-                onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
-                onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+              {!isGolfType && (
+                <input placeholder="Title *" value={title} onChange={e => setTitle(e.target.value)}
+                  style={inp}
+                  onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+              )}
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                style={{ ...inp, colorScheme: 'dark' }}
+                style={{ ...inp, gridColumn: isGolfType ? '1 / -1' : 'auto', colorScheme: 'dark' }}
                 onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
                 onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
             </div>
@@ -2555,18 +2594,45 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                 <p style={{ fontSize: 14, color: 'var(--bt-text-3)', margin: '0 0 4px' }}>No bookings yet</p>
                 {canEdit && <p style={{ fontSize: 12, color: 'var(--bt-text-3)', margin: 0 }}>Use + Add to log lodging, tee times, and more.</p>}
               </div></Card>
-            : resList.map(r => (
-              <Card key={r._id} style={{ marginBottom: 8, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <Ic n={RES_ICONS[r.type] || 'ClipboardList'} size={18} color="var(--bt-text-3)" style={{ marginTop: 2 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, color: 'var(--bt-text-1)' }}>{r.title}</div>
-                  <div style={{ fontSize: 12, marginBottom: 6, color: 'var(--bt-text-3)' }}>{fmtDate(r.date)}{r.startTime ? ` · ${r.startTime}` : ''}</div>
-                  {r.confirmationNumber && <span style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 4, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)' }}>#{r.confirmationNumber}</span>}
-                  {r.notes ? <div style={{ fontSize: 12, marginTop: 6, color: 'var(--bt-text-3)' }}>{r.notes}</div> : null}
-                </div>
-                {r.cost > 0 && <div style={{ fontWeight: 700, fontSize: 14, flexShrink: 0, color: 'var(--bt-text-1)' }}>${r.cost.toLocaleString()}</div>}
-              </Card>
-            ))
+            : resList.map(r => {
+              const isGolfCard = r.type === 'golf-round' || r.type === 'tee-time'
+              return (
+                <Card key={r._id} style={{ marginBottom: 8, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <Ic n={RES_ICONS[r.type] || 'ClipboardList'} size={18} color={isGolfCard ? 'var(--bt-accent)' : 'var(--bt-text-3)'} style={{ marginTop: 2 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, color: 'var(--bt-text-1)' }}>{r.title}</div>
+                    <div style={{ fontSize: 12, marginBottom: 4, color: 'var(--bt-text-3)' }}>
+                      {fmtDate(r.date)}{r.startTime ? ` · ${r.startTime}` : ''}
+                      {r.teeBox ? <span style={{ marginLeft: 6, padding: '1px 6px', borderRadius: 4, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', fontSize: 10, fontWeight: 700 }}>{r.teeBox.charAt(0).toUpperCase() + r.teeBox.slice(1)} tees</span> : null}
+                    </div>
+                    {r.confirmationNumber && <span style={{ fontSize: 11, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 4, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)' }}>#{r.confirmationNumber}</span>}
+                    {r.notes ? <div style={{ fontSize: 12, marginTop: 4, color: 'var(--bt-text-3)' }}>{r.notes}</div> : null}
+                    {/* Add to Comp button */}
+                    {isGolfCard && hasComp && canEdit && (
+                      <div style={{ marginTop: 6 }}>
+                        {r.linkedCompRound ? (
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 9999, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)40' }}>
+                            ✓ In Comp · {r.linkedCompRound}
+                          </span>
+                        ) : (
+                          <button onClick={() => {
+                            const roundLabel = prompt('Assign to which comp round? (e.g. Day 1 Scramble)')
+                            if (!roundLabel) return
+                            RESERVATIONS.forEach(res => { if (res._id === r._id) res.linkedCompRound = roundLabel })
+                            setResList(RESERVATIONS.filter(res => res.tripId === trip._id))
+                            showToast('Linked to competition')
+                          }}
+                            style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 9999, background: 'transparent', border: '1px solid var(--bt-accent)60', color: 'var(--bt-accent)', cursor: 'pointer' }}>
+                            + Add to Comp
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {r.cost > 0 && <div style={{ fontWeight: 700, fontSize: 14, flexShrink: 0, color: 'var(--bt-text-1)' }}>${r.cost.toLocaleString()}</div>}
+                </Card>
+              )
+            })
           }
         </div>
 
@@ -3111,29 +3177,61 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
           </SectionAccordion>
 
           {/* ── COURSES ── */}
-          <SectionAccordion id="courses" icon="Flag" label="Courses" status={hasCourses || rounds.some(r => r.course) ? 'set' : 'not-set'}
-            summary={rounds.filter(r => r.course).map(r => r.course).join(' · ') || 'Assign courses to rounds above'}>
-            {rounds.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--bt-text-3)' }}>Add rounds first — courses are assigned per round.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <p style={{ fontSize: 12, color: 'var(--bt-text-3)', marginBottom: 4 }}>Courses are set on each round above. Edit a round to change the course assignment.</p>
-                {rounds.map((r, i) => (
-                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}>
-                    <span style={{ fontSize: 11, color: 'var(--bt-text-3)', fontFamily: 'monospace', width: 20 }}>R{i+1}</span>
-                    <span style={{ fontSize: 13, color: 'var(--bt-text-1)', flex: 1 }}>{r.name}</span>
-                    <span style={{ fontSize: 12, color: r.course ? 'var(--bt-accent)' : 'var(--bt-text-3)', fontStyle: r.course ? 'normal' : 'italic', flex: 1 }}>{r.course || 'Not set'}</span>
-                    {canEdit && (
-                      <button onClick={() => navigate('course-setup', { tripId: trip._id, roundId: r.id })}
-                        style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--bt-accent)50', background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        Set Up Course
-                      </button>
-                    )}
+          {(() => {
+            const golfReservations = RESERVATIONS.filter(r => r.tripId === trip._id && (r.type === 'golf-round' || r.type === 'tee-time'))
+            const linkedCount = golfReservations.filter(r => r.linkedCompRound).length
+            return (
+              <SectionAccordion id="courses" icon="Flag" label="Courses" status={hasCourses || golfReservations.length > 0 || rounds.some(r => r.course) ? 'set' : 'not-set'}
+                summary={golfReservations.length > 0 ? `${golfReservations.length} golf booking${golfReservations.length !== 1 ? 's' : ''} · ${linkedCount} linked to comp` : rounds.filter(r => r.course).map(r => r.course).join(' · ') || 'Add courses from Schedule tab'}>
+                {golfReservations.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <p style={{ fontSize: 12, color: 'var(--bt-text-3)', marginBottom: 4 }}>
+                      Golf rounds added on the Schedule tab. Assign each to a comp round and select the tee box.
+                    </p>
+                    {golfReservations.map(r => (
+                      <div key={r._id} style={{ borderRadius: 8, padding: '10px 12px', background: 'var(--bt-card)', border: `1px solid ${r.linkedCompRound ? 'var(--bt-accent)30' : 'var(--bt-border)'}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <Ic n="Flag" size={14} color="var(--bt-accent)" />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-text-1)', flex: 1 }}>{r.title}</span>
+                          <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{fmtDate(r.date)}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <select value={r.teeBox || 'blue'}
+                            onChange={e => { RESERVATIONS.forEach(res => { if (res._id === r._id) res.teeBox = e.target.value }); setResList && void 0 }}
+                            style={{ fontSize: 11, padding: '4px 6px', borderRadius: 6, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }}>
+                            {['black', 'blue', 'white', 'gold', 'red'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)} tees</option>)}
+                          </select>
+                          <select value={r.linkedCompRound || ''}
+                            onChange={e => { RESERVATIONS.forEach(res => { if (res._id === r._id) res.linkedCompRound = e.target.value || null }); showToast(e.target.value ? 'Linked to round' : 'Unlinked') }}
+                            style={{ flex: 1, fontSize: 11, padding: '4px 6px', borderRadius: 6, background: 'var(--bt-input)', border: `1px solid ${r.linkedCompRound ? 'var(--bt-accent)60' : 'var(--bt-border-input)'}`, color: r.linkedCompRound ? 'var(--bt-accent)' : 'var(--bt-text-2)', outline: 'none' }}>
+                            <option value="">Assign to comp round…</option>
+                            {rounds.map(rnd => <option key={rnd.id} value={rnd.name}>{rnd.name}</option>)}
+                          </select>
+                          {canEdit && (
+                            <button onClick={() => navigate('course-setup', { tripId: trip._id, roundId: r._id })}
+                              style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--bt-accent)50', background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                              Pairings
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <p style={{ fontSize: 11, color: 'var(--bt-text-3)', marginTop: 2 }}>Add more courses on the Schedule tab → Golf Round.</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </SectionAccordion>
+                ) : (
+                  <div>
+                    <p style={{ fontSize: 13, color: 'var(--bt-text-2)', marginBottom: 10, lineHeight: 1.5 }}>
+                      Add golf rounds on the <strong style={{ color: 'var(--bt-text-1)' }}>Schedule tab</strong> and tap "Add to Comp" to link them here.
+                    </p>
+                    <button onClick={() => setTab('schedule')}
+                      style={{ fontSize: 13, fontWeight: 700, padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117' }}>
+                      Go to Schedule →
+                    </button>
+                  </div>
+                )}
+              </SectionAccordion>
+            )
+          })()}
 
           {/* ── SIDE COMPETITIONS ── */}
           <SectionAccordion id="sides" icon="Target" label="Side Competitions" status={sides.length > 0 ? 'set' : 'not-set'}
@@ -3337,7 +3435,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SectionLabel>Expenses</SectionLabel>
-            {canEdit && !addExpenseOpen && <Btn variant="secondary" onClick={() => setAddExpenseOpen(true)}>+ Add</Btn>}
+            {canEditSocial && !addExpenseOpen && <Btn variant="secondary" onClick={() => setAddExpenseOpen(true)}>+ Add</Btn>}
           </div>
           {addExpenseOpen && <AddExpenseForm onClose={() => setAddExpenseOpen(false)} />}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -3874,8 +3972,18 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
   // ── Shared state ────────────────────────────────────────────────
   const [mode, setMode] = useState(null)           // null | 'manual' | 'draft'
   const [teamCount, setTeamCount] = useState(2)
-  const [teamNames, setTeamNames] = useState(['Team Alpha', 'Team Bravo', 'Team Charlie', 'Team Delta'])
-  const [teamColors] = useState(['#00d4aa', '#f97316', '#8b5cf6', '#3b82f6'])
+  const [customCountOpen, setCustomCountOpen] = useState(false)
+  const DEFAULT_TEAM_NAMES = ['Team Alpha', 'Team Bravo', 'Team Charlie', 'Team Delta',
+    'Team Echo', 'Team Foxtrot', 'Team Golf', 'Team Hotel',
+    ...Array.from({ length: 56 }, (_, i) => `Team ${i + 9}`)]
+  const [teamNames, setTeamNames] = useState(DEFAULT_TEAM_NAMES)
+  // Colors: first 4 hand-picked, then HSL rotation for large field events
+  const teamColors = Array.from({ length: Math.max(teamCount, 4) }, (_, i) => {
+    const base = ['#00d4aa', '#f97316', '#8b5cf6', '#3b82f6']
+    return i < base.length ? base[i] : `hsl(${(i * 53 + 195) % 360}, 65%, 58%)`
+  })
+  const isFieldEvent = teamCount > 8  // large competition: no draft, no match-play
+  const isLargeGroup = teamCount > 4 && teamCount <= 8  // draft/match-play still work but layouts compress
 
   // ── Manual assignment state ──────────────────────────────────────
   // assignments: { [userId]: 0 | 1 | null }  (0 = team A, 1 = team B, null = unassigned)
@@ -3934,6 +4042,12 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
     setCaptains(Array(teamCount).fill(null))
     setDraftOrder(genSerpentine(teamCount, roster.length))
   }, [teamCount])
+
+  function handleSetTeamCount(n) {
+    const clamped = Math.max(2, Math.min(64, n))
+    setTeamCount(clamped)
+    if ([2, 3, 4].includes(clamped)) setCustomCountOpen(false)
+  }
 
   // Draft helpers
   const pickCount = draftPicks.length
@@ -4017,30 +4131,64 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
           <>
             {/* Team count selector */}
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--bt-text-3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 }}>How many teams?</p>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
               {[2, 3, 4].map(n => (
-                <button key={n} onClick={() => setTeamCount(n)}
-                  style={{ flex: 1, padding: '10px 0', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer', border: `2px solid ${teamCount === n ? 'var(--bt-accent)' : 'var(--bt-border)'}`, background: teamCount === n ? 'var(--bt-tag-bg)' : 'var(--bt-card)', color: teamCount === n ? 'var(--bt-accent)' : 'var(--bt-text-2)', transition: 'all .15s' }}>
+                <button key={n} onClick={() => handleSetTeamCount(n)}
+                  style={{ flex: 1, padding: '10px 0', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer', border: `2px solid ${teamCount === n && !customCountOpen ? 'var(--bt-accent)' : 'var(--bt-border)'}`, background: teamCount === n && !customCountOpen ? 'var(--bt-tag-bg)' : 'var(--bt-card)', color: teamCount === n && !customCountOpen ? 'var(--bt-accent)' : 'var(--bt-text-2)', transition: 'all .15s' }}>
                   {n}
                 </button>
               ))}
+              <div style={{ width: 1, height: 32, background: 'var(--bt-border)', flexShrink: 0 }} />
+              {customCountOpen ? (
+                <input type="number" min="2" max="64" value={teamCount} autoFocus
+                  onChange={e => handleSetTeamCount(Number(e.target.value))}
+                  style={{ width: 70, padding: '8px 10px', borderRadius: 10, border: `2px solid var(--bt-accent)`, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', fontWeight: 700, fontSize: 16, textAlign: 'center', outline: 'none' }} />
+              ) : (
+                <button onClick={() => setCustomCountOpen(true)}
+                  style={{ padding: '10px 14px', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', border: '2px solid var(--bt-border)', background: 'var(--bt-card)', color: 'var(--bt-text-3)', transition: 'all .15s' }}>
+                  Custom
+                </button>
+              )}
             </div>
 
+            {/* Competition type notice */}
+            {isFieldEvent && (
+              <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 10, background: '#1a1400', border: '1px solid #f59e0b50' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b', marginBottom: 4 }}>⚡ Field Event ({teamCount} teams)</div>
+                <div style={{ fontSize: 12, color: '#f59e0b99', lineHeight: 1.5 }}>
+                  Large competitions use a <strong style={{ color: '#f59e0b' }}>stroke-play leaderboard</strong> format.
+                  Captain's draft and hole-by-hole match play are not available above 8 teams.
+                  Manual assignment only.
+                </div>
+              </div>
+            )}
+            {isLargeGroup && (
+              <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
+                <div style={{ fontSize: 12, color: 'var(--bt-text-3)', lineHeight: 1.5 }}>
+                  ℹ️ With {teamCount} teams the draft board and team columns will compress — still functional.
+                  Match play works best at 2 teams; larger formats switch to net stroke scoring.
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 24 }} />
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--bt-text-3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 14 }}>How do you want to form teams?</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
                 {
                   id: 'manual', icon: '✏️',
                   label: 'Manual Assignment',
-                  desc: 'You assign everyone to a team. Fast, simple, owner has full control.',
-                  badge: 'Default',
+                  desc: isFieldEvent ? `Assign all participants across ${teamCount} teams. Best for tournaments and large events.` : 'You assign everyone to a team. Fast, simple, owner has full control.',
+                  badge: isFieldEvent ? 'Only option' : 'Default',
+                  disabled: false,
                 },
-                {
+                ...(!isFieldEvent ? [{
                   id: 'draft', icon: 'Target',
                   label: "Captain's Draft",
                   desc: `Designate ${teamCount} captain${teamCount > 1 ? 's' : ''}. Set the pick order. Captains draft their own teams.`,
                   badge: 'More fun',
-                },
+                  disabled: false,
+                }] : []),
               ].map(opt => (
                 <button key={opt.id} onClick={() => setMode(opt.id)}
                   style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '20px', borderRadius: 14, textAlign: 'left', cursor: 'pointer', background: 'var(--bt-card)', border: '1px solid var(--bt-border)', transition: 'border-color .15s, box-shadow .15s' }}
@@ -5227,8 +5375,24 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
   const teamAPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamA._id)
   const teamBPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamB._id)
 
-  const defaultScoringType = round.format === 'scramble' || round.format === 'stableford' ? 'stroke' : 'match'
+  // Round type: use eventType/scoringMode if present, else infer from format
+  const isScramble  = round.format === 'scramble'  || (round.eventType === 'team'     && round.scoringMode === 'stroke')
+  const isSingles   = round.format === 'singles'   || (round.eventType === 'team'     && round.scoringMode === 'singles')
+  const isMatchPlay = round.format === 'match play'|| (round.eventType === 'team'     && round.scoringMode === 'match')
+  const isPersonal  = round.eventType === 'personal' || (!isScramble && !isSingles && !isMatchPlay)
+  const isSabotage  = round.format === 'sabotage'
+
+  const defaultScoringType = isMatchPlay ? 'match' : isSingles ? 'singles' : isScramble ? 'scramble' : 'stroke'
   const [scoringType, setScoringType] = useState(defaultScoringType)
+  // Sabotage tracking: { [holeIdx]: { victimId: playerId, saboteurId: playerId } }
+  const [sabotages, setSabotages] = useState({})
+  // Singles: pair up A1 vs B1, A2 vs B2 (by index in teamAPlayers/teamBPlayers)
+  const singlesPairs = useMemo(() => {
+    const pairs = []
+    const maxPairs = Math.min(teamAPlayers.length, teamBPlayers.length)
+    for (let i = 0; i < maxPairs; i++) pairs.push({ playerA: teamAPlayers[i], playerB: teamBPlayers[i] })
+    return pairs
+  }, [teamAPlayers, teamBPlayers])
 
   const initHoles = PARS.map((par, i) => ({
     holeNum: i + 1, par,
@@ -5254,7 +5418,7 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
   }
 
   const matchState = useMemo(() => {
-    if (scoringType !== 'match') return null
+    if (!isMatchPlay) return null
     let balance = 0 // positive = team-a leads by N holes
     let played = 0
     holes.forEach(hole => {
@@ -5271,15 +5435,22 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
     const isDormie = !!leader && absUp === remaining && remaining > 0
     const isMatchOver = !!leader && absUp > remaining
     return { leader, absUp, remaining, played, leadTeam, isDormie, isMatchOver }
-  }, [holes, scoringType])
+  }, [holes, isMatchPlay])
 
   const strokeTotals = useMemo(() => {
+    if (isScramble) {
+      const aTotal = holes.reduce((s, h) => s + (Number(h.strokes['__teamA__']) || 0), 0)
+      const bTotal = holes.reduce((s, h) => s + (Number(h.strokes['__teamB__']) || 0), 0)
+      return { aTotal, bTotal }
+    }
     const aTotal = teamAPlayers.reduce((sum, p) => sum + holes.reduce((s, h) => s + (Number(h.strokes[p._id]) || 0), 0), 0)
     const bTotal = teamBPlayers.reduce((sum, p) => sum + holes.reduce((s, h) => s + (Number(h.strokes[p._id]) || 0), 0), 0)
     return { aTotal, bTotal }
-  }, [holes])
+  }, [holes, isScramble])
 
-  const anyScored = holes.some(h => groupPlayers.some(p => h.strokes[p._id] !== ''))
+  const anyScored = isScramble
+    ? holes.some(h => h.strokes['__teamA__'] !== '' && h.strokes['__teamA__'] != null)
+    : holes.some(h => groupPlayers.some(p => h.strokes[p._id] !== ''))
 
   function handleSubmit() {
     // Save hole-by-hole data
@@ -5287,10 +5458,25 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
     HOLE_RESULTS[round._id][group._id] = { holes: holes.map(h => ({ ...h, strokes: { ...h.strokes } })) }
     // Derive team result
     let teamAPts, teamBPts
-    if (scoringType === 'match') {
+    if (isMatchPlay) {
       const leader = matchState?.leader
       teamAPts = leader === 'team-a' ? 1 : leader === null ? 0.5 : 0
       teamBPts = leader === 'team-b' ? 1 : leader === null ? 0.5 : 0
+    } else if (isSingles) {
+      // Average match results across pairs
+      let aWins = 0, bWins = 0
+      singlesPairs.forEach(pair => {
+        let bal = 0
+        holes.forEach(h => {
+          const aS = Number(h.strokes[pair.playerA._id]) || 0
+          const bS = Number(h.strokes[pair.playerB._id]) || 0
+          if (!h.strokes[pair.playerA._id] || !h.strokes[pair.playerB._id]) return
+          if (aS < bS) bal++; else if (bS < aS) bal--
+        })
+        if (bal > 0) aWins++; else if (bal < 0) bWins++; else { aWins += 0.5; bWins += 0.5 }
+      })
+      const total = singlesPairs.length || 1
+      teamAPts = aWins / total; teamBPts = bWins / total
     } else {
       const { aTotal, bTotal } = strokeTotals
       teamAPts = aTotal < bTotal ? 1 : aTotal === bTotal ? 0.5 : 0
@@ -5318,19 +5504,14 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
             <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>Day {round.day} · {round.title} · {round.course}</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--bt-text-1)' }}>{group.name} — Hole by Hole</div>
           </div>
-          {/* Scoring type toggle */}
-          <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--bt-border)' }}>
-            {[['stroke', 'Stroke'], ['match', 'Match']].map(([type, label]) => (
-              <button key={type} onClick={() => setScoringType(type)}
-                style={{ padding: '5px 10px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', background: scoringType === type ? 'var(--bt-accent)' : 'var(--bt-card)', color: scoringType === type ? '#0d1117' : 'var(--bt-text-3)', transition: 'all .15s' }}>
-                {label}
-              </button>
-            ))}
+          {/* Round type badge */}
+          <div style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 9999, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)40', whiteSpace: 'nowrap' }}>
+            {isScramble ? 'Scramble' : isSingles ? 'Singles' : isMatchPlay ? 'Match Play' : isSabotage ? 'Sabotage' : 'Stroke'}
           </div>
         </div>
 
         {/* Match play state banner */}
-        {scoringType === 'match' && matchState && (
+        {isMatchPlay && matchState && (
           <div style={{ borderRadius: 10, padding: '10px 14px', ...dormieStyle, ...matchOverStyle, background: matchState.isDormie || matchState.isMatchOver ? undefined : 'var(--bt-base)', border: matchState.isDormie || matchState.isMatchOver ? undefined : '1px solid var(--bt-border)' }}>
             {matchState.isMatchOver ? (
               <div style={{ textAlign: 'center' }}>
@@ -5357,11 +5538,11 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
             )}
           </div>
         )}
-        {scoringType === 'stroke' && (
+        {(isPersonal || isScramble) && (
           <div style={{ display: 'flex', gap: 10 }}>
-            {[{ team: teamA, total: strokeTotals.aTotal, players: teamAPlayers }, { team: teamB, total: strokeTotals.bTotal, players: teamBPlayers }].map(({ team, total, players }) => (
+            {[{ team: teamA, total: strokeTotals.aTotal }, { team: teamB, total: strokeTotals.bTotal }].map(({ team, total }) => (
               <div key={team._id} style={{ flex: 1, borderRadius: 8, padding: '8px 12px', background: `${team.color}15`, border: `1px solid ${team.color}40`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: team.color }}>{team.shortName}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: team.color }}>{isScramble ? team.name : team.shortName}</span>
                 <span style={{ fontSize: 20, fontWeight: 900, color: team.color }}>{total || '—'}</span>
               </div>
             ))}
@@ -5371,47 +5552,201 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
 
       {/* Hole rows */}
       <div style={{ padding: '12px 16px', flex: 1 }}>
-        {/* Column headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
-          <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
-          <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>PAR</span>
-          <span style={{ fontSize: 10, color: teamA.color, fontWeight: 700, textAlign: 'center' }}>{teamA.shortName}</span>
-          <span style={{ fontSize: 10, color: teamB.color, fontWeight: 700, textAlign: 'center' }}>{teamB.shortName}</span>
-          <span />
-        </div>
-        {holes.map((hole, hi) => {
-          const { aTotal, bTotal, complete } = holeTeamTotals(hole)
-          const holeWinner = complete && scoringType === 'match' ? (aTotal < bTotal ? 'a' : bTotal < aTotal ? 'b' : 'halve') : null
-          const isDormieHole = matchState?.isDormie && !complete
-          return (
-            <div key={hi} style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)', background: isDormieHole ? 'rgba(255,80,80,.04)' : 'transparent', borderLeft: isDormieHole ? '2px solid rgba(255,80,80,.25)' : '2px solid transparent', paddingLeft: isDormieHole ? 6 : 0 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
-              <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
-              {/* Team A player inputs */}
-              <div style={{ display: 'flex', gap: 3 }}>
-                {teamAPlayers.map(p => (
-                  <input key={p._id} type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
-                    title={p.nickname}
-                    style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamA.color + '60' : 'var(--bt-border)'}`, color: teamA.color, outline: 'none' }} />
-                ))}
-              </div>
-              {/* Team B player inputs */}
-              <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
-                {teamBPlayers.map(p => (
-                  <input key={p._id} type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
-                    title={p.nickname}
-                    style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamB.color + '60' : 'var(--bt-border)'}`, color: teamB.color, outline: 'none' }} />
-                ))}
-              </div>
-              {/* Hole result indicator */}
-              <div style={{ textAlign: 'center' }}>
-                {holeWinner === 'a' && <span style={{ fontSize: 10, fontWeight: 700, color: teamA.color }}>▲</span>}
-                {holeWinner === 'b' && <span style={{ fontSize: 10, fontWeight: 700, color: teamB.color }}>▼</span>}
-                {holeWinner === 'halve' && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>–</span>}
-              </div>
+
+        {/* ── SCRAMBLE MODE: one team score per hole ── */}
+        {isScramble && (
+          <>
+            <div style={{ fontSize: 11, color: 'var(--bt-text-3)', marginBottom: 10, padding: '8px 10px', borderRadius: 8, background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}>
+              Enter the team's best-ball score for each hole. One score per team.
             </div>
-          )
-        })}
+            <div style={{ display: 'grid', gridTemplateColumns: '36px 28px 1fr 1fr 20px', gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
+              <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
+              <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>PAR</span>
+              <span style={{ fontSize: 10, color: teamA.color, fontWeight: 700, textAlign: 'center' }}>{teamA.name}</span>
+              <span style={{ fontSize: 10, color: teamB.color, fontWeight: 700, textAlign: 'center' }}>{teamB.name}</span>
+              <span />
+            </div>
+            {holes.map((hole, hi) => {
+              const aVal = hole.strokes['__teamA__'] ?? ''
+              const bVal = hole.strokes['__teamB__'] ?? ''
+              const aNum = Number(aVal) || 0; const bNum = Number(bVal) || 0
+              const holeWinner = aVal !== '' && bVal !== '' ? (aNum < bNum ? 'a' : bNum < aNum ? 'b' : 'halve') : null
+              return (
+                <div key={hi} style={{ display: 'grid', gridTemplateColumns: '36px 28px 1fr 1fr 20px', gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
+                  <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
+                  <input type="number" min="1" max="15" value={aVal} onChange={e => setStroke(hi, '__teamA__', e.target.value)} placeholder="—"
+                    style={{ width: '100%', height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${aVal !== '' ? teamA.color + '60' : 'var(--bt-border)'}`, color: teamA.color, outline: 'none' }} />
+                  <input type="number" min="1" max="15" value={bVal} onChange={e => setStroke(hi, '__teamB__', e.target.value)} placeholder="—"
+                    style={{ width: '100%', height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${bVal !== '' ? teamB.color + '60' : 'var(--bt-border)'}`, color: teamB.color, outline: 'none' }} />
+                  <div style={{ textAlign: 'center' }}>
+                    {holeWinner === 'a' && <span style={{ fontSize: 10, fontWeight: 700, color: teamA.color }}>▲</span>}
+                    {holeWinner === 'b' && <span style={{ fontSize: 10, fontWeight: 700, color: teamB.color }}>▼</span>}
+                    {holeWinner === 'halve' && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>–</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </>
+        )}
+
+        {/* ── PERSONAL STROKE MODE (stableford, sabotage, skins) ── */}
+        {isPersonal && !isSingles && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: `36px 28px ${groupPlayers.map(() => '1fr').join(' ')}`, gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
+              <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
+              <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>PAR</span>
+              {groupPlayers.map(p => {
+                const t = getTeamId(event._id, p._id) === teamA._id ? teamA : teamB
+                return <span key={p._id} style={{ fontSize: 10, fontWeight: 700, color: t.color, textAlign: 'center' }} title={p.name}>{p.nickname}</span>
+              })}
+            </div>
+            {holes.map((hole, hi) => (
+              <div key={hi} style={{ display: 'grid', gridTemplateColumns: `36px 28px ${groupPlayers.map(() => '1fr').join(' ')}`, gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
+                <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
+                {groupPlayers.map(p => {
+                  const t = getTeamId(event._id, p._id) === teamA._id ? teamA : teamB
+                  return (
+                    <input key={p._id} type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
+                      title={p.nickname}
+                      style={{ width: '100%', height: 32, fontSize: 13, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? t.color + '60' : 'var(--bt-border)'}`, color: t.color, outline: 'none' }} />
+                  )
+                })}
+              </div>
+            ))}
+            {/* Sabotage panel */}
+            {isSabotage && (
+              <div style={{ marginTop: 16, padding: '12px 14px', borderRadius: 10, background: '#1a0a14', border: '1px solid #e0297050' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#e02970', marginBottom: 8 }}>🗡 Sabotage Tracking</div>
+                <div style={{ fontSize: 11, color: '#e0297099', marginBottom: 8 }}>Mark any hole where a player sabotaged a teammate's shot.</div>
+                {holes.filter((h, hi) => groupPlayers.some(p => h.strokes[p._id] !== '')).map((hole, hi) => (
+                  <div key={hi} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-text-3)', width: 30 }}>#{hole.holeNum}</span>
+                    <select value={sabotages[hi]?.victimId || ''}
+                      onChange={e => setSabotages(s => e.target.value ? { ...s, [hi]: { victimId: e.target.value, saboteurId: sabotages[hi]?.saboteurId || '' } } : Object.fromEntries(Object.entries(s).filter(([k]) => +k !== hi)))}
+                      style={{ flex: 1, fontSize: 11, padding: '4px 6px', borderRadius: 6, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }}>
+                      <option value="">No sabotage</option>
+                      {groupPlayers.map(p => <option key={p._id} value={p._id}>{p.nickname} (victim)</option>)}
+                    </select>
+                    {sabotages[hi]?.victimId && (
+                      <select value={sabotages[hi]?.saboteurId || ''}
+                        onChange={e => setSabotages(s => ({ ...s, [hi]: { ...s[hi], saboteurId: e.target.value } }))}
+                        style={{ flex: 1, fontSize: 11, padding: '4px 6px', borderRadius: 6, background: 'var(--bt-input)', border: '1px solid #e0297050', color: '#e02970', outline: 'none' }}>
+                        <option value="">by whom?</option>
+                        {groupPlayers.filter(p => p._id !== sabotages[hi]?.victimId).map(p => <option key={p._id} value={p._id}>{p.nickname}</option>)}
+                      </select>
+                    )}
+                  </div>
+                ))}
+                {Object.keys(sabotages).length > 0 && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: '#e02970' }}>{Object.keys(sabotages).length} sabotage event{Object.keys(sabotages).length !== 1 ? 's' : ''} logged</div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── MATCH PLAY MODE: team vs team per hole ── */}
+        {isMatchPlay && !isSingles && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
+              <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
+              <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>PAR</span>
+              <span style={{ fontSize: 10, color: teamA.color, fontWeight: 700, textAlign: 'center' }}>{teamA.shortName}</span>
+              <span style={{ fontSize: 10, color: teamB.color, fontWeight: 700, textAlign: 'center' }}>{teamB.shortName}</span>
+              <span />
+            </div>
+            {holes.map((hole, hi) => {
+              const { aTotal, bTotal, complete } = holeTeamTotals(hole)
+              const holeWinner = complete && isMatchPlay ? (aTotal < bTotal ? 'a' : bTotal < aTotal ? 'b' : 'halve') : null
+              const isDormieHole = matchState?.isDormie && !complete
+              return (
+                <div key={hi} style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)', background: isDormieHole ? 'rgba(255,80,80,.04)' : 'transparent', borderLeft: isDormieHole ? '2px solid rgba(255,80,80,.25)' : '2px solid transparent', paddingLeft: isDormieHole ? 6 : 0 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
+                  <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {teamAPlayers.map(p => (
+                      <input key={p._id} type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
+                        title={p.nickname}
+                        style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamA.color + '60' : 'var(--bt-border)'}`, color: teamA.color, outline: 'none' }} />
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
+                    {teamBPlayers.map(p => (
+                      <input key={p._id} type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
+                        title={p.nickname}
+                        style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? teamB.color + '60' : 'var(--bt-border)'}`, color: teamB.color, outline: 'none' }} />
+                    ))}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    {holeWinner === 'a' && <span style={{ fontSize: 10, fontWeight: 700, color: teamA.color }}>▲</span>}
+                    {holeWinner === 'b' && <span style={{ fontSize: 10, fontWeight: 700, color: teamB.color }}>▼</span>}
+                    {holeWinner === 'halve' && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>–</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </>
+        )}
+
+        {/* ── SINGLES MODE: 2 independent 1v1 matches ── */}
+        {isSingles && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {singlesPairs.map((pair, pi) => {
+              const pairKey = `${pair.playerA._id}_${pair.playerB._id}`
+              const teamOfA = teamA
+              const teamOfB = teamB
+              // compute match state for this pair
+              let balance = 0; let played = 0
+              holes.forEach(h => {
+                const aS = Number(h.strokes[pair.playerA._id]) || 0
+                const bS = Number(h.strokes[pair.playerB._id]) || 0
+                if (h.strokes[pair.playerA._id] === '' || h.strokes[pair.playerB._id] === '') return
+                played++
+                if (aS < bS) balance++; else if (bS < aS) balance--
+              })
+              const remaining = 18 - played
+              const absUp = Math.abs(balance)
+              const leader = balance > 0 ? 'a' : balance < 0 ? 'b' : null
+              const leadTeam = leader === 'a' ? teamOfA : leader === 'b' ? teamOfB : null
+              const isDormie = !!leader && absUp === remaining && remaining > 0
+              const isOver = !!leader && absUp > remaining
+              return (
+                <div key={pi}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: teamOfA.color }}>{pair.playerA.nickname}</span>
+                    <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>vs</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: teamOfB.color }}>{pair.playerB.nickname}</span>
+                    <div style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 9999, background: isOver ? `${leadTeam?.color}20` : isDormie ? `${leadTeam?.color}15` : 'var(--bt-base)', color: isOver || isDormie ? leadTeam?.color : 'var(--bt-text-3)', border: `1px solid ${isOver || isDormie ? leadTeam?.color + '50' : 'var(--bt-border)'}` }}>
+                      {isOver ? `${leadTeam?.shortName} wins ${absUp}UP` : isDormie ? `DORMIE ${absUp}UP` : leader ? `${leadTeam?.shortName} ${absUp}UP thru ${played}` : played > 0 ? 'All Square' : 'Not started'}
+                    </div>
+                  </div>
+                  {holes.map((hole, hi) => {
+                    const aS = hole.strokes[pair.playerA._id]
+                    const bS = hole.strokes[pair.playerB._id]
+                    const hW = aS !== '' && bS !== '' ? (Number(aS) < Number(bS) ? 'a' : Number(bS) < Number(aS) ? 'b' : 'halve') : null
+                    return (
+                      <div key={hi} style={{ display: 'grid', gridTemplateColumns: '32px 24px 1fr 20px 1fr', gap: 4, alignItems: 'center', marginBottom: 3, padding: '2px 0', borderBottom: '1px solid var(--bt-base)' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
+                        <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
+                        <input type="number" min="1" max="15" value={aS} onChange={e => setStroke(hi, pair.playerA._id, e.target.value)} placeholder="—" title={pair.playerA.nickname}
+                          style={{ width: '100%', height: 28, fontSize: 13, fontWeight: 700, textAlign: 'center', borderRadius: 5, background: 'var(--bt-base)', border: `1px solid ${aS !== '' ? teamOfA.color + '60' : 'var(--bt-border)'}`, color: teamOfA.color, outline: 'none' }} />
+                        <div style={{ textAlign: 'center' }}>
+                          {hW === 'a' && <span style={{ fontSize: 9, fontWeight: 700, color: teamOfA.color }}>▲</span>}
+                          {hW === 'b' && <span style={{ fontSize: 9, fontWeight: 700, color: teamOfB.color }}>▼</span>}
+                          {hW === 'halve' && <span style={{ fontSize: 9, color: 'var(--bt-text-3)' }}>–</span>}
+                        </div>
+                        <input type="number" min="1" max="15" value={bS} onChange={e => setStroke(hi, pair.playerB._id, e.target.value)} placeholder="—" title={pair.playerB.nickname}
+                          style={{ width: '100%', height: 28, fontSize: 13, fontWeight: 700, textAlign: 'center', borderRadius: 5, background: 'var(--bt-base)', border: `1px solid ${bS !== '' ? teamOfB.color + '60' : 'var(--bt-border)'}`, color: teamOfB.color, outline: 'none' }} />
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* Front/back 9 par totals */}
         <div style={{ display: 'flex', gap: 10, marginTop: 8, marginBottom: 20 }}>
@@ -5615,6 +5950,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
   const [scoreEntryGroup, setScoreEntryGroup] = useState(null)
   const [holeByHoleGroup, setHoleByHoleGroup] = useState(null)
   const [roundSummaryId, setRoundSummaryId] = useState(null)
+  const [scorecardView, setScorecardView] = useState(null) // { roundId, groupId }
   const [editMode, setEditMode] = useState(false)
   const [showModifiers, setShowModifiers] = useState(false)
   const [handicapOn, setHandicapOn] = useState(false)
@@ -6011,15 +6347,24 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                 {BBMI_EVENT.groups.map(group => {
                   const gr = groupResults[group._id]
                   const players = BBMI_EVENT.players.filter(p => group.playerIds.includes(p._id))
+                  const hasHoles = !!HOLE_RESULTS[roundSummaryId]?.[group._id]
                   return (
-                    <div key={group._id} style={{ borderRadius: 10, padding: '12px 14px', background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
+                    <div key={group._id}
+                      onClick={() => { setScorecardView({ roundId: roundSummaryId, groupId: group._id }); setRoundSummaryId(null) }}
+                      style={{ borderRadius: 10, padding: '12px 14px', background: 'var(--bt-base)', border: '1px solid var(--bt-border)', cursor: 'pointer', transition: 'border-color .15s' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--bt-accent)50'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--bt-border)'}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--bt-text-1)' }}>{group.name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--bt-text-1)' }}>{group.name}</span>
+                          {hasHoles && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 9999, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)40' }}>Scorecard</span>}
+                        </div>
                         {gr ? (
-                          <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             {teams.map(team => (
                               <span key={team._id} style={{ fontSize: 13, fontWeight: 700, color: team.color }}>{gr[team._id] ?? '—'}</span>
                             ))}
+                            <Ic n="ChevronRight" size={14} color="var(--bt-text-3)" />
                           </div>
                         ) : <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>Not submitted</span>}
                       </div>
@@ -6028,6 +6373,101 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                   )
                 })}
               </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Read-only scorecard viewer sheet ── */}
+      {scorecardView && (() => {
+        const r = rounds.find(x => x._id === scorecardView.roundId)
+        const group = BBMI_EVENT.groups.find(g => g._id === scorecardView.groupId)
+        const holeData = HOLE_RESULTS[scorecardView.roundId]?.[scorecardView.groupId]
+        const players = BBMI_EVENT.players.filter(p => group?.playerIds.includes(p._id))
+        const [teamA, teamB] = teams
+        const teamAPlayers = players.filter(p => getTeamId(BBMI_EVENT._id, p._id) === teamA._id)
+        const teamBPlayers = players.filter(p => getTeamId(BBMI_EVENT._id, p._id) === teamB._id)
+        const PARS = [4,4,3,4,5,3,4,5,4, 4,3,5,4,4,3,5,4,4]
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 210, display: 'flex', flexDirection: 'column', background: 'var(--bt-base)', overflowY: 'auto' }}>
+            <div style={{ position: 'sticky', top: 0, background: 'var(--bt-card)', borderBottom: '1px solid var(--bt-border)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={() => setScorecardView(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', color: 'var(--bt-text-3)' }}>
+                <Ic n="X" size={18} color="var(--bt-text-3)" />
+              </button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>Day {r?.day} · {r?.title} · {r?.course}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--bt-text-1)' }}>{group?.name} — Scorecard</div>
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 9999, background: 'var(--bt-tag-bg)', color: 'var(--bt-text-3)', border: '1px solid var(--bt-border)' }}>Read Only</span>
+            </div>
+            <div style={{ padding: '12px 16px' }}>
+              {holeData ? (
+                <>
+                  {/* Column headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
+                    <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
+                    <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>PAR</span>
+                    <span style={{ fontSize: 10, color: teamA.color, fontWeight: 700, textAlign: 'center' }}>{teamA.shortName}</span>
+                    <span style={{ fontSize: 10, color: teamB.color, fontWeight: 700, textAlign: 'center' }}>{teamB.shortName}</span>
+                    <span />
+                  </div>
+                  {holeData.holes.map((hole, hi) => {
+                    const aStrokes = teamAPlayers.map(p => Number(hole.strokes[p._id]) || 0)
+                    const bStrokes = teamBPlayers.map(p => Number(hole.strokes[p._id]) || 0)
+                    const aFilled = teamAPlayers.every(p => hole.strokes[p._id] !== '' && hole.strokes[p._id] != null)
+                    const bFilled = teamBPlayers.every(p => hole.strokes[p._id] !== '' && hole.strokes[p._id] != null)
+                    const aTotal = aStrokes.reduce((s, n) => s + n, 0)
+                    const bTotal = bStrokes.reduce((s, n) => s + n, 0)
+                    const holeWinner = aFilled && bFilled ? (aTotal < bTotal ? 'a' : bTotal < aTotal ? 'b' : 'halve') : null
+                    return (
+                      <div key={hi} style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
+                        <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
+                        <div style={{ display: 'flex', gap: 3 }}>
+                          {teamAPlayers.map(p => (
+                            <div key={p._id} title={p.nickname}
+                              style={{ width: 36, height: 28, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, background: hole.strokes[p._id] ? `${teamA.color}20` : 'var(--bt-base)', color: teamA.color, border: `1px solid ${hole.strokes[p._id] ? teamA.color + '50' : 'var(--bt-border)'}` }}>
+                              {hole.strokes[p._id] || '—'}
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
+                          {teamBPlayers.map(p => (
+                            <div key={p._id} title={p.nickname}
+                              style={{ width: 36, height: 28, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, background: hole.strokes[p._id] ? `${teamB.color}20` : 'var(--bt-base)', color: teamB.color, border: `1px solid ${hole.strokes[p._id] ? teamB.color + '50' : 'var(--bt-border)'}` }}>
+                              {hole.strokes[p._id] || '—'}
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          {holeWinner === 'a' && <span style={{ fontSize: 10, fontWeight: 700, color: teamA.color }}>▲</span>}
+                          {holeWinner === 'b' && <span style={{ fontSize: 10, fontWeight: 700, color: teamB.color }}>▼</span>}
+                          {holeWinner === 'halve' && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>–</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {/* Totals */}
+                  <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                    {[teamA, teamB].map((team, ti) => {
+                      const tPlayers = ti === 0 ? teamAPlayers : teamBPlayers
+                      const total = tPlayers.reduce((sum, p) => sum + holeData.holes.reduce((s, h) => s + (Number(h.strokes[p._id]) || 0), 0), 0)
+                      return (
+                        <div key={team._id} style={{ flex: 1, textAlign: 'center', borderRadius: 8, padding: '8px', background: `${team.color}15`, border: `1px solid ${team.color}40` }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: team.color }}>{team.shortName}</div>
+                          <div style={{ fontSize: 22, fontWeight: 900, color: team.color }}>{total || '—'}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                  <Ic n="ClipboardList" size={32} color="var(--bt-text-3)" style={{ marginBottom: 12 }} />
+                  <div style={{ fontSize: 14, color: 'var(--bt-text-2)', marginBottom: 4 }}>No hole-by-hole data</div>
+                  <div style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>Score was entered as an offline result</div>
+                </div>
+              )}
             </div>
           </div>
         )
