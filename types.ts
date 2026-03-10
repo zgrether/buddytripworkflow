@@ -218,6 +218,11 @@ export interface PlayGroup {
   playerIds: string[]               // FK[] → Player._id (User._id)
 }
 
+export interface RoundModifiers {
+  carryOver?: boolean               // Halved holes accumulate — pot carries to next hole
+  movingTees?: MovingTeesConfig     // Per-player tee box shifts based on score vs par (Task C)
+}
+
 /** A round of competition. Maps to `rounds` table. */
 export interface Round {
   _id: string
@@ -227,6 +232,7 @@ export interface Round {
   format: RoundFormat
   status: RoundStatus
   pointsAvailable: number           // Total points up for grabs this round
+  modifiers?: RoundModifiers | null
 }
 
 /** A side event (non-golf competition). Maps to `side_events` table. */
