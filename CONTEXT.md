@@ -1,12 +1,14 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 5.1 complete
+2026-03-10 — Task 5.2 complete
 
 ## Current State
 - buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
 - README.md: fully updated screen inventory, navigation graph, data architecture, permission model
 - types.ts: ~300 lines — complete TypeScript interfaces for all entities
+- README.md: fully updated screen inventory, navigation graph, data architecture, permission model
+- SCHEMA.md: complete database schema — 25 tables, all FKs, indexes, creation annotations, migration order
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
@@ -276,6 +278,7 @@
 
 ## Completed Tasks (continued)
 - [x] 5.1 — Rewrote README.md: full screen inventory with route keys and props for all 7 screens; TripDetail tab breakdown; navigation graph (BottomNav context-awareness, breadcrumb patterns, visual flow diagram); data architecture (14 module-level objects, 5 helper functions, trip-level state, messages shape, notification types); design system CSS vars; permission model summary; reference document index; corrected stale info (DESTINATION_LOCK/DATE_POLL globals → trip-level state, team messages shape, member role user name, mock trips table with BBMI 2024, 4-status model including completed)
+- [x] 5.2 — Created SCHEMA.md: 25 tables derived from types.ts, annotated with required-at-creation fields (`*`), server-computed fields (`auto`), FK relationships, indexes, constraints, RLS notes, payload shapes for notification types, circular FK resolution for trips↔events, updated_at trigger SQL, and ordered table creation list
 
 ## Notes from 5.1
 - README now serves as the definitive handoff document — a migration dev can read it and understand every screen, route, data object, and interaction pattern
@@ -284,6 +287,17 @@
 - Navigation graph section is new — documents BottomNav context switching (3 items outside trip, 4 inside), which screens show/hide BottomNav, and a visual flow diagram
 - Data architecture section replaces scattered mentions — consolidated all 14 module-level objects, helper functions, and the trip-level state pattern into one reference
 - Added Key Engineering Rules #3 (state via setTrips) and #4 (module-level arrays need nonces) — these patterns caused bugs before and the migration dev needs to know
+
+## Notes from 5.2
+- trips↔events is the only circular FK in the schema — resolved with deferrable constraints (documented in creation order section)
+- `round_results` from the prototype should be a Postgres VIEW, not a table — it's always derived from `group_results`; documented as such
+- `notification_reads` doesn't exist in the prototype (mark-all-read only); added as a separate join table for per-user read state in production
+- `side_events.result` kept as JSONB for now; normalizing into `side_event_results(side_event_id, team_id, points)` is noted as an option
+- `play_groups.player_ids` kept as text[] (matches prototype shape); noted that a join table would be needed if per-player group queries are required
+- `expense_splits.amount` stays nullable even though it's not implemented — avoids a migration later when per-person overrides are added
+- `date_polls` has trip_id as PK (enforces one-poll-per-trip constraint); `locked_window_id` FK is a forward reference — handle with deferrable constraint
+- `players` table denormalizes name/nickname intentionally — historical competition records should reflect the player at event time, not current user profile
+- Phase 5 is 2/4 complete (5.1, 5.2 done; 5.3 REALTIME.md and 5.4 MIGRATION_PLAN.md remain)
 
 ## In Progress
 - (none)
@@ -296,7 +310,7 @@
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
-Next task: 5.2 — Create SCHEMA.md from the TypeScript interfaces (Opus recommended)
+Next task: 5.3 — Create REALTIME.md (Opus recommended)
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.
