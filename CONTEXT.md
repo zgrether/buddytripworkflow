@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 5.4 complete
+2026-03-10 — Post-5.4 bug/UX/hidden-requirements pass complete
 
 ## Current State
 - buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
@@ -311,8 +311,28 @@
 - Reconnect: invalidate TanStack Query on `system` channel event to catch missed updates during disconnect
 - Implementation order: leaderboard first, then notifications, then chat — highest stakes first
 
+## Completed Tasks (continued)
+- [x] 6.1 — Bug/UX/hidden-requirements pass on buddytrip.html: 8 fixes + 3 new features; see Notes from 6.1
+
+## Notes from 6.1
+Bugs fixed:
+- B2: `hasComp` local state diverged from `trip.eventId` on back-navigation — replaced `useState(!!trip.eventId)` with derived value `!!trip.eventId || !!trip.hasComp` and a `setHasComp` that persists to trip via `setTrips`
+- B3: `KNOWN_ACCOUNTS` array in CrewTab was redundant — replaced with `Object.values(USERS).find(u => u.email?.toLowerCase() === ...)` using the existing `USERS` global (which already has email fields for mike/paul/lance); changed `account.userId` → `account._id` to match USERS shape
+
+UX improvements:
+- U1+U2: Crew removal and demotion now show an inline confirmation prompt (danger-colored bar with Confirm/Cancel) instead of acting immediately; `confirmAction` state tracks pending action
+- U3: Expense split "Done" button now calls `showToast('Split updated')` when transitioning from editing to done
+- U4: TripNew trip name field now shows inline "Trip name is required" error when field is blurred empty; clicking Next while empty also triggers the error; `tripNameTouched` state tracks first-touch
+
+Hidden requirements implemented (v1):
+- H1: Full Add Booking form in ScheduleTab — type selector (6 types with icons), title+date (required), time/confirmation/cost/notes (optional); pushes to RESERVATIONS array, updates local `resList` state; `addBookingOpen` toggle hides the + Add button while form is open
+- H2: Sabotage and Skins score entry now fully implemented in ScoreEntry component:
+  - Sabotage: uses same 3-way result selector (team-a wins / halved / team-b wins) with a descriptive subtitle about net result after sabotage plays
+  - Skins: dedicated numeric input per team for total skins won this round; team-colored input boxes; `skinsA`/`skinsB` state; validation requires non-negative integers
+- H6: Score entry now role-gated — `viewerRole` prop added to LiveLeaderboard signature and passed from App; `const canScore = viewerRole === 'owner' || viewerRole === 'planner'`; group cards non-clickable for members (cursor:default); "Enter score" label replaced with "🔒 Pending" for non-scorers
+
 ## In Progress
-- (none — all Phase 0–5 tasks complete)
+- (none)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
@@ -322,7 +342,8 @@
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
-All PLAYBOOK tasks complete. Next work is the actual migration (start with Phase 0 in MIGRATION_PLAN.md) or resolving the 3 blocking product decisions in MIGRATION_PLAN.md §Pre-Migration Product Decisions.
+All PLAYBOOK tasks and pre-migration UX pass complete. Prototype is ready for merge review.
+Next: resolve 3 blocking product decisions in MIGRATION_PLAN.md §Pre-Migration Product Decisions, then start Phase 0 (infra setup).
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.
