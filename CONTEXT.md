@@ -1,10 +1,10 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-09 — Task 3.2 complete
+2026-03-10 — Task 3.3 complete
 
 ## Current State
-- buddytrip.html: ~5200 lines (net ~flat — removed globals, added trip-level fields)
+- buddytrip.html: ~5200 lines (no code changes this task)
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
@@ -13,6 +13,7 @@
 - All votes, comments, and date polls reference stable IDs instead of array indexes
 - Trip status is now derived dynamically via getTripStatus(trip) — no status field on trip objects
 - In-app notification system live — bell icon in TopNav with unread count, dropdown panel, 4 triggers wired
+- PERMISSIONS.md created — complete permission matrix for all actions × roles, with RLS migration notes
 
 ## Completed Tasks
 - [x] 0.1 — Send icon added to ICONS dict (line 197)
@@ -173,7 +174,19 @@
 - TripNew sets `lockedDestination` on new trips with known destination (title + location from form input)
 - getTripStatus() now reads `trip.lockedDestination` and `trip.datePoll` instead of globals — no functional change
 - No `scoreNonce` equivalent needed — destination lock and date poll changes now trigger React re-renders naturally via `setTrips`
-- Next task: 3.3 — Document the permission model (Opus recommended)
+## Completed Tasks (continued)
+- [x] 3.3 — Created PERMISSIONS.md: audited every isOwner (25), canEdit (43), viewerRole (3), and member.role (2) check in the prototype; documented all actions across 10 categories (Trip Management, Destination, Ideas, Dates, Quick Info Tiles, Crew, Competition, Logistics, Expenses, Messages); included RLS migration notes and 5 open questions for production
+
+## Notes from 3.3
+- Three-tier model: Owner (full control), Planner (planning authority), Member (vote/chat/view)
+- `isOwner` gates: destination lock/unlock, crew role management, trip settings, quick info tiles, expense editing, idea removal
+- `canEdit` (Owner+Planner) gates: description editing, idea/destination addition, date management, competition setup, crew addition, expense creation
+- No role check: destination voting, date voting, idea commenting, chat messaging, score entry
+- Team chat privacy is enforced by TEAM_ASSIGNMENTS lookup, not by role — all 3 roles see only their own team's chat
+- Score entry (LiveLeaderboard) has NO role gating at all — flagged as open question for production
+- TripSettingsPanel (series, transfer, archive, delete) is fully owner-gated at the render level (line 2991)
+- `isMe` pattern prevents self-promotion/demotion/removal — uses hardcoded userId mapping per role (Owner→brad, Planner→zach, Member→rob)
+- Next task: 3.4 — Define complete TypeScript interfaces (Opus recommended)
 
 ## In Progress
 - (none)
