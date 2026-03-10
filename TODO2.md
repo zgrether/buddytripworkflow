@@ -15,3 +15,5 @@
 15. Do we need the Message panel on the trip home?
 16. Do we need a workflow for just creating a competition, no trip involved?  That seems like a good use case.
 17. I still want a Quick Score page, so a simple one-tap start scoring that's available for any user that comes across the site.  Rather than trying to hunt down a pad of paper for a game of Scrabble with mom, I can just go to BuddyTrip's homepage and a scorecard appears.  
+18. Where's the mock data for a past trip?
+19. There's no way to get to my score entry page anymore. Tap for scorecard on the Groups tab doesn't work either.
