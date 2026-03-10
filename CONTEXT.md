@@ -1,10 +1,11 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 3.3 complete
+2026-03-10 — Task 3.4 complete
 
 ## Current State
 - buddytrip.html: ~5200 lines (no code changes this task)
+- types.ts: ~300 lines — complete TypeScript interfaces for all entities
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
@@ -186,7 +187,22 @@
 - Score entry (LiveLeaderboard) has NO role gating at all — flagged as open question for production
 - TripSettingsPanel (series, transfer, archive, delete) is fully owner-gated at the render level (line 2991)
 - `isMe` pattern prevents self-promotion/demotion/removal — uses hardcoded userId mapping per role (Owner→brad, Planner→zach, Member→rob)
-- Next task: 3.4 — Define complete TypeScript interfaces (Opus recommended)
+## Completed Tasks (continued)
+- [x] 3.4 — Created types.ts with complete TypeScript interfaces for all 25+ entities: User, Series, Trip (with LockedDestination, DatePoll, DateWindow, DatePollVote, ProposedDate), TripMember, Idea, IdeaVote, IdeaComment, DateVote, Event, Team, Player, TeamAssignment, PlayGroup, Round, SideEvent, RoundResult, GroupResult, Reservation, Expense, ExpenseSplit, Message, NotificationEvent (with typed payloads), SeriesHistory, PastParticipant, QuickInfoTile, TripStatus, ScoreSummary
+
+## Notes from 3.4
+- `types.ts` is a reference document, not imported by the prototype — it defines the migration target schema
+- Each top-level interface maps to a database table; embedded interfaces (DatePoll, LockedDestination) annotated as column-or-table decisions
+- Union types defined for enums: TripRole, RsvpStatus, RoundFormat, RoundStatus, EventStatus, MessageChannel, NotificationType, ReservationType, TripStatus
+- NotificationPayloads uses a mapped type so payload shape is type-safe per notification type
+- DATE_VOTES and DatePollVote coexist in the prototype (different field names: dateId/availability vs windowId/answer) — noted for consolidation during migration
+- RoundResult and GroupResult use index signatures for team scores plus fixed metadata fields (submittedBy, createdAt) — in production, normalize into separate columns
+- QuickInfoTile is component-local state in the prototype (not persisted to module-level data) — needs tripId and createdBy in production
+- Message in prototype lacks tripId/channel/teamId (inferred from TRIP_MESSAGES nesting) — production table needs explicit columns
+- ExpenseSplit.amount is commented as not-yet-implemented (currently even split)
+- SeriesHistory and PastParticipant are component-local display data; in production, derive from trip_members + events tables
+- lockedDestination stored as Trip field per PLAYBOOK decision point 3.4 (not separate entity)
+- Next task: 4.1 — Handle empty states consistently (Sonnet recommended)
 
 ## In Progress
 - (none)
