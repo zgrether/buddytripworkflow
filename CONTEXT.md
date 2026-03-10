@@ -1,14 +1,14 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 5.2 complete
+2026-03-10 — Task 5.3 complete
 
 ## Current State
 - buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
-- README.md: fully updated screen inventory, navigation graph, data architecture, permission model
 - types.ts: ~300 lines — complete TypeScript interfaces for all entities
 - README.md: fully updated screen inventory, navigation graph, data architecture, permission model
 - SCHEMA.md: complete database schema — 25 tables, all FKs, indexes, creation annotations, migration order
+- REALTIME.md: Supabase Realtime channels (4), TanStack Query feature mapping, RLS requirements, channel lifecycle
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
 - Expense splits now keyed by userId, not first names
@@ -279,6 +279,7 @@
 ## Completed Tasks (continued)
 - [x] 5.1 — Rewrote README.md: full screen inventory with route keys and props for all 7 screens; TripDetail tab breakdown; navigation graph (BottomNav context-awareness, breadcrumb patterns, visual flow diagram); data architecture (14 module-level objects, 5 helper functions, trip-level state, messages shape, notification types); design system CSS vars; permission model summary; reference document index; corrected stale info (DESTINATION_LOCK/DATE_POLL globals → trip-level state, team messages shape, member role user name, mock trips table with BBMI 2024, 4-status model including completed)
 - [x] 5.2 — Created SCHEMA.md: 25 tables derived from types.ts, annotated with required-at-creation fields (`*`), server-computed fields (`auto`), FK relationships, indexes, constraints, RLS notes, payload shapes for notification types, circular FK resolution for trips↔events, updated_at trigger SQL, and ordered table creation list
+- [x] 5.3 — Created REALTIME.md: decision matrix (5 realtime, 2 polling, 8 TanStack Query); 5 Supabase Realtime channel specs with code examples (trip chat, team chat, group_results, side_events, notifications); TanStack Query config, query key mapping, polling for vote counts; Realtime publication SQL; RLS requirements per table; channel lifecycle table; reconnect pattern; prototype→production mapping; implementation order
 
 ## Notes from 5.1
 - README now serves as the definitive handoff document — a migration dev can read it and understand every screen, route, data object, and interaction pattern
@@ -297,7 +298,16 @@
 - `expense_splits.amount` stays nullable even though it's not implemented — avoids a migration later when per-person overrides are added
 - `date_polls` has trip_id as PK (enforces one-poll-per-trip constraint); `locked_window_id` FK is a forward reference — handle with deferrable constraint
 - `players` table denormalizes name/nickname intentionally — historical competition records should reflect the player at event time, not current user profile
-- Phase 5 is 2/4 complete (5.1, 5.2 done; 5.3 REALTIME.md and 5.4 MIGRATION_PLAN.md remain)
+- Phase 5 is 3/4 complete (5.1, 5.2, 5.3 done; 5.4 MIGRATION_PLAN.md remains)
+
+## Notes from 5.3
+- 4 Realtime channels: trip chat, team chat, live scores (group_results), notifications
+- Side events piggyback on the leaderboard channel (same eventId, same lifecycle)
+- Idea votes and date poll votes use polling (refetchInterval: 30s), not Realtime — group is small, lag is acceptable
+- group_results needs `event_id` denormalized column for Supabase filter (documented in schema addition section)
+- Notifications use IN filter on trip IDs — fine for BuddyTrip scale; documented server-side fan-out alternative for larger scale
+- Reconnect: invalidate TanStack Query on `system` channel event to catch missed updates during disconnect
+- Implementation order: leaderboard first, then notifications, then chat — highest stakes first
 
 ## In Progress
 - (none)
@@ -310,7 +320,7 @@
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
-Next task: 5.3 — Create REALTIME.md (Opus recommended)
+Next task: 5.4 — Create MIGRATION_PLAN.md (Opus recommended)
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.
