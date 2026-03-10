@@ -347,10 +347,16 @@ Rounds of competition within an event.
 | `title` | `text` | `NN`, `*` | "Day 1 — Scramble" |
 | `course` | `text` | `NN`, `*` | "Bandon Dunes" |
 | `format` | `text` | `NN`, `*` | `'scramble' \| 'stableford' \| 'sabotage' \| 'skins'` |
-| `status` | `text` | `NN`, `auto` | `'upcoming' \| 'active' \| 'complete'`. Defaults to `'upcoming'`. |
+| `status` | `text` | `NN`, `auto` | `'upcoming' \| 'active' \| 'submitted' \| 'closed'`. Defaults to `'upcoming'`. |
 | `points_available` | `numeric(5,1)` | `NN`, `*` | Total Ryder Cup points for this round |
+| `closed_at` | `timestamptz` | nullable | Set when an owner/planner closes the round via "Close Round" action |
+| `closed_by` | `text` | `FK → users.id`, nullable | User who closed the round |
 
 **Indexes:** `event_id`, `(event_id, day)` (sort rounds chronologically)
+
+**Notes:**
+- `submitted` means all group scores have been entered but the round has not been officially closed. Score corrections are still allowed.
+- `closed` means the round is officially finalized. No further edits are permitted. Use `closed_at` / `closed_by` for audit trail.
 
 ---
 

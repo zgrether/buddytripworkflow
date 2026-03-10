@@ -267,8 +267,8 @@ const BBMI_EVENT = {
     { _id: 'g4', name: 'Group 4', teeTime: '8:36 AM', playerIds: ['ben','llama','bj','taj'] },
   ],
   rounds: [
-    { _id: 'r1', day: 1, title: 'Scramble',   course: 'Bandon Dunes',  format: 'scramble',   status: 'complete', pointsAvailable: 4 },
-    { _id: 'r2', day: 2, title: 'Stableford', course: 'Bandon Trails', format: 'stableford', status: 'complete', pointsAvailable: 4 },
+    { _id: 'r1', day: 1, title: 'Scramble',   course: 'Bandon Dunes',  format: 'scramble',   status: 'closed',    pointsAvailable: 4 },
+    { _id: 'r2', day: 2, title: 'Stableford', course: 'Bandon Trails', format: 'stableford', status: 'submitted', pointsAvailable: 4 },
     { _id: 'r3', day: 3, title: 'Sabotage',   course: 'Pacific Dunes', format: 'sabotage',   status: 'active',   pointsAvailable: 4 },
     { _id: 'r4', day: 4, title: 'Skins',      course: 'Old Macdonald', format: 'skins',      status: 'upcoming', pointsAvailable: 4 },
   ],
@@ -2957,6 +2957,9 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
       const [openSection, setOpenSection] = useState(null)
       const toggleSection = id => setOpenSection(o => o === id ? null : id)
 
+      // Nonce to force re-render when BBMI_EVENT.rounds status mutates
+      const [roundNonce, setRoundNonce] = useState(0)
+
       // Mock team/round/course data for bbmi-live
       const hasTeams   = !!trip.eventId
       const hasRounds  = !!trip.eventId
@@ -3065,48 +3068,91 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
           {/* ── ROUNDS ── */}
           <SectionAccordion id="rounds" icon="Flag" label="Rounds & Format" status={rounds.length > 0 ? 'set' : 'not-set'}
             summary={rounds.length > 0 ? rounds.map(r => r.format).join(' · ') : 'No rounds added yet'}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: rounds.length > 0 ? 12 : 0 }}>
-              {rounds.map((r, i) => (
-                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: 'var(--bt-text-3)', width: 20, flexShrink: 0 }}>R{i + 1}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-text-1)' }}>{r.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{r.format}{r.course ? ` · ${r.course}` : ''} · {r.pts} pts</div>
-                  </div>
-                  {canEdit && !trip.eventId && (
-                    <button onClick={() => setRounds(rs => rs.filter(x => x.id !== r.id))}
-                      style={{ fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bt-text-3)', padding: '2px 6px' }}>×</button>
-                  )}
-                </div>
-              ))}
-            </div>
-            {canEdit && !trip.eventId && !addingRound && (
-              <button onClick={() => setAddingRound(true)}
-                style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '1px dashed var(--bt-accent)60', color: 'var(--bt-accent)', cursor: 'pointer' }}>
-                + Add Round
-              </button>
-            )}
-            {addingRound && (
-              <div style={{ marginTop: 10, padding: '12px', borderRadius: 8, background: 'var(--bt-card)', border: '1px solid var(--bt-accent)40', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <input placeholder="Round name (e.g. Day 1 Scramble)" value={roundDraft.name} onChange={e => setRoundDraft(d => ({...d, name: e.target.value}))}
-                  style={{ fontSize: 13, padding: '7px 10px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }} />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <select value={roundDraft.format} onChange={e => setRoundDraft(d => ({...d, format: e.target.value}))}
-                    style={{ flex: 1, fontSize: 13, padding: '7px 10px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }}>
-                    {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
-                  <input placeholder="Course (optional)" value={roundDraft.course} onChange={e => setRoundDraft(d => ({...d, course: e.target.value}))}
-                    style={{ flex: 1.5, fontSize: 13, padding: '7px 10px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }} />
-                  <input type="number" min="1" max="20" value={roundDraft.pts} onChange={e => setRoundDraft(d => ({...d, pts: +e.target.value}))}
-                    style={{ width: 52, fontSize: 13, padding: '7px 8px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none', textAlign: 'center' }} />
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => { if (!roundDraft.name.trim()) return; setRounds(rs => [...rs, { id: `r${Date.now()}`, ...roundDraft }]); setRoundDraft({ name: '', format: 'Scramble', course: '', pts: 4 }); setAddingRound(false); showToast('Round added') }}
-                    style={{ fontSize: 13, fontWeight: 700, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117' }}>Save</button>
-                  <button onClick={() => setAddingRound(false)}
-                    style={{ fontSize: 13, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>Cancel</button>
-                </div>
+            {/* Live event: use BBMI_EVENT.rounds with status-aware UI */}
+            {trip.eventId ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {BBMI_EVENT.rounds.map((r, i) => {
+                  const isSubmitted = r.status === 'submitted'
+                  const isClosed = r.status === 'closed'
+                  const isActive = r.status === 'active'
+                  return (
+                    <div key={r._id} style={{ borderRadius: 8, background: 'var(--bt-card)', border: `1px solid ${isSubmitted ? '#f59e0b40' : isClosed ? 'var(--bt-border)' : 'var(--bt-border)'}`, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: 'var(--bt-text-3)', width: 20, flexShrink: 0 }}>R{i + 1}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: isClosed ? 'var(--bt-text-3)' : 'var(--bt-text-1)' }}>{r.title}</span>
+                            {isActive && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 9999, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)30' }}>Active</span>}
+                            {isSubmitted && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 9999, background: '#1a120030', color: '#f59e0b', border: '1px solid #f59e0b40' }}>⚠ Pending Close</span>}
+                            {isClosed && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 9999, background: 'var(--bt-base)', color: 'var(--bt-text-3)', border: '1px solid var(--bt-border)' }}>✓ Closed</span>}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{r.format} · {r.course} · {r.pointsAvailable} pts</div>
+                        </div>
+                      </div>
+                      {/* Close Round button for submitted rounds */}
+                      {isSubmitted && canEdit && (
+                        <div style={{ padding: '0 12px 12px' }}>
+                          <button
+                            onClick={() => {
+                              r.status = 'closed'
+                              setRoundNonce(n => n + 1)
+                              showToast(`Day ${r.day}: ${r.title} officially closed`)
+                            }}
+                            style={{ width: '100%', fontSize: 13, fontWeight: 700, padding: '9px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <Ic n="CheckCircle" size={14} color="#0d1117" /> Close Round ✓
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: rounds.length > 0 ? 12 : 0 }}>
+                  {rounds.map((r, i) => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: 'var(--bt-text-3)', width: 20, flexShrink: 0 }}>R{i + 1}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-text-1)' }}>{r.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{r.format}{r.course ? ` · ${r.course}` : ''} · {r.pts} pts</div>
+                      </div>
+                      {canEdit && (
+                        <button onClick={() => setRounds(rs => rs.filter(x => x.id !== r.id))}
+                          style={{ fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bt-text-3)', padding: '2px 6px' }}>×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {canEdit && !addingRound && (
+                  <button onClick={() => setAddingRound(true)}
+                    style={{ fontSize: 12, fontWeight: 600, padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '1px dashed var(--bt-accent)60', color: 'var(--bt-accent)', cursor: 'pointer' }}>
+                    + Add Round
+                  </button>
+                )}
+                {addingRound && (
+                  <div style={{ marginTop: 10, padding: '12px', borderRadius: 8, background: 'var(--bt-card)', border: '1px solid var(--bt-accent)40', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <input placeholder="Round name (e.g. Day 1 Scramble)" value={roundDraft.name} onChange={e => setRoundDraft(d => ({...d, name: e.target.value}))}
+                      style={{ fontSize: 13, padding: '7px 10px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <select value={roundDraft.format} onChange={e => setRoundDraft(d => ({...d, format: e.target.value}))}
+                        style={{ flex: 1, fontSize: 13, padding: '7px 10px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }}>
+                        {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                      <input placeholder="Course (optional)" value={roundDraft.course} onChange={e => setRoundDraft(d => ({...d, course: e.target.value}))}
+                        style={{ flex: 1.5, fontSize: 13, padding: '7px 10px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none' }} />
+                      <input type="number" min="1" max="20" value={roundDraft.pts} onChange={e => setRoundDraft(d => ({...d, pts: +e.target.value}))}
+                        style={{ width: 52, fontSize: 13, padding: '7px 8px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none', textAlign: 'center' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => { if (!roundDraft.name.trim()) return; setRounds(rs => [...rs, { id: `r${Date.now()}`, ...roundDraft }]); setRoundDraft({ name: '', format: 'Scramble', course: '', pts: 4 }); setAddingRound(false); showToast('Round added') }}
+                        style={{ fontSize: 13, fontWeight: 700, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117' }}>Save</button>
+                      <button onClick={() => setAddingRound(false)}
+                        style={{ fontSize: 13, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </SectionAccordion>
 
@@ -5541,6 +5587,11 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
                 {existingResult ? 'Update Score' : 'Submit Score'}
               </span>
             </button>
+            {round.status === 'submitted' && (
+              <div style={{ marginTop: 10, fontSize: 11, color: '#f59e0b', textAlign: 'center', padding: '8px 12px', borderRadius: 8, background: '#1a120030', border: '1px solid #f59e0b30' }}>
+                ⚠ This round is submitted but not yet closed. Corrections are still allowed.
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -5598,6 +5649,11 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
                 {existingResult ? 'Update Score' : 'Submit Score'}
               </span>
             </button>
+            {round.status === 'submitted' && (
+              <div style={{ marginTop: 10, fontSize: 11, color: '#f59e0b', textAlign: 'center', padding: '8px 12px', borderRadius: 8, background: '#1a120030', border: '1px solid #f59e0b30' }}>
+                ⚠ This round is submitted but not yet closed. Corrections are still allowed.
+              </div>
+            )}
           </>
         )}
       </div>
@@ -5613,6 +5669,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
   const [scoreNonce, setScoreNonce] = useState(0)
   const scores = computeScores(BBMI_EVENT, ROUND_RESULTS)
   const [scoreEntryGroup, setScoreEntryGroup] = useState(null)
+  const [scoreEntryRound, setScoreEntryRound] = useState(null)
   const [holeByHoleGroup, setHoleByHoleGroup] = useState(null)
   const [roundSummaryId, setRoundSummaryId] = useState(null)
   const [editMode, setEditMode] = useState(false)
@@ -5763,21 +5820,26 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                 {rounds.map((r, i) => {
                   const res = ROUND_RESULTS[r._id]
                   const isActive = r.status === 'active'
-                  const isComplete = r.status === 'complete'
-                  const isClickable = !editMode && (isActive || isComplete)
+                  const isSubmitted = r.status === 'submitted'
+                  const isClosed = r.status === 'closed'
+                  const isClickable = !editMode && (isActive || isSubmitted || isClosed)
                   const edit = roundEdits[r._id] || {}
+                  const rowBg = isActive ? '#0d1a10' : isSubmitted ? '#1a120008' : 'transparent'
+                  const borderColor = isActive ? 'var(--bt-accent)' : isSubmitted ? '#f59e0b' : isClosed ? 'var(--bt-border)' : 'transparent'
                   return (
                     <div key={r._id}
                       onClick={isClickable ? () => { if (isActive) setTab('groups'); else setRoundSummaryId(r._id) } : undefined}
-                      style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px 40px', padding: isActive ? '12px 14px' : '10px 14px', borderBottom: i < rounds.length - 1 ? '1px solid var(--bt-base)' : 'none', alignItems: 'center', opacity: r.status === 'upcoming' && !editMode ? .4 : 1, background: isActive ? '#0d1a10' : 'transparent', borderLeft: `3px solid ${isActive ? 'var(--bt-accent)' : 'transparent'}`, cursor: isClickable ? 'pointer' : 'default', transition: 'background .15s' }}
+                      style={{ display: 'grid', gridTemplateColumns: '1fr 64px 64px 40px', padding: isActive ? '12px 14px' : '10px 14px', borderBottom: i < rounds.length - 1 ? '1px solid var(--bt-base)' : 'none', alignItems: 'center', opacity: r.status === 'upcoming' && !editMode ? .4 : 1, background: rowBg, borderLeft: `3px solid ${borderColor}`, cursor: isClickable ? 'pointer' : 'default', transition: 'background .15s' }}
                       onMouseEnter={e => { if (isClickable) e.currentTarget.style.background = isActive ? '#112518' : 'var(--bt-base)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = isActive ? '#0d1a10' : 'transparent' }}>
+                      onMouseLeave={e => { e.currentTarget.style.background = rowBg }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {isActive && <LiveDot />}
-                          {isComplete && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>✓</span>}
-                          <span style={{ fontSize: 14, color: 'var(--bt-text-1)' }}>Day {r.day}: {r.title}</span>
-                          {isClickable && <span style={{ fontSize: 11, color: 'var(--bt-text-3)', marginLeft: 'auto' }}>{isActive ? 'Groups →' : '›'}</span>}
+                          {isClosed && <span style={{ fontSize: 10, color: 'var(--bt-text-3)' }}>✓</span>}
+                          <span style={{ fontSize: 14, color: isClosed ? 'var(--bt-text-3)' : 'var(--bt-text-1)' }}>Day {r.day}: {r.title}</span>
+                          {isSubmitted && <span style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', marginLeft: 4 }}>⚠ Pending close</span>}
+                          {isClickable && !isSubmitted && <span style={{ fontSize: 11, color: 'var(--bt-text-3)', marginLeft: 'auto' }}>{isActive ? 'Groups →' : '›'}</span>}
+                          {isSubmitted && <span style={{ fontSize: 11, color: '#f59e0b', marginLeft: 'auto' }}>›</span>}
                           {editMode && res && (
                             <button onClick={() => { delete ROUND_RESULTS[r._id]; delete GROUP_RESULTS[r._id]; setRoundEdits(e => ({ ...e, [r._id]: { a: '', b: '' } })); setScoreNonce(n => n + 1) }}
                               style={{ marginLeft: 'auto', fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>
@@ -5785,7 +5847,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                             </button>
                           )}
                         </div>
-                        <div style={{ fontSize: 11, color: isActive ? 'var(--bt-accent)' : 'var(--bt-text-3)', paddingLeft: isActive ? 14 : isComplete ? 14 : 0 }}>{r.course}</div>
+                        <div style={{ fontSize: 11, color: isActive ? 'var(--bt-accent)' : isSubmitted ? '#f59e0b80' : 'var(--bt-text-3)', paddingLeft: isActive || isClosed || isSubmitted ? 14 : 0 }}>{r.course}</div>
                       </div>
                       {editMode ? (
                         <>
@@ -5963,33 +6025,44 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
           event={BBMI_EVENT}
           onSubmit={handleScoreSubmit}
           onClose={() => setHoleByHoleGroup(null)}
-          onOfflineResult={() => { setScoreEntryGroup(holeByHoleGroup); setHoleByHoleGroup(null) }}
+          onOfflineResult={() => { setScoreEntryGroup(holeByHoleGroup); setScoreEntryRound(activeRound); setHoleByHoleGroup(null) }}
         />
       )}
       {scoreEntryGroup && (
         <ScoreEntry
           group={scoreEntryGroup}
-          round={activeRound}
+          round={scoreEntryRound || activeRound}
           event={BBMI_EVENT}
           onSubmit={handleScoreSubmit}
-          onClose={() => setScoreEntryGroup(null)}
+          onClose={() => { setScoreEntryGroup(null); setScoreEntryRound(null) }}
         />
       )}
       {roundSummaryId && (() => {
         const r = rounds.find(x => x._id === roundSummaryId)
         const groupResults = GROUP_RESULTS[roundSummaryId] || {}
+        const roundIsSubmitted = r.status === 'submitted'
+        const roundIsClosed = r.status === 'closed'
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
             <div onClick={() => setRoundSummaryId(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.6)' }} />
             <div style={{ position: 'relative', background: 'var(--bt-card)', borderRadius: '20px 20px 0 0', padding: '20px 16px 40px', maxHeight: '75vh', overflowY: 'auto' }}>
               <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--bt-border)', margin: '0 auto 16px' }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--bt-text-1)' }}>Day {r.day}: {r.title}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--bt-text-1)' }}>Day {r.day}: {r.title}</span>
+                    {roundIsSubmitted && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 9999, background: '#1a120030', color: '#f59e0b', border: '1px solid #f59e0b40' }}>⚠ Pending Close</span>}
+                    {roundIsClosed && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 9999, background: 'var(--bt-base)', color: 'var(--bt-text-3)', border: '1px solid var(--bt-border)' }}>✓ Closed</span>}
+                  </div>
                   <div style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>{r.course}</div>
                 </div>
                 <button onClick={() => setRoundSummaryId(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--bt-text-3)' }}>×</button>
               </div>
+              {roundIsSubmitted && (
+                <div style={{ marginBottom: 14, fontSize: 11, color: '#f59e0b', padding: '8px 12px', borderRadius: 8, background: '#1a120030', border: '1px solid #f59e0b30' }}>
+                  ⚠ This round is submitted but not yet closed. Tap "Edit Scores" on any group to correct a misentry.
+                </div>
+              )}
               {/* Round totals */}
               {ROUND_RESULTS[roundSummaryId] && (
                 <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
@@ -6023,7 +6096,14 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                           </div>
                         ) : <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>Not submitted</span>}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>{players.map(p => p.nickname).join(' · ')}</div>
+                      <div style={{ fontSize: 11, color: 'var(--bt-text-3)', marginBottom: roundIsSubmitted && canScore ? 8 : 0 }}>{players.map(p => p.nickname).join(' · ')}</div>
+                      {roundIsSubmitted && canScore && (
+                        <button
+                          onClick={() => { setScoreEntryGroup(group); setScoreEntryRound(r); setRoundSummaryId(null) }}
+                          style={{ width: '100%', fontSize: 12, fontWeight: 700, padding: '7px', borderRadius: 7, border: '1px solid #f59e0b60', background: '#1a120030', color: '#f59e0b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                          <Ic n="Edit2" size={12} color="#f59e0b" /> Edit Scores
+                        </button>
+                      )}
                     </div>
                   )
                 })}
