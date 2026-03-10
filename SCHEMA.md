@@ -351,12 +351,37 @@ Rounds of competition within an event.
 | `points_available` | `numeric(5,1)` | `NN`, `*` | Total Ryder Cup points for this round |
 | `closed_at` | `timestamptz` | nullable | Set when an owner/planner closes the round via "Close Round" action |
 | `closed_by` | `text` | `FK → users.id`, nullable | User who closed the round |
+| `modifiers` | `jsonb` | nullable | `{ carryOver?: bool, movingTees?: { enabled, startBox, eagleShift, birdieShift, parShift, bogeyShift } }` |
 
 **Indexes:** `event_id`, `(event_id, day)` (sort rounds chronologically)
 
 **Notes:**
 - `submitted` means all group scores have been entered but the round has not been officially closed. Score corrections are still allowed.
 - `closed` means the round is officially finalized. No further edits are permitted. Use `closed_at` / `closed_by` for audit trail.
+- `modifiers` is a JSONB object for optional per-round rule variants. Both keys are optional; null means no modifiers active.
+
+---
+
+## `hole_results`
+
+Per-hole carry state for a group's round. Written when scorer uses hole-by-hole entry. Required to reconstruct carry pot history.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `round_id` | `text` | `FK → rounds.id`, `NN`, `*` | |
+| `group_id` | `text` | `FK → play_groups.id`, `NN`, `*` | |
+| `hole_number` | `integer` | `NN`, `*` | 1–18 |
+| `carry_value` | `integer` | `NN`, `auto` | Pot value for this hole. `1` = normal (no carry). Defaults to `1`. |
+| `winner_team_id` | `text` | `FK → teams.id`, nullable | `null` = hole was halved / dead hole. Set when a team wins the hole. |
+
+**Primary key:** `(round_id, group_id, hole_number)`
+
+**Indexes:** `(round_id, group_id)` (fetch all holes for a group's round in one query)
+
+**Notes:**
+- A `carry_value` > 1 means prior holes were halved and the pot accumulated.
+- When `winner_team_id IS NOT NULL`, the carry resets to 1 on the next hole.
+- This table is only populated when the scorer uses hole-by-hole entry. For offline/quick-entry results, this table has no rows for that group/round.
 
 ---
 
@@ -631,6 +656,7 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 10. `side_events` (refs `events`)
 11. `group_results` (refs `rounds`, `play_groups`, `users`)
 12. `group_result_scores` (refs `group_results`, `teams`)
+12a. `hole_results` (refs `rounds`, `play_groups`, `teams`)
 13. `trip_members` (refs `trips`, `users`)
 14. `ideas` (refs `trips`)
 15. `idea_votes` (refs `trips`, `ideas`, `users`)

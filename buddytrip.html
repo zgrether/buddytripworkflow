@@ -267,10 +267,10 @@ const BBMI_EVENT = {
     { _id: 'g4', name: 'Group 4', teeTime: '8:36 AM', playerIds: ['ben','llama','bj','taj'] },
   ],
   rounds: [
-    { _id: 'r1', day: 1, title: 'Scramble',   course: 'Bandon Dunes',  format: 'scramble',   status: 'closed',    pointsAvailable: 4 },
-    { _id: 'r2', day: 2, title: 'Stableford', course: 'Bandon Trails', format: 'stableford', status: 'submitted', pointsAvailable: 4 },
-    { _id: 'r3', day: 3, title: 'Sabotage',   course: 'Pacific Dunes', format: 'sabotage',   status: 'active',   pointsAvailable: 4 },
-    { _id: 'r4', day: 4, title: 'Skins',      course: 'Old Macdonald', format: 'skins',      status: 'upcoming', pointsAvailable: 4 },
+    { _id: 'r1', day: 1, title: 'Scramble',   course: 'Bandon Dunes',  format: 'scramble',   status: 'closed',    pointsAvailable: 4, modifiers: null },
+    { _id: 'r2', day: 2, title: 'Stableford', course: 'Bandon Trails', format: 'stableford', status: 'submitted', pointsAvailable: 4, modifiers: null },
+    { _id: 'r3', day: 3, title: 'Sabotage',   course: 'Pacific Dunes', format: 'sabotage',   status: 'active',   pointsAvailable: 4, modifiers: { carryOver: true } },
+    { _id: 'r4', day: 4, title: 'Skins',      course: 'Old Macdonald', format: 'skins',      status: 'upcoming', pointsAvailable: 4, modifiers: null },
   ],
   sides: [
     { _id: 's1', name: 'Pool',           icon: '🎱', pointsAvailable: 5, status: 'complete', result: { 'team-a': 2, 'team-b': 3 } },
@@ -5327,6 +5327,24 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
 
   const anyScored = holes.some(h => groupPlayers.some(p => h.strokes[p._id] !== ''))
 
+  // Carry-over pot values — one per hole. Only computed when modifiers.carryOver is true.
+  const carryPots = useMemo(() => {
+    if (!round.modifiers?.carryOver) return null
+    const pots = []
+    let carry = 1
+    holes.forEach(hole => {
+      pots.push(carry)
+      const { aTotal, bTotal, complete } = holeTeamTotals(hole)
+      if (complete) {
+        carry = (aTotal !== bTotal) ? 1 : carry + 1  // winner resets, halve accumulates
+      }
+    })
+    return pots
+  }, [holes, round])
+
+  // Index of the first incomplete hole (the "live" hole) — used for carry-over highlight
+  const liveHoleIdx = carryPots ? holes.findIndex(h => !holeTeamTotals(h).complete) : -1
+
   function handleSubmit() {
     // Save hole-by-hole data
     if (!HOLE_RESULTS[round._id]) HOLE_RESULTS[round._id] = {}
@@ -5417,6 +5435,13 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
 
       {/* Hole rows */}
       <div style={{ padding: '12px 16px', flex: 1 }}>
+        {/* Carry-over legend */}
+        {carryPots && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '7px 10px', borderRadius: 8, background: '#1a120030', border: '1px solid #f59e0b30' }}>
+            <span style={{ fontSize: 12 }}>⊕</span>
+            <span style={{ fontSize: 11, color: '#f59e0b' }}>Carry-over active — halved holes accumulate into the next pot</span>
+          </div>
+        )}
         {/* Column headers */}
         <div style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--bt-border)' }}>
           <span style={{ fontSize: 10, color: 'var(--bt-text-3)', fontWeight: 700 }}>HOLE</span>
@@ -5429,9 +5454,16 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
           const { aTotal, bTotal, complete } = holeTeamTotals(hole)
           const holeWinner = complete && scoringType === 'match' ? (aTotal < bTotal ? 'a' : bTotal < aTotal ? 'b' : 'halve') : null
           const isDormieHole = matchState?.isDormie && !complete
+          const pot = carryPots ? carryPots[hi] : 1
+          const isLiveHole = carryPots && hi === liveHoleIdx
           return (
-            <div key={hi} style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)', background: isDormieHole ? 'rgba(255,80,80,.04)' : 'transparent', borderLeft: isDormieHole ? '2px solid rgba(255,80,80,.25)' : '2px solid transparent', paddingLeft: isDormieHole ? 6 : 0 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
+            <div key={hi} style={{ display: 'grid', gridTemplateColumns: '36px 28px auto auto 20px', gap: 4, alignItems: 'center', marginBottom: 4, padding: '4px 0', borderBottom: '1px solid var(--bt-base)', background: isDormieHole ? 'rgba(255,80,80,.04)' : isLiveHole ? '#1a120015' : 'transparent', borderLeft: isDormieHole ? '2px solid rgba(255,80,80,.25)' : isLiveHole ? '2px solid #f59e0b60' : '2px solid transparent', paddingLeft: isDormieHole || isLiveHole ? 6 : 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: isLiveHole ? '#f59e0b' : 'var(--bt-text-3)' }}>#{hole.holeNum}</span>
+                {carryPots && pot > 1 && (
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#f59e0b', background: '#f59e0b20', borderRadius: 3, padding: '0 3px', lineHeight: '14px' }}>×{pot}</span>
+                )}
+              </div>
               <span style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>P{hole.par}</span>
               {/* Team A player inputs */}
               <div style={{ display: 'flex', gap: 3 }}>
@@ -5497,6 +5529,24 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
   // Determine which team each player in this group is on
   const teamAPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamA._id)
   const teamBPlayers = groupPlayers.filter(p => getTeamId(event._id, p._id) === teamB._id)
+
+  // Carry-over: compute current pot from HOLE_RESULTS if available
+  const carryOver = !!round.modifiers?.carryOver
+  const currentPot = (() => {
+    if (!carryOver) return 1
+    const holeData = HOLE_RESULTS[round._id]?.[group._id]?.holes
+    if (!holeData) return 1
+    let carry = 1
+    for (const hole of holeData) {
+      const aFilled = teamAPlayers.every(p => hole.strokes[p._id] !== '')
+      const bFilled = teamBPlayers.every(p => hole.strokes[p._id] !== '')
+      if (!aFilled || !bFilled) break
+      const aTotal = teamAPlayers.reduce((s, p) => s + (Number(hole.strokes[p._id]) || 0), 0)
+      const bTotal = teamBPlayers.reduce((s, p) => s + (Number(hole.strokes[p._id]) || 0), 0)
+      carry = (aTotal !== bTotal) ? 1 : carry + 1
+    }
+    return carry
+  })()
 
   // Skins: track skins won per team (integer entry instead of 3-way result)
   const isSkins = round.format === 'skins'
@@ -5623,6 +5673,14 @@ function ScoreEntry({ group, round, event, onSubmit, onClose }) {
                 })}
               </div>
             </div>
+
+            {/* Carry-over note */}
+            {carryOver && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: '#1a120030', border: '1px solid #f59e0b30' }}>
+                <span style={{ fontSize: 11, color: '#f59e0b' }}>⊕ Halved holes carry over.</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#f59e0b' }}>Current pot: ×{currentPot}</span>
+              </div>
+            )}
 
             {/* Points preview */}
             {result && (
@@ -5847,7 +5905,10 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                             </button>
                           )}
                         </div>
-                        <div style={{ fontSize: 11, color: isActive ? 'var(--bt-accent)' : isSubmitted ? '#f59e0b80' : 'var(--bt-text-3)', paddingLeft: isActive || isClosed || isSubmitted ? 14 : 0 }}>{r.course}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: isActive ? 'var(--bt-accent)' : isSubmitted ? '#f59e0b80' : 'var(--bt-text-3)', paddingLeft: isActive || isClosed || isSubmitted ? 14 : 0 }}>
+                          <span>{r.course}</span>
+                          {r.modifiers?.carryOver && <span style={{ fontSize: 9, fontWeight: 700, color: '#f59e0b', background: '#f59e0b20', borderRadius: 3, padding: '1px 4px', letterSpacing: '.04em' }}>⊕ carry</span>}
+                        </div>
                       </div>
                       {editMode ? (
                         <>
