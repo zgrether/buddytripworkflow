@@ -668,7 +668,56 @@ const ROUND_RESULTS = {
 }
 
 // Hole-by-hole data: { [roundId]: { [groupId]: { holes: [{holeNum, par, strokes:{[playerId]:num}}] } } }
-const HOLE_RESULTS = {}
+const HOLE_RESULTS = {
+  'r1': {
+    'g1': {
+      holes: [
+        { holeNum: 1,  par: 4, strokes: { brad: 4, merling: 5, jd: 4, jrob: 4 } },
+        { holeNum: 2,  par: 4, strokes: { brad: 5, merling: 4, jd: 5, jrob: 3 } },
+        { holeNum: 3,  par: 3, strokes: { brad: 3, merling: 3, jd: 4, jrob: 3 } },
+        { holeNum: 4,  par: 4, strokes: { brad: 4, merling: 6, jd: 4, jrob: 5 } },
+        { holeNum: 5,  par: 5, strokes: { brad: 5, merling: 5, jd: 6, jrob: 4 } },
+        { holeNum: 6,  par: 3, strokes: { brad: 3, merling: 4, jd: 3, jrob: 3 } },
+        { holeNum: 7,  par: 4, strokes: { brad: 5, merling: 4, jd: 4, jrob: 5 } },
+        { holeNum: 8,  par: 5, strokes: { brad: 4, merling: 5, jd: 5, jrob: 6 } },
+        { holeNum: 9,  par: 4, strokes: { brad: 4, merling: 5, jd: 3, jrob: 4 } },
+        { holeNum: 10, par: 4, strokes: { brad: 5, merling: 4, jd: 4, jrob: 5 } },
+        { holeNum: 11, par: 3, strokes: { brad: 2, merling: 3, jd: 4, jrob: 3 } },
+        { holeNum: 12, par: 5, strokes: { brad: 5, merling: 6, jd: 5, jrob: 5 } },
+        { holeNum: 13, par: 4, strokes: { brad: 4, merling: 4, jd: 5, jrob: 4 } },
+        { holeNum: 14, par: 4, strokes: { brad: 6, merling: 5, jd: 4, jrob: 4 } },
+        { holeNum: 15, par: 3, strokes: { brad: 3, merling: 3, jd: 3, jrob: 4 } },
+        { holeNum: 16, par: 5, strokes: { brad: 5, merling: 4, jd: 5, jrob: 5 } },
+        { holeNum: 17, par: 4, strokes: { brad: 4, merling: 5, jd: 4, jrob: 3 } },
+        { holeNum: 18, par: 4, strokes: { brad: 5, merling: 4, jd: 5, jrob: 4 } },
+      ]
+    }
+  },
+  'r2': {
+    'g2': {
+      holes: [
+        { holeNum: 1,  par: 4, strokes: { zach: 4, steve: 5, rob: 4, buddy: 5 } },
+        { holeNum: 2,  par: 4, strokes: { zach: 3, steve: 4, rob: 5, buddy: 4 } },
+        { holeNum: 3,  par: 3, strokes: { zach: 3, steve: 3, rob: 3, buddy: 4 } },
+        { holeNum: 4,  par: 4, strokes: { zach: 5, steve: 4, rob: 4, buddy: 6 } },
+        { holeNum: 5,  par: 5, strokes: { zach: 5, steve: 6, rob: 5, buddy: 5 } },
+        { holeNum: 6,  par: 3, strokes: { zach: 4, steve: 3, rob: 3, buddy: 3 } },
+        { holeNum: 7,  par: 4, strokes: { zach: 4, steve: 5, rob: 4, buddy: 4 } },
+        { holeNum: 8,  par: 5, strokes: { zach: 5, steve: 5, rob: 6, buddy: 5 } },
+        { holeNum: 9,  par: 4, strokes: { zach: 4, steve: 4, rob: 5, buddy: 3 } },
+        { holeNum: 10, par: 4, strokes: { zach: 5, steve: 4, rob: 4, buddy: 5 } },
+        { holeNum: 11, par: 3, strokes: { zach: 3, steve: 4, rob: 3, buddy: 3 } },
+        { holeNum: 12, par: 5, strokes: { zach: 6, steve: 5, rob: 5, buddy: 6 } },
+        { holeNum: 13, par: 4, strokes: { zach: 4, steve: 4, rob: 4, buddy: 5 } },
+        { holeNum: 14, par: 4, strokes: { zach: 3, steve: 5, rob: 4, buddy: 4 } },
+        { holeNum: 15, par: 3, strokes: { zach: 3, steve: 3, rob: 4, buddy: 3 } },
+        { holeNum: 16, par: 5, strokes: { zach: 5, steve: 5, rob: 5, buddy: 4 } },
+        { holeNum: 17, par: 4, strokes: { zach: 4, steve: 4, rob: 5, buddy: 4 } },
+        { holeNum: 18, par: 4, strokes: { zach: 5, steve: 4, rob: 4, buddy: 5 } },
+      ]
+    }
+  }
+}
 
 // Per-group results for each round. Each group's outcome is 1/0.5/0 per team
 // (win/halve/loss). ROUND_RESULTS aggregates these across all groups.
@@ -5452,7 +5501,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
 }
 
 // ── HoleByHoleEntry — full hole-by-hole scorecard overlay ────────
-function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResult }) {
+function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResult, readOnly = false }) {
   const { useState, useMemo } = React
   const PARS = [4,4,3,4,5,3,4,5,4, 4,3,5,4,4,3,5,4,4]
   const { teams } = event
@@ -5637,17 +5686,17 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
           </button>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: 'var(--bt-text-3)' }}>Day {round.day} · {round.title} · {round.course}</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--bt-text-1)' }}>{group.name} — Hole by Hole</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--bt-text-1)' }}>{readOnly ? `Scorecard — ${group.name}` : `${group.name} — Hole by Hole`}</div>
           </div>
-          {/* Scoring type toggle */}
-          <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--bt-border)' }}>
+          {/* Scoring type toggle (hidden in readOnly) */}
+          {!readOnly && <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--bt-border)' }}>
             {[['stroke', 'Stroke'], ['match', 'Match']].map(([type, label]) => (
               <button key={type} onClick={() => setScoringType(type)}
                 style={{ padding: '5px 10px', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', background: scoringType === type ? 'var(--bt-accent)' : 'var(--bt-card)', color: scoringType === type ? '#0d1117' : 'var(--bt-text-3)', transition: 'all .15s' }}>
                 {label}
               </button>
             ))}
-          </div>
+          </div>}
         </div>
 
         {/* Match play state banner */}
@@ -5775,9 +5824,16 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
                     const isFuture = movingTees && hi > teeBoxLiveIdx && teeBoxLiveIdx >= 0
                     return (
                       <div key={p._id} style={{ position: 'relative', width: 36, height: 32 }}>
-                        <input type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
-                          title={p.nickname}
-                          style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? team.color + '60' : 'var(--bt-border)'}`, color: team.color, outline: 'none' }} />
+                        {readOnly ? (
+                          <div title={p.nickname}
+                            style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: '32px', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? team.color + '60' : 'var(--bt-border)'}`, color: team.color }}>
+                            {hole.strokes[p._id] !== '' ? hole.strokes[p._id] : '—'}
+                          </div>
+                        ) : (
+                          <input type="number" min="1" max="15" value={hole.strokes[p._id]} onChange={e => setStroke(hi, p._id, e.target.value)} placeholder="—"
+                            title={p.nickname}
+                            style={{ width: 36, height: 32, fontSize: 14, fontWeight: 700, textAlign: 'center', borderRadius: 6, background: 'var(--bt-base)', border: `1px solid ${hole.strokes[p._id] !== '' ? team.color + '60' : 'var(--bt-border)'}`, color: team.color, outline: 'none' }} />
+                        )}
                         {box && <span style={{ position: 'absolute', bottom: 1, right: 1, width: 8, height: 8, borderRadius: '50%', background: box.color, border: box.id === 'white' ? '1px solid #999' : 'none', opacity: isFuture ? 0.35 : 0.85 }} />}
                       </div>
                     )
@@ -5807,15 +5863,24 @@ function HoleByHoleEntry({ group, round, event, onSubmit, onClose, onOfflineResu
           })}
         </div>
 
-        {/* Submit / offline */}
-        <button onClick={handleSubmit} disabled={!anyScored}
-          style={{ width: '100%', fontSize: 14, fontWeight: 700, padding: '14px', borderRadius: 10, border: 'none', marginBottom: 12, cursor: anyScored ? 'pointer' : 'not-allowed', background: anyScored ? 'var(--bt-accent)' : 'var(--bt-border)', color: anyScored ? '#0d1117' : 'var(--bt-text-3)', boxShadow: anyScored ? '0 0 20px var(--bt-accent)30' : 'none', transition: 'all .15s' }}>
-          {matchState?.isMatchOver ? `Submit — ${matchState.leadTeam.shortName} wins` : anyScored ? 'Submit Score' : 'Enter scores above'}
-        </button>
-        <button onClick={onOfflineResult}
-          style={{ width: '100%', fontSize: 13, fontWeight: 500, padding: '10px', borderRadius: 10, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>
-          Enter offline result instead
-        </button>
+        {/* Submit / offline (hidden in readOnly) */}
+        {readOnly ? (
+          <button onClick={onClose}
+            style={{ width: '100%', fontSize: 14, fontWeight: 700, padding: '14px', borderRadius: 10, border: '1px solid var(--bt-border)', background: 'var(--bt-card)', color: 'var(--bt-text-1)', cursor: 'pointer', transition: 'all .15s' }}>
+            Close
+          </button>
+        ) : (
+          <>
+            <button onClick={handleSubmit} disabled={!anyScored}
+              style={{ width: '100%', fontSize: 14, fontWeight: 700, padding: '14px', borderRadius: 10, border: 'none', marginBottom: 12, cursor: anyScored ? 'pointer' : 'not-allowed', background: anyScored ? 'var(--bt-accent)' : 'var(--bt-border)', color: anyScored ? '#0d1117' : 'var(--bt-text-3)', boxShadow: anyScored ? '0 0 20px var(--bt-accent)30' : 'none', transition: 'all .15s' }}>
+              {matchState?.isMatchOver ? `Submit — ${matchState.leadTeam.shortName} wins` : anyScored ? 'Submit Score' : 'Enter scores above'}
+            </button>
+            <button onClick={onOfflineResult}
+              style={{ width: '100%', fontSize: 13, fontWeight: 500, padding: '10px', borderRadius: 10, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>
+              Enter offline result instead
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -6083,6 +6148,8 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
   const [scoreEntryRound, setScoreEntryRound] = useState(null)
   const [holeByHoleGroup, setHoleByHoleGroup] = useState(null)
   const [roundSummaryId, setRoundSummaryId] = useState(null)
+  const [viewingScorecardGroup, setViewingScorecardGroup] = useState(null)
+  const [viewingScorecardRound, setViewingScorecardRound] = useState(null)
   const [editMode, setEditMode] = useState(false)
   const [showModifiers, setShowModifiers] = useState(false)
   const [handicapOn, setHandicapOn] = useState(false)
@@ -6518,22 +6585,28 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                 {event.groups.map(group => {
                   const gr = groupResults[group._id]
                   const players = event.players.filter(p => group.playerIds.includes(p._id))
+                  const hasHoleData = !!HOLE_RESULTS[roundSummaryId]?.[group._id]
                   return (
-                    <div key={group._id} style={{ borderRadius: 10, padding: '12px 14px', background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
+                    <div key={group._id}
+                      onClick={hasHoleData ? () => { setViewingScorecardGroup(group); setViewingScorecardRound(r); setRoundSummaryId(null) } : undefined}
+                      style={{ borderRadius: 10, padding: '12px 14px', background: 'var(--bt-base)', border: '1px solid var(--bt-border)', cursor: hasHoleData ? 'pointer' : 'default', transition: 'border-color .15s' }}
+                      onMouseEnter={hasHoleData ? e => e.currentTarget.style.borderColor = 'var(--bt-accent)' : undefined}
+                      onMouseLeave={hasHoleData ? e => e.currentTarget.style.borderColor = 'var(--bt-border)' : undefined}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                         <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--bt-text-1)' }}>{group.name}</span>
                         {gr ? (
-                          <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             {teams.map(team => (
                               <span key={team._id} style={{ fontSize: 13, fontWeight: 700, color: team.color }}>{gr[team._id] ?? '—'}</span>
                             ))}
+                            {hasHoleData && <span style={{ color: 'var(--bt-text-3)', fontSize: 11, marginLeft: 4 }}>View scorecard ›</span>}
                           </div>
                         ) : <span style={{ fontSize: 12, color: 'var(--bt-text-3)' }}>Not submitted</span>}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--bt-text-3)', marginBottom: roundIsSubmitted && canScore ? 8 : 0 }}>{players.map(p => p.nickname).join(' · ')}</div>
                       {roundIsSubmitted && canScore && (
                         <button
-                          onClick={() => { setScoreEntryGroup(group); setScoreEntryRound(r); setRoundSummaryId(null) }}
+                          onClick={e => { e.stopPropagation(); setScoreEntryGroup(group); setScoreEntryRound(r); setRoundSummaryId(null) }}
                           style={{ width: '100%', fontSize: 12, fontWeight: 700, padding: '7px', borderRadius: 7, border: '1px solid #f59e0b60', background: '#1a120030', color: '#f59e0b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                           <Ic n="Edit2" size={12} color="#f59e0b" /> Edit Scores
                         </button>
@@ -6546,6 +6619,18 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
           </div>
         )
       })()}
+      {/* Read-only scorecard viewer */}
+      {viewingScorecardGroup && viewingScorecardRound && (
+        <HoleByHoleEntry
+          group={viewingScorecardGroup}
+          round={viewingScorecardRound}
+          event={event}
+          readOnly={true}
+          onClose={() => { setViewingScorecardGroup(null); setViewingScorecardRound(null) }}
+          onSubmit={() => {}}
+          onOfflineResult={() => {}}
+        />
+      )}
     </div>
   )
 }
