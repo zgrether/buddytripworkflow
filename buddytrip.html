@@ -1169,6 +1169,19 @@ function Dashboard({ navigate, viewerRole, trips, notifications, onMarkAllRead, 
               </div>
             </div>
           )}
+          {/* Completed — final competition result */}
+          {!isLive && !isReady && trip.eventId && getTripStatus(trip) === 'completed' && (() => {
+            const ev = getEventForTrip(trip._id, trips)
+            if (!ev) return null
+            const sc = computeScores(ev, ROUND_RESULTS)
+            const sorted = ev.teams.map(t => ({ team: t, pts: sc[t._id] || 0 })).sort((a, b) => b.pts - a.pts)
+            const winner = sorted[0]
+            return winner.pts > 0 ? (
+              <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: winner.team.color, display: 'flex', alignItems: 'center', gap: 5 }}>
+                🏆 {winner.team.name} won · {sorted.map(s => s.pts).join('–')}
+              </div>
+            ) : null
+          })()}
         </div>
       </div>
     )
@@ -1783,7 +1796,7 @@ const MOCK_SERIES = [
   { _id: 'series-ryder', name: 'Ryder Knockoff', fullName: 'The Ryder Knockoff Cup', years: '2022–present', trips: 3, ownerId: 'brad' },
 ]
 
-function TripSettingsPanel({ trip, showToast, navigate, notify }) {
+function TripSettingsPanel({ trip, showToast, navigate, notify, isCompleted }) {
   const [open, setOpen] = React.useState(null)  // 'series' | 'transfer' | 'archive' | 'delete'
   const toggle = key => setOpen(o => o === key ? null : key)
 
@@ -1948,8 +1961,8 @@ function TripSettingsPanel({ trip, showToast, navigate, notify }) {
           isToggle toggleVal={compEnabled}
           toggle={() => { setCompEnabled(v => !v); showToast(compEnabled ? 'Competition suspended' : 'Competition resumed') }} />
 
-        {/* 3 — Transfer Ownership */}
-        <SettingRow id="transfer" icon="Crown" label="Transfer Ownership"
+        {/* 3 — Transfer Ownership (hidden when completed) */}
+        {!isCompleted && <SettingRow id="transfer" icon="Crown" label="Transfer Ownership"
           sublabel="You'll become a Planner after transferring">
           <div style={{ paddingTop: 14 }}>
             {!confirmTransfer ? (
@@ -1989,10 +2002,10 @@ function TripSettingsPanel({ trip, showToast, navigate, notify }) {
               </div>
             )}
           </div>
-        </SettingRow>
+        </SettingRow>}
 
-        {/* 4 — Archive Trip */}
-        <SettingRow id="archive" icon="📦" label="Archive Trip"
+        {/* 4 — Archive Trip (hidden when completed) */}
+        {!isCompleted && <SettingRow id="archive" icon="📦" label="Archive Trip"
           sublabel="Moves to Past Trips — read-only, nothing deleted">
           <div style={{ paddingTop: 14 }}>
             {!archiveConfirm ? (
@@ -2017,10 +2030,10 @@ function TripSettingsPanel({ trip, showToast, navigate, notify }) {
               </div>
             )}
           </div>
-        </SettingRow>
+        </SettingRow>}
 
-        {/* 5 — Delete Trip (danger) */}
-        <SettingRow id="delete" icon="🗑️" label="Delete Trip" danger
+        {/* 5 — Delete Trip (hidden when completed) */}
+        {!isCompleted && <SettingRow id="delete" icon="🗑️" label="Delete Trip" danger
           sublabel="Permanent — cannot be undone">
           <div style={{ paddingTop: 14 }}>
             <div style={{ padding: '14px', borderRadius: 10, background: '#1a0a0a', border: '1px solid var(--bt-danger)30', marginBottom: 14 }}>
@@ -2038,7 +2051,7 @@ function TripSettingsPanel({ trip, showToast, navigate, notify }) {
               Permanently Delete Trip
             </button>
           </div>
-        </SettingRow>
+        </SettingRow>}
 
       </div>
     </div>
@@ -2195,9 +2208,12 @@ function TripChat({ messages, setMessages, msgDraft, setMsgDraft, maxHeight = 32
 
 function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips, setTrips, notify, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const trip = trips.find(t => t._id === tripId) || trips[0]
+  const tripStatus = getTripStatus(trip)
+  const isCompleted = tripStatus === 'completed'
   const isOwner = viewerRole === 'owner'
-  const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
-  const isLive = getTripStatus(trip) === 'active'
+  const canEdit = !isCompleted && (viewerRole === 'owner' || viewerRole === 'planner')
+  const isOwnerActive = !isCompleted && viewerRole === 'owner'
+  const isLive = tripStatus === 'active'
 
   const [tab, setTab] = useState('home')
   const hasComp = !!trip.eventId || !!trip.hasComp
@@ -2846,8 +2862,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                 </div>
               )}
 
-              {/* RSVP — self-service for the current user */}
-              {isMe && (
+              {/* RSVP — self-service for the current user (disabled when completed) */}
+              {isMe && !isCompleted && (
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--bt-text-3)', marginBottom: 8 }}>Your RSVP</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -2910,8 +2926,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                 </div>
               )}
 
-              {/* Role management — owner only, not self */}
-              {isOwner && !isMe && (
+              {/* Role management — owner only, not self, not completed */}
+              {isOwnerActive && !isMe && (
                 <div style={{ paddingTop: canEdit ? 10 : 0, borderTop: canEdit ? '1px solid var(--bt-border)' : 'none' }}>
                   {confirmAction?.userId === member.userId ? (
                     /* Inline confirmation prompt */
@@ -3184,8 +3200,8 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                           </div>
                         </div>
                       </div>
-                      {/* Close Round button for submitted rounds */}
-                      {isSubmitted && canEdit && (
+                      {/* Close Round button for submitted rounds — available even on completed trips */}
+                      {isSubmitted && (viewerRole === 'owner' || viewerRole === 'planner') && (
                         <div style={{ padding: '0 12px 12px' }}>
                           <button
                             onClick={() => {
@@ -3528,10 +3544,16 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {isCompleted && (
+          <div style={{ padding: '10px 14px', borderRadius: 10, background: 'var(--bt-card)', border: '1px solid var(--bt-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14 }}>🔒</span>
+            <span style={{ fontSize: 13, color: 'var(--bt-text-3)' }}>This trip is complete. Most editing is disabled.</span>
+          </div>
+        )}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SectionLabel>Expenses</SectionLabel>
-            {canEdit && !addExpenseOpen && <Btn variant="secondary" onClick={() => setAddExpenseOpen(true)}>+ Add</Btn>}
+            {!addExpenseOpen && <Btn variant="secondary" onClick={() => setAddExpenseOpen(true)}>+ Add</Btn>}
           </div>
           {addExpenseOpen && <AddExpenseForm onClose={() => setAddExpenseOpen(false)} />}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -3547,7 +3569,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
             : expenseList.map(exp => <ExpenseRow key={exp._id} exp={exp} />)
           }
         </div>
-        {isOwner && <TripSettingsPanel trip={trip} showToast={showToast} navigate={navigate} notify={notify} />}
+        {isOwner && <TripSettingsPanel trip={trip} showToast={showToast} navigate={navigate} notify={notify} isCompleted={isCompleted} />}
       </div>
     )
   }
@@ -3571,10 +3593,15 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6, paddingRight: 56 }}>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--bt-text-1)' }}>{trip.title}</h1>
-            {getTripStatus(trip) === 'active' && (
+            {tripStatus === 'active' && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 9999, background: 'var(--bt-tag-bg)', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)40' }}>
                 <span className="animate-pulse-dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--bt-accent)' }} />
                 LIVE
+              </span>
+            )}
+            {isCompleted && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 9999, background: 'var(--bt-base)', color: 'var(--bt-text-3)', border: '1px solid var(--bt-border)' }}>
+                Complete
               </span>
             )}
           </div>
@@ -3584,7 +3611,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
           {effectiveLocation && !effectiveComparisonMode && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
               <div style={{ fontSize: 14, color: 'var(--bt-text-2)', display:'flex', alignItems:'center', gap:5 }}><Ic n="MapPin" size={14} color="var(--bt-text-3)" />{effectiveLocation}</div>
-              {effectiveLockedDest && isOwner && (
+              {effectiveLockedDest && isOwnerActive && (
                 <button onClick={() => {
                   setLockedDest(null)
                   setInlineIdeas(trip.ideas || [])
@@ -3651,7 +3678,17 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
             ) : (
               <span style={{display:"flex",alignItems:"center",gap:5}}><Ic n="Calendar" size={14} color="var(--bt-text-3)" />Dates TBD</span>
             )}
-            {trip.eventId && <span style={{display:"flex",alignItems:"center",gap:5}}><Ic n="Trophy" size={14} color="var(--bt-accent)" />Competition active</span>}
+            {trip.eventId && !isCompleted && <span style={{display:"flex",alignItems:"center",gap:5}}><Ic n="Trophy" size={14} color="var(--bt-accent)" />Competition active</span>}
+            {trip.eventId && isCompleted && (() => {
+              const ev = getEventForTrip(trip._id, trips)
+              if (!ev) return null
+              const sc = computeScores(ev, ROUND_RESULTS)
+              const sorted = ev.teams.map(t => ({ team: t, pts: sc[t._id] || 0 })).sort((a, b) => b.pts - a.pts)
+              const winner = sorted[0]
+              return winner.pts > 0 ? (
+                <span style={{display:"flex",alignItems:"center",gap:5, color: winner.team.color, fontWeight: 700, fontSize: 12}}>🏆 {winner.team.name} won · {sorted.map(s => s.pts).join('–')}</span>
+              ) : null
+            })()}
           </div>
         </div>
 
@@ -3719,7 +3756,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                             {isMyPick ? 'Voted' : 'Vote'}
                           </button>
                         )}
-                        {isOwner && (
+                        {isOwnerActive && (
                           <button onClick={() => {
                             const lock = { title: idea.title, location: idea.location || idea.title, createdAt: new Date() }
                             setLockedDest(lock)
@@ -4555,8 +4592,10 @@ function CompetitionSetup({ navigate, showToast, tripId, viewerRole, trips, noti
 // ── SCREEN: IdeaComparison ───────────────────────────────────────
 function IdeaComparison({ navigate, showToast, tripId, viewerRole, trips, setTrips, notify, notifications, onMarkAllRead, theme, onToggleTheme }) {
   const trip = trips.find(t => t._id === (tripId || 'trip-bbmi')) || trips[1]
-  const canEdit = viewerRole === 'owner' || viewerRole === 'planner'
+  const tripCompleted = getTripStatus(trip) === 'completed'
+  const canEdit = !tripCompleted && (viewerRole === 'owner' || viewerRole === 'planner')
   const isOwner = viewerRole === 'owner'
+  const isOwnerActive = !tripCompleted && isOwner
 
   const [localIdeas, setLocalIdeas] = useState(trip.ideas.filter(i => !i.archived))
   const [myVote, setMyVote] = useState(null)
@@ -4873,13 +4912,13 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                   {isMyVote ? 'Your pick' : 'Vote for this'}
                 </button>
               )}
-              {isOwner && lockedIn === null && (
+              {isOwnerActive && lockedIn === null && (
                 <button onClick={() => setShowLockConfirm(ideaId)}
                   style={{ padding:'10px 14px', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer', border:'1px solid var(--bt-accent)40', background:'transparent', color:'var(--bt-accent)', display:'flex', alignItems:'center', gap:6 }}>
                   <Ic n="Lock" size={14} color="var(--bt-accent)" /> Lock In
                 </button>
               )}
-              {isOwner && lockedIn === null && (
+              {isOwnerActive && lockedIn === null && (
                 <button
                   onClick={() => {
                     if(!window.confirm(`Remove "${idea.title}" from the list?`)) return
@@ -4937,7 +4976,7 @@ Pros/cons = honest reasons to consider or avoid. Course names must be real and a
                 <Ic n="Plus" size={14} color="var(--bt-accent)" sw={2.5} /> Add Idea
               </button>
             )}
-            {isOwner && lockedIn !== null && (
+            {isOwnerActive && lockedIn !== null && (
               <button onClick={() => setShowReopenConfirm(true)}
                 style={{ fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 8, cursor: 'pointer', background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-3)' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bt-accent)'; e.currentTarget.style.color = 'var(--bt-accent)' }}
