@@ -1,13 +1,14 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 5.3 complete
+2026-03-10 — Task 5.4 complete
 
 ## Current State
 - buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
 - types.ts: ~300 lines — complete TypeScript interfaces for all entities
 - README.md: fully updated screen inventory, navigation graph, data architecture, permission model
-- SCHEMA.md: complete database schema — 25 tables, all FKs, indexes, creation annotations, migration order
+- SCHEMA.md: complete database schema — 26 tables (added group_result_scores for multi-team), all FKs, indexes, creation annotations, migration order
+- MIGRATION_PLAN.md: complete migration playbook — pre-migration product decisions, 5 phases (infra, database, auth, data layer, realtime), permission gaps, launch checklist
 - REALTIME.md: Supabase Realtime channels (4), TanStack Query feature mapping, RLS requirements, channel lifecycle
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
@@ -280,6 +281,7 @@
 - [x] 5.1 — Rewrote README.md: full screen inventory with route keys and props for all 7 screens; TripDetail tab breakdown; navigation graph (BottomNav context-awareness, breadcrumb patterns, visual flow diagram); data architecture (14 module-level objects, 5 helper functions, trip-level state, messages shape, notification types); design system CSS vars; permission model summary; reference document index; corrected stale info (DESTINATION_LOCK/DATE_POLL globals → trip-level state, team messages shape, member role user name, mock trips table with BBMI 2024, 4-status model including completed)
 - [x] 5.2 — Created SCHEMA.md: 25 tables derived from types.ts, annotated with required-at-creation fields (`*`), server-computed fields (`auto`), FK relationships, indexes, constraints, RLS notes, payload shapes for notification types, circular FK resolution for trips↔events, updated_at trigger SQL, and ordered table creation list
 - [x] 5.3 — Created REALTIME.md: decision matrix (5 realtime, 2 polling, 8 TanStack Query); 5 Supabase Realtime channel specs with code examples (trip chat, team chat, group_results, side_events, notifications); TanStack Query config, query key mapping, polling for vote counts; Realtime publication SQL; RLS requirements per table; channel lifecycle table; reconnect pattern; prototype→production mapping; implementation order
+- [x] 5.4 — Created MIGRATION_PLAN.md: 3 blocking pre-migration product decisions (#11 co-planner validation, #13 series ownership, #16 competition without trip); 5 non-blocking UX decisions; 5 permission gaps with recommended fixes; 5-phase migration plan (infra → database → auth → data layer → realtime); launch checklist; v2 backlog
 
 ## Notes from 5.1
 - README now serves as the definitive handoff document — a migration dev can read it and understand every screen, route, data object, and interaction pattern
@@ -298,7 +300,7 @@
 - `expense_splits.amount` stays nullable even though it's not implemented — avoids a migration later when per-person overrides are added
 - `date_polls` has trip_id as PK (enforces one-poll-per-trip constraint); `locked_window_id` FK is a forward reference — handle with deferrable constraint
 - `players` table denormalizes name/nickname intentionally — historical competition records should reflect the player at event time, not current user profile
-- Phase 5 is 3/4 complete (5.1, 5.2, 5.3 done; 5.4 MIGRATION_PLAN.md remains)
+- Phase 5 is complete (5.1–5.4 done)
 
 ## Notes from 5.3
 - 4 Realtime channels: trip chat, team chat, live scores (group_results), notifications
@@ -310,7 +312,7 @@
 - Implementation order: leaderboard first, then notifications, then chat — highest stakes first
 
 ## In Progress
-- (none)
+- (none — all Phase 0–5 tasks complete)
 
 ## Known Issues / Notes
 - raw.githubusercontent.com blocked in Claude chat container
@@ -320,7 +322,7 @@
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
-Next task: 5.4 — Create MIGRATION_PLAN.md (Opus recommended)
+All PLAYBOOK tasks complete. Next work is the actual migration (start with Phase 0 in MIGRATION_PLAN.md) or resolving the 3 blocking product decisions in MIGRATION_PLAN.md §Pre-Migration Product Decisions.
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.

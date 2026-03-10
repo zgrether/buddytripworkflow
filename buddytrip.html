@@ -5262,7 +5262,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
           )}
         </div>
       </div>
-      <BottomNav active="live-leaderboard" navigate={navigate} />
+      <BottomNav active="live-leaderboard" navigate={navigate} currentTripId={tripId} />
       {scoreEntryGroup && (
         <ScoreEntry
           group={scoreEntryGroup}
