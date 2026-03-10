@@ -6445,8 +6445,7 @@ function LiveLeaderboard({ navigate, showToast, tripId, notify, notifications, o
                               {grScores.map(s => s.pts).join('–')}
                             </span>
                           </div>)
-                        })()
-                        ) : canScore ? (
+                        })() : canScore ? (
                           <div style={{ fontSize: 12, color: 'var(--bt-accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                             <Ic n="Edit2" size={12} color="var(--bt-accent)" /> Enter score
                           </div>
