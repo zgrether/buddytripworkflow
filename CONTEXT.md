@@ -1,10 +1,10 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 3.4 complete
+2026-03-10 — Task 4.1 complete
 
 ## Current State
-- buddytrip.html: ~5200 lines (no code changes this task)
+- buddytrip.html: ~5235 lines — 3 empty state fixes (Past Trips section, no-trips Dashboard state, Schedule tab bookings)
 - types.ts: ~300 lines — complete TypeScript interfaces for all entities
 - All known icon references verified against ICONS dict
 - Team scores are now computed from data, not hardcoded
@@ -202,7 +202,15 @@
 - ExpenseSplit.amount is commented as not-yet-implemented (currently even split)
 - SeriesHistory and PastParticipant are component-local display data; in production, derive from trip_members + events tables
 - lockedDestination stored as Trip field per PLAYBOOK decision point 3.4 (not separate entity)
-- Next task: 4.1 — Handle empty states consistently (Sonnet recommended)
+## Completed Tasks (continued)
+- [x] 4.1 — Audited all list/section areas for empty states; added 3 fixes: (1) Dashboard Past Trips section was declared but never rendered — now shows collapsible toggle with count below Upcoming; (2) Dashboard shows an icon + message + New Trip CTA when live/ready/upcoming are all empty; (3) Schedule tab "No bookings yet" enriched with ClipboardList icon and canEdit CTA hint
+
+## Notes from 4.1
+- `past` array and `pastExpanded` state were already declared at Dashboard top (lines 924, 928) — the section was just never in the JSX
+- Empty state for no trips only fires when all three sections (live/ready/upcoming) are empty — past trips section renders separately below
+- Schedule tab Add button was already visible for canEdit; the empty state message now points to it explicitly
+- All other sections already had appropriate empty states (expenses, messages, description, ideas, date panel, competition)
+- Next task: 4.2 — Verify all navigation paths work round-trip (Sonnet recommended)
 
 ## In Progress
 - (none)
