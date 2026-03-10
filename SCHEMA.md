@@ -45,10 +45,12 @@ Recurring trip series (e.g., "BBMI"). Optional — trips can exist without a ser
 | `full_name` | `text` | `NN`, `*` | "The Buddy Banks Memorial Invitational" |
 | `years` | `text` | `NN`, `*` | Display string: "2019–present" (denormalized) |
 | `trip_count` | `integer` | `NN`, `auto` | Maintained by trigger or recomputed from trips |
+| `owner_id` | `text` | `NN`, `*`, `FK → users.id` | Explicit series owner — does NOT change when a trip owner changes. Transfer via dedicated hand-off action. |
 
 **Notes:**
 - `years` is a display string, not a date range — update manually or derive from linked trips
 - `trip_count` can be a generated column: `(SELECT COUNT(*) FROM trips WHERE series_id = series.id)`
+- `owner_id` decision (2026-03-10): explicit column chosen over implicit "most recent trip's owner" — see MIGRATION_PLAN.md §Pre-Migration Product Decisions
 
 ---
 

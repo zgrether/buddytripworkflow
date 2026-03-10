@@ -12,13 +12,15 @@ These questions from TODO2.md must be answered before writing schema migrations 
 
 ### Blocking (affects schema or auth)
 
-| # | Question | Options | Default if skipped |
-|---|----------|---------|-------------------|
-| **13** | Transfer series ownership — should series ownership transfer when the owner leaves a trip, or is series ownership separate from per-trip ownership? | (a) Series has its own owner column (separate from trip owner); (b) Series owner = owner of the most recent trip in the series | Add `owner_id` to `series` table — explicit is safer |
-| **16** | Competition without a trip — is this a first-class feature (new `events` row with no `trip_id`) or out of scope for v1? | (a) Allow `trip_id = null` on `events`; (b) V1 requires a trip | Skip for v1; `trip_id NOT NULL` on `events` |
-| **11** | Co-planner validation at trip creation — when a user types a co-planner name, do we require a BuddyTrip account to exist, or allow ghost placeholders until they sign up? | (a) Require account — autocomplete from `users` table; (b) Allow ghost user IDs (`ghost-*`) that self-heal on sign-up | Require account for v1 (simpler RLS) |
+All three blocking decisions have been resolved (2026-03-10):
 
-### Non-blocking (UX, no schema impact)
+| # | Question | **Decision** |
+|---|----------|-------------|
+| **11** | Co-planner validation at trip creation | **Require account** — autocomplete from `users` table only; no ghost placeholders for co-planners at trip creation. Prototype updated: invite input now validates against USERS; unrecognized names are rejected with an inline error. |
+| **13** | Series ownership transfer | **Explicit `owner_id` column** — `series` table gets its own `owner_id FK → users.id`. Ownership transfers only via an explicit hand-off action, not implicitly when a trip owner changes. SCHEMA.md updated. |
+| **16** | Competition without a trip | **Skip for v1** — `events.trip_id NOT NULL` constraint kept. Standalone competitions (Quick Score) are a v2 feature. |
+
+### Non-blocking (UX, no schema impact) — resolved in prototype
 
 These can be decided anytime during the frontend migration sprint:
 
@@ -37,13 +39,13 @@ These can be decided anytime during the frontend migration sprint:
 
 From the task 4.3 role audit. Each gap requires either a product decision or a code change:
 
-| Gap | Current behavior | Recommended fix |
-|-----|-----------------|----------------|
-| Score entry has no role gate | Any visitor can submit scores | Gate on `trip_member.role IN ('owner', 'planner')`, or require being a `player` in the event |
-| Members can't comment on ideas | IdeaComparison requires `canEdit` to open | Move idea commenting to TripDetail HomeTab, no `canEdit` gate |
-| Quick Info Tiles gated by `isOwner` | Planners can't manage them | Change to `canEdit` (owner + planner) |
-| No self-service RSVP | Members can't update own attendance | Add RSVP endpoint; anyone can update their own `trip_members.rsvp_status` |
-| Dashboard shows all trips | Rob sees trips he's not a member of | Filter Dashboard query: `trip_members.user_id = auth.uid()` |
+| Gap | Status | Fix |
+|-----|--------|-----|
+| Score entry has no role gate | ✅ Fixed (task 6.1) | `canScore = viewerRole === 'owner' \|\| viewerRole === 'planner'`; group cards locked for members |
+| Members can't comment on ideas | ✅ Fixed (task 7.4) | "Full view" nav button ungated; IdeaComparison comment input was already open |
+| Quick Info Tiles gated by `isOwner` | ✅ Fixed (task 7.5) | Changed to `canEdit` (owner + planner) |
+| No self-service RSVP | ✅ Fixed (task 7.3) | RSVP status widget in own crew row; calls `setRoster` |
+| Dashboard shows all trips | ✅ Fixed (task 7.2) | `myTrips` filtered by `attendees.some(a => a.userId === viewerUserId)` |
 
 ---
 
@@ -255,11 +257,11 @@ These are issues documented in the prototype that aren't blocked on any phase ab
 
 ### Must-fix before launch
 
-- [ ] **Score entry role gate** — currently no check; add `useTripRole` guard (see permission gaps above)
-- [ ] **Dashboard membership filter** — `trips` query must filter by `trip_members.user_id = auth.uid()`
-- [ ] **Self-service RSVP** — Members need a way to update their own `trip_members.rsvp_status`
-- [ ] **Co-planner validation** (pending product decision #11 above)
-- [ ] **Series ownership** (pending product decision #13 above)
+- [x] **Score entry role gate** — fixed in prototype (task 6.1); wire `useTripRole` guard in production
+- [x] **Dashboard membership filter** — fixed in prototype (task 7.2); production uses `trip_members.user_id = auth.uid()` RLS
+- [x] **Self-service RSVP** — fixed in prototype (task 7.3); production needs RSVP endpoint
+- [x] **Co-planner validation** — decided: require account (task 7.6); prototype validates against USERS
+- [x] **Series ownership** — decided: explicit `owner_id` on `series` table (task 7.6); SCHEMA.md updated
 
 ### Nice-to-have for launch
 
@@ -324,8 +326,8 @@ Phase 4 — Realtime
   [ ] Reconnect/invalidate pattern implemented
 
 Phase 5 — Gaps
-  [ ] Score entry role gate
-  [ ] Dashboard membership filter
-  [ ] Self-service RSVP
-  [ ] Pre-migration product decisions resolved (#11, #13, #16)
+  [x] Score entry role gate
+  [x] Dashboard membership filter
+  [x] Self-service RSVP
+  [x] Pre-migration product decisions resolved (#11, #13, #16)
 ```
