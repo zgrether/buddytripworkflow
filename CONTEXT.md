@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 7.1 light/dark theme toggle complete
+2026-03-10 — Tasks 7.2–7.5 functional gaps complete
 
 ## Current State
 - buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
@@ -343,6 +343,18 @@ Hidden requirements implemented (v1):
 - `teamColorDim` values on team JS objects (`#0d2a22`, `#2a1200`) intentionally not tokenized — these are team identity colors
 - Field Mode (Option B — bumped font sizes + larger tap targets for outdoor scoring) logged for future work after user testing of light mode outdoors
 
+## Completed Tasks (continued)
+- [x] 7.2 — Dashboard membership filter: added `viewerUserId` derivation from `roleUserIds[viewerRole]`; filter `myTrips = trips.filter(t => t.attendees.some(a => a.userId === viewerUserId))` before splitting into live/ready/upcoming/past; removed duplicate `viewerUserId` inside TripCard (now closes over outer scope)
+- [x] 7.3 — Self-service RSVP: added RSVP status widget in expanded MemberRow panel (only shown when `isMe`); 4 status buttons (✅ I'm in / 🤙 Likely / 🤷 Maybe / ❌ Can't go) with active-state styling; calls `setRoster` (consistent with all other crew mutations in CrewTab); shows toast confirmation
+- [x] 7.4 — Members can comment on ideas: removed `canEdit` gate from "Full view" button in the HomeTab destination vote panel — all members can now navigate to IdeaComparison; IdeaComparison comment/vote UI was already ungated; `canEdit` gates on pros/cons editing and lock/unlock actions remain
+- [x] 7.5 — Quick Info Tiles: changed all 5 `isOwner` references in the tiles section to `canEdit` — Planners can now add, edit, and delete tiles
+
+## Notes from 7.2–7.5
+- P2: Rob (member role) no longer sees 'trip-new-deciding' on Dashboard since he's not in that trip's attendees
+- P3: RSVP widget appears in crew panel when viewing your own row (isMe check) — works for all 3 roles
+- P4: IdeaComparison already had ungated comment input; the only blocker was canEdit-gated navigation access
+- P5: Tiles section visibility condition changed from `tiles.length === 0 && isOwner` to `tiles.length === 0 && canEdit` and `tiles.length > 0 || isOwner` to `tiles.length > 0 || canEdit`
+
 ## In Progress
 - (none)
 
@@ -355,14 +367,11 @@ Hidden requirements implemented (v1):
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
 All PLAYBOOK tasks, pre-migration UX pass, and theme toggle complete.
-Next priority items (Tier 1 functional gaps):
-- P2: Dashboard membership filter — Rob sees trips he's not on (filter by trip_members.user_id)
-- P3: Self-service RSVP — Members can't update own attendance status
-- P4: Members can comment on ideas — commenting requires canEdit; move comment UI out of IdeaComparison
-- P5: Quick Info Tiles gate — change isOwner → canEdit so Planners can manage
+Next priority items (Tier 1 resolved — P2–P5 complete):
 - P6: Product decision #11 — co-planner validation (require account vs ghost user)
 - P7: Product decision #13 — series ownership (own column vs most-recent-trip owner)
 - P8: Product decision #16 — competition without trip (trip_id nullable on events)
+Tier 2 UX polish: Dates TBD badge, tab scrollbar, messageboard mobile fit
 Tier 2 UX polish: Dates TBD badge, tab scrollbar, messageboard mobile fit
 Field Mode: logged as future improvement after user testing of light mode outdoors
 
