@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Tasks 7.2–7.5 functional gaps complete
+2026-03-10 — Tasks 7.6 product decisions resolved (P6–P8)
 
 ## Current State
 - buddytrip.html: ~5,390 lines — all Phase 0–4 tasks complete
@@ -355,6 +355,21 @@ Hidden requirements implemented (v1):
 - P4: IdeaComparison already had ungated comment input; the only blocker was canEdit-gated navigation access
 - P5: Tiles section visibility condition changed from `tiles.length === 0 && isOwner` to `tiles.length === 0 && canEdit` and `tiles.length > 0 || isOwner` to `tiles.length > 0 || canEdit`
 
+## Completed Tasks (continued)
+- [x] 7.6 — Product decisions resolved (P6–P8):
+  - P6 (#11 co-planner validation): **Require account** — TripNew invite now validates against USERS (name/nickname/email match); unrecognized names get inline error; ghost fallback removed from `handleFinish`; `invites` state changed from `string[]` to `User[]`
+  - P7 (#13 series ownership): **Explicit `owner_id` column** — added `ownerId` field to MOCK_SERIES; SCHEMA.md `series` table updated with `owner_id FK → users.id`; MIGRATION_PLAN.md updated
+  - P8 (#16 competition without trip): **Skip for v1** — no code change needed; `events.trip_id NOT NULL` remains; recorded in MIGRATION_PLAN.md
+
+## Notes from 7.6
+- All three blocking pre-migration product decisions are now resolved — MIGRATION_PLAN.md §Pre-Migration Product Decisions and §Must-fix before launch are both fully checked off
+- TripNew invite input placeholder changed to "Name, nickname, or email" to hint at account requirement
+- Helper text updated to "Must have a BuddyTrip account"
+- Error shown inline (danger color) in place of helper text when no match found
+- Self-referential check: error if user tries to add themselves
+- Duplicate check: error if already added
+- `inviteError` cleared on any keystroke so it doesn't persist stale
+
 ## In Progress
 - (none)
 
@@ -367,11 +382,14 @@ Hidden requirements implemented (v1):
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
 All PLAYBOOK tasks, pre-migration UX pass, and theme toggle complete.
-Next priority items (Tier 1 resolved — P2–P5 complete):
-- P6: Product decision #11 — co-planner validation (require account vs ghost user)
-- P7: Product decision #13 — series ownership (own column vs most-recent-trip owner)
-- P8: Product decision #16 — competition without trip (trip_id nullable on events)
-Tier 2 UX polish: Dates TBD badge, tab scrollbar, messageboard mobile fit
+All Tier 1 functional gaps and product decisions are complete (P2–P8).
+Next: Tier 2 UX polish (any order):
+- Dates TBD badge on Dashboard TripCard (#7)
+- Tab scrollbar fix (#9)
+- Messageboard mobile fit (#5)
+- Co-planner step friction removal (#12) — remove "you must assign someone" requirement
+- Message panel toggle on Trip Home (#15) — show/hide inline team chat
+After that: Phase 0 infra setup (Supabase project, env, client, TanStack Query)
 Tier 2 UX polish: Dates TBD badge, tab scrollbar, messageboard mobile fit
 Field Mode: logged as future improvement after user testing of light mode outdoors
 

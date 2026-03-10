@@ -1143,7 +1143,8 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
   const [tripName, setTripName]       = useState('')
   const [tripNameTouched, setTripNameTouched] = useState(false)
   const [inviteInput, setInviteInput] = useState('')
-  const [invites, setInvites]         = useState([])
+  const [inviteError, setInviteError] = useState('')
+  const [invites, setInvites]         = useState([])   // array of USERS entries { _id, name, nickname }
   const inviteRef = useRef(null)
 
   // Step 2 — destination
@@ -1187,9 +1188,17 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
   const addInvite = () => {
     const val = inviteInput.trim()
     if (!val) return
-    if (invites.includes(val)) { showToast('Already added'); return }
-    setInvites(p => [...p, val])
+    const match = Object.values(USERS).find(u =>
+      u.name.toLowerCase() === val.toLowerCase() ||
+      (u.nickname && u.nickname.toLowerCase() === val.toLowerCase()) ||
+      (u.email && u.email.toLowerCase() === val.toLowerCase())
+    )
+    if (!match) { setInviteError(`No BuddyTrip account found for "${val}"`); return }
+    if (match._id === CURRENT_USER._id) { setInviteError("That's you — you're already the owner"); return }
+    if (invites.some(i => i._id === match._id)) { setInviteError(`${match.nickname || match.name} is already added`); return }
+    setInvites(p => [...p, match])
     setInviteInput('')
+    setInviteError('')
     inviteRef.current?.focus()
   }
 
@@ -1216,14 +1225,11 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
       activities: [], golfCourses: [],
       attendees: [
         { name: CURRENT_USER.name, userId: CURRENT_USER._id, status: 'in', role: 'Owner', joinedAt: now },
-        ...invites.map(inv => {
-          const knownUser = Object.values(USERS).find(u => u.name.toLowerCase() === inv.toLowerCase() || u.nickname.toLowerCase() === inv.toLowerCase())
-          return {
-            name: knownUser?.name || inv,
-            userId: knownUser?._id || ('ghost-' + inv.toLowerCase().replace(/\s+/g, '-')),
-            status: 'invited', role: 'Planner', joinedAt: now,
-          }
-        }),
+        ...invites.map(u => ({
+          name: u.name,
+          userId: u._id,
+          status: 'invited', role: 'Planner', joinedAt: now,
+        })),
       ],
       comparisonMode,
       ideas: comparisonMode
@@ -1323,31 +1329,34 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
                 <Label>Invite Co-Planners</Label>
                 {invites.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                    {invites.map(name => (
-                      <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '4px 8px 4px 4px', borderRadius: 9999, background: 'var(--bt-tag-bg)', border: '1px solid var(--bt-accent)33', color: 'var(--bt-accent)' }}>
-                        <Avatar name={name} size="sm" />
-                        {name}
+                    {invites.map(u => (
+                      <span key={u._id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '4px 8px 4px 4px', borderRadius: 9999, background: 'var(--bt-tag-bg)', border: '1px solid var(--bt-accent)33', color: 'var(--bt-accent)' }}>
+                        <Avatar name={u.name} size="sm" />
+                        {u.nickname || u.name}
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'var(--bt-accent)20', color: 'var(--bt-accent)', border: '1px solid var(--bt-accent)40', marginLeft: 2 }}>Planner</span>
-                        <button onClick={() => setInvites(p => p.filter(n => n !== name))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bt-text-3)', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+                        <button onClick={() => setInvites(p => p.filter(i => i._id !== u._id))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bt-text-3)', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
                       </span>
                     ))}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <input ref={inviteRef} value={inviteInput} onChange={e => setInviteInput(e.target.value)}
+                  <input ref={inviteRef} value={inviteInput} onChange={e => { setInviteInput(e.target.value); setInviteError('') }}
                     onKeyDown={e => e.key === 'Enter' && addInvite()}
-                    placeholder="Name or email — optional"
-                    style={{ ...inputStyle, flex: 1 }}
-                    onFocus={e => e.target.style.borderColor = 'var(--bt-accent)'}
-                    onBlur={e => e.target.style.borderColor = 'var(--bt-border-input)'} />
+                    placeholder="Name, nickname, or email"
+                    style={{ ...inputStyle, flex: 1, borderColor: inviteError ? 'var(--bt-danger)' : undefined }}
+                    onFocus={e => e.target.style.borderColor = inviteError ? 'var(--bt-danger)' : 'var(--bt-accent)'}
+                    onBlur={e => e.target.style.borderColor = inviteError ? 'var(--bt-danger)' : 'var(--bt-border-input)'} />
                   <button onClick={addInvite} disabled={!inviteInput.trim()}
                     style={{ fontSize: 13, fontWeight: 700, padding: '10px 14px', borderRadius: 8, flexShrink: 0, cursor: inviteInput.trim() ? 'pointer' : 'default', background: inviteInput.trim() ? 'var(--bt-tag-bg)' : 'transparent', border: `1px solid ${inviteInput.trim() ? 'var(--bt-accent)' : 'var(--bt-border)'}`, color: inviteInput.trim() ? 'var(--bt-accent)' : 'var(--bt-text-3)' }}>
                     + Add
                   </button>
                 </div>
-                <p style={{ fontSize: 11, marginTop: 7, color: 'var(--bt-text-3)', lineHeight: 1.5 }}>
-                  Your inner circle — auto-assigned <strong style={{ color: 'var(--bt-accent)' }}>Planner</strong> role. Add the rest of the crew later.
-                </p>
+                {inviteError
+                  ? <div style={{ fontSize: 12, color: 'var(--bt-danger)', marginTop: 4 }}>{inviteError}</div>
+                  : <p style={{ fontSize: 11, marginTop: 7, color: 'var(--bt-text-3)', lineHeight: 1.5 }}>
+                      Must have a BuddyTrip account. Auto-assigned <strong style={{ color: 'var(--bt-accent)' }}>Planner</strong> role. Add the rest of the crew later.
+                    </p>
+                }
               </div>
 
               {/* Series */}
@@ -1588,8 +1597,8 @@ function TripNew({ navigate, showToast, setTrips, notifications, onMarkAllRead }
 
 // ── COMPONENT: TripSettingsPanel ────────────────────────────────
 const MOCK_SERIES = [
-  { _id: 'series-bbmi', name: 'BBMI', fullName: 'Buddy Banks Memorial Invitational', years: '2019–present', trips: 6 },
-  { _id: 'series-ryder', name: 'Ryder Knockoff', fullName: 'The Ryder Knockoff Cup', years: '2022–present', trips: 3 },
+  { _id: 'series-bbmi', name: 'BBMI', fullName: 'Buddy Banks Memorial Invitational', years: '2019–present', trips: 6, ownerId: 'brad' },
+  { _id: 'series-ryder', name: 'Ryder Knockoff', fullName: 'The Ryder Knockoff Cup', years: '2022–present', trips: 3, ownerId: 'brad' },
 ]
 
 function TripSettingsPanel({ trip, showToast, navigate, notify }) {
