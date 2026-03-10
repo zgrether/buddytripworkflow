@@ -84,7 +84,7 @@ The central entity. One row per trip instance (not per series).
 **Indexes:** `series_id` (filter by series), `start_date` (sort/filter by date), `event_id`
 
 **Notes:**
-- `status` is NOT stored — always derived by the application from `start_date`, `end_date`, `locked_destination_title`, and the date poll (see `getTripStatus()`)
+- `status` is NOT stored — always derived by the application from `start_date`, `end_date`, `locked_destination_title`, and the date poll (see `getTripStatus()`). `isCompleted` (used to gate edit controls in `TripDetail`) is derived as `getTripStatus(trip) === 'completed'`.
 - `locked_destination_*` columns replace the prototype's embedded `lockedDestination` object — three columns are simpler than a JSONB column for this limited shape
 - The prototype's `proposedDates[]` array (distinct from `date_poll`) is currently display-only; migrate to `trip_proposed_dates` table only if users need to vote on them independently of a poll
 - `activities` and `golf_courses` are string arrays on the trip; if they need to become searchable, normalize into a join table with a `tags` table
