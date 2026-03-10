@@ -1,7 +1,7 @@
 # BuddyTrip — Session Context
 
 ## Last Updated
-2026-03-10 — Task 4.3 complete
+2026-03-10 — Task 4.4 complete
 
 ## Current State
 - buddytrip.html: ~5240 lines — navigation fixes + empty states
@@ -262,6 +262,17 @@
 - `hasComp` state in TripDetail is local — toggling competition on, navigating away, and coming back resets it unless `trip.eventId` is set
 - Sabotage and Skins score entry formats are stubbed — active round (r3) can't be scored
 
+## Completed Tasks (continued)
+- [x] 4.4 — Added 'trip-bbmi-2024' (BBMI 2024) to MOCK_TRIPS: past dates (Mar 12–15 2024), lockedDestination (Bandon Dunes), 8 attendees, description with final scores (Team Hammer 14–12); auto-derives as 'completed' via getTripStatus(); added matching TRIP_MESSAGES entry with 3 post-trip messages; Past Trips toggle on Dashboard now shows (1)
+
+## Notes from 4.4
+- BBMI 2024 shape mirrors existing trips: comparisonMode=false, ideas=[], proposedDates=[], eventId=null
+- endDate '2024-03-15' is 23 months before today — getTripStatus() returns 'completed' without any status field
+- lockedDestination set so getTripStatus() status derivation hits the 'completed' branch (past endDate) rather than falling through to 'planning'
+- TRIP_MESSAGES entry added so TripDetail Messages tab renders without errors; team={} since no competition event for this trip
+- TripCard renders cleanly for completed trips: no accent bar, no scoreboard strip, "Done" StatusBadge in muted color
+- Past Trips section was already wired (task 4.1) — toggle now shows (1) on first load
+
 ## In Progress
 - (none)
 
@@ -273,7 +284,7 @@
 ## Next Session Start Instructions
 Read PLAYBOOK.md and CONTEXT.md before touching any code.
 Work one task at a time. Update CONTEXT.md before ending session.
-Next task: 4.4 — Add a "completed" trip to mock data (Sonnet recommended — consider switching models)
+Next task: 5.1 — Update the README with current screen inventory (Opus recommended)
 
 ## CONTEXT.md instructions
 Update CONTEXT.md with what we completed, what's in progress, and any notes the next session needs.

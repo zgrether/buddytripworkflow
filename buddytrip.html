@@ -438,6 +438,30 @@ const MOCK_TRIPS = [
     lockedDestination: null,
     datePoll: { open: false, lockedId: null, windows: [], votes: [] },
   },
+  {
+    _id: 'trip-bbmi-2024', title: 'BBMI 2024', location: 'Bandon Dunes, OR',
+    costTier: '$$$$',
+    imageUrl: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800&q=80',
+    description: 'The 3rd Annual Buddy Banks Memorial Invitational. 16 players, 4 days, Ryder Cup format. Team Hammer won the Cup 14–12 in a dramatic final-round comeback at Old Macdonald. JD Shumpert went 3-0 to earn MVP honors.',
+    startDate: '2024-03-12', endDate: '2024-03-15',
+    accommodation: 'Bandon Dunes Lodge',
+    notes: 'Final: Team Hammer 14, Team Eagle 12. MVP: JD Shumpert (3-0). Walking only — no carts.',
+    activities: ['Golf', 'Hammerschlagen', 'Poker', 'Cards'],
+    golfCourses: ['Bandon Dunes', 'Bandon Trails', 'Pacific Dunes', 'Old Macdonald'],
+    attendees: [
+      { name: 'Brad Giesler',  userId: 'brad',    status: 'in', role: 'Owner',   joinedAt: new Date('2023-10-01') },
+      { name: 'Zach Grether',  userId: 'zach',    status: 'in', role: 'Planner', joinedAt: new Date('2023-10-01') },
+      { name: 'JD Shumpert',   userId: 'jd',      status: 'in', role: 'Planner', joinedAt: new Date('2023-10-03') },
+      { name: 'Rob Drupp',     userId: 'rob',     status: 'in', role: 'Member',  joinedAt: new Date('2023-10-10') },
+      { name: 'Charlie Piper', userId: 'charlie', status: 'in', role: 'Member',  joinedAt: new Date('2023-10-14') },
+      { name: 'Tyler Larson',  userId: 'tyler',   status: 'in', role: 'Member',  joinedAt: new Date('2023-10-10') },
+      { name: 'Ben Bartkus',   userId: 'ben',     status: 'in', role: 'Member',  joinedAt: new Date('2023-11-05') },
+      { name: 'BJ Dames',      userId: 'bj',      status: 'in', role: 'Member',  joinedAt: new Date('2023-10-12') },
+    ],
+    comparisonMode: false, ideas: [], proposedDates: [], eventId: null,
+    lockedDestination: { title: 'Bandon Dunes', location: 'Bandon Dunes, OR', createdAt: new Date('2023-08-15T10:00:00') },
+    datePoll: null,
+  },
 ]
 
 
@@ -505,6 +529,14 @@ const TRIP_MESSAGES = {
     },
   },
   'trip-new-deciding': { trip: [], team: {} },
+  'trip-bbmi-2024': {
+    trip: [
+      { _id: 'msg-2024-1', userId: 'brad',  text: "That's a wrap on BBMI 2024. Hammer wins. See everyone next year!", createdAt: new Date('2024-03-15T21:10:00') },
+      { _id: 'msg-2024-2', userId: 'jd',    text: "Couldn't have scripted a better comeback. Old Mac delivered.", createdAt: new Date('2024-03-15T21:35:00') },
+      { _id: 'msg-2024-3', userId: 'zach',  text: 'Next year we get you back. Mark it down.', createdAt: new Date('2024-03-15T22:01:00') },
+    ],
+    team: {},
+  },
 }
 
 const ROUND_RESULTS = {
