@@ -167,6 +167,13 @@ export type EventStatus = 'active' | 'completed' | 'upcoming'
 export type RoundFormat = 'scramble' | 'stableford' | 'sabotage' | 'skins'
 export type RoundStatus = 'upcoming' | 'active' | 'submitted' | 'closed'
 
+/**
+ * Competition type — determines the overall match structure.
+ *   RYDER_CUP : Team vs. team match play (Ryder Cup / Presidents Cup style)
+ *   NORMAL    : Standard individual or team stroke/points competition
+ */
+export type CompetitionType = 'RYDER_CUP' | 'NORMAL'
+
 /** A competition event linked to a trip. Maps to `events` table. */
 export interface Event {
   _id: string
@@ -177,6 +184,7 @@ export interface Event {
   location: string
   dates: string                     // Display string: "March 11–14, 2025"
   status: EventStatus
+  competitionType: CompetitionType  // Overall match structure (RYDER_CUP | NORMAL)
 
   // Nested in prototype; separate tables in production
   teams: Team[]
@@ -184,6 +192,23 @@ export interface Event {
   groups: PlayGroup[]
   rounds: Round[]
   sides: SideEvent[]
+}
+
+/**
+ * Validates competition-level constraints.
+ * Returns an error message string if invalid, or null if valid.
+ *
+ * Rule: Scramble format is incompatible with Ryder Cup competition type
+ * because Ryder Cup uses match-play scoring, not a team scramble.
+ */
+export function validateCompetitionConstraints(
+  format: RoundFormat,
+  competitionType: CompetitionType
+): string | null {
+  if (format === 'scramble' && competitionType === 'RYDER_CUP') {
+    return 'Scramble format is not compatible with Ryder Cup competition type.'
+  }
+  return null
 }
 
 /** A team within a competition. Maps to `teams` table. */
