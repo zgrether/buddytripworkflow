@@ -249,6 +249,7 @@ const BBMI_EVENT = {
   title: 'BBMI 2025', subtitle: 'Buddy Banks Memorial Invitational',
   motto: '"If You\'re Not First, You\'re Last"',
   location: 'Bandon Dunes, OR', dates: 'March 11–14, 2025', status: 'active',
+  competitionType: 'RYDER_CUP',
   teams: [
     { _id: 'team-a', name: 'Team Hammer', shortName: 'Hammer', color: '#00d4aa', colorDim: '#0d2a22' },
     { _id: 'team-b', name: 'Team Anvil',  shortName: 'Anvil',  color: '#f97316', colorDim: '#2a1200' },
@@ -303,6 +304,7 @@ const THREESOME_EVENT = {
   _id: 'threesome-test', tripId: 'trip-threesome',
   title: '3-Team Test Event', subtitle: '3-Team Match Play', motto: '"Three\'s Company"',
   location: 'Pinehurst, NC', dates: 'April 5–7, 2025', status: 'active',
+  competitionType: 'NORMAL',
   teams: [
     { _id: 'team-red',   name: 'Red Team',   shortName: 'Red',   color: '#ef4444', colorDim: '#2a0a0a' },
     { _id: 'team-green', name: 'Green Team', shortName: 'Green', color: '#22c55e', colorDim: '#0a2a0f' },
@@ -360,6 +362,16 @@ const TEAM_ASSIGNMENTS = [
   { eventId: 'threesome-test', teamId: 'team-blue',  userId: 'b2' },
   { eventId: 'threesome-test', teamId: 'team-blue',  userId: 'b3' },
 ]
+
+// Validate competition-level constraints.
+// Returns an error string if the combination is invalid, or null if valid.
+// Rule: Scramble format is incompatible with Ryder Cup (match-play) competition type.
+function validateCompetitionConstraints(format, competitionType) {
+  if (format && format.toLowerCase() === 'scramble' && competitionType === 'RYDER_CUP') {
+    return 'Scramble format is not compatible with Ryder Cup competition type.'
+  }
+  return null
+}
 
 // Return the teamId for a player in a given event, or null if not assigned.
 function getTeamId(eventId, userId) {
@@ -2337,6 +2349,7 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
   const [tileDraft, setTileDraft] = useState({ label: '', value: '' })
 
   const [showCompExplainer, setShowCompExplainer] = useState(false)
+  const [selectedCompType, setSelectedCompType] = useState('RYDER_CUP')
 
   // Roster — lifted to TripDetail so date-lock cleanup can mutate it
   const [roster, setRoster] = useState(() =>
@@ -2351,37 +2364,74 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Competition explainer modal overlay */}
+        {/* Add Competition modal — selects competitionType then enables */}
         {showCompExplainer && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000a', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
             onClick={() => setShowCompExplainer(false)}>
-            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 600, borderRadius: '16px 16px 0 0', background: 'var(--bt-card)', border: '1px solid var(--bt-border)', padding: '24px 20px 36px' }}>
-              <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 12, display:"flex", alignItems:"center", justifyContent:"center" }}><Ic n="Swords" size={36} color="var(--bt-accent)" /></div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--bt-text-1)', textAlign: 'center', marginBottom: 8 }}>Add a Competition</h2>
-              <p style={{ fontSize: 13, color: 'var(--bt-text-2)', lineHeight: 1.7, textAlign: 'center', marginBottom: 20 }}>
-                Enabling competition adds a <strong style={{ color: 'var(--bt-text-1)' }}>Competition tab</strong> where you can build out your teams, rounds, and courses over time — nothing needs to be ready all at once.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 600, borderRadius: '16px 16px 0 0', background: 'var(--bt-card)', border: '1px solid var(--bt-border)', padding: '20px 20px 32px' }}>
+
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                    <Ic n="Swords" size={20} color="var(--bt-accent)" />
+                    <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--bt-text-1)', margin: 0 }}>Add a Competition</h2>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--bt-text-3)', margin: 0 }}>Choose the competition type to get started.</p>
+                </div>
+                <button onClick={() => setShowCompExplainer(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bt-text-3)', fontSize: 18, lineHeight: 1, padding: 4, marginTop: -2 }}>✕</button>
+              </div>
+
+              {/* Competition type selector */}
+              {[
+                { id: 'RYDER_CUP', label: 'Ryder Cup', desc: 'Team vs. team match play — groups earn points for wins and halves.' },
+                { id: 'NORMAL',    label: 'Normal',    desc: 'Standard competition — stroke play, stableford, skins, or custom format.' },
+              ].map(ct => (
+                <button key={ct.id} onClick={() => setSelectedCompType(ct.id)}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 12, marginBottom: 8, cursor: 'pointer',
+                    background: selectedCompType === ct.id ? 'var(--bt-tag-bg)' : 'var(--bt-base)',
+                    border: `1px solid ${selectedCompType === ct.id ? 'var(--bt-accent)' : 'var(--bt-border)'}`,
+                    transition: 'border-color .15s, background .15s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <div style={{ width: 13, height: 13, borderRadius: '50%', flexShrink: 0,
+                      border: `2px solid ${selectedCompType === ct.id ? 'var(--bt-accent)' : 'var(--bt-border)'}`,
+                      background: selectedCompType === ct.id ? 'var(--bt-accent)' : 'transparent' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700,
+                      color: selectedCompType === ct.id ? 'var(--bt-accent)' : 'var(--bt-text-1)' }}>{ct.label}</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--bt-text-3)', margin: 0, paddingLeft: 21 }}>{ct.desc}</p>
+                </button>
+              ))}
+
+              {/* Divider + what you get */}
+              <div style={{ borderTop: '1px solid var(--bt-border)', margin: '14px 0 12px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
                 {[
-                  { icon: 'Users', text: 'Form teams manually or run a captain\'s draft' },
-                  { icon: 'Flag', text: 'Add rounds with any format — scramble, stableford, skins, sabotage' },
-                  { icon: 'Flag', text: 'Assign courses to each round' },
+                  { icon: 'Users',     text: 'Form teams manually or run a captain\'s draft' },
+                  { icon: 'Flag',      text: 'Add rounds with any format — stableford, skins, sabotage' },
                   { icon: 'BarChart2', text: 'Live leaderboard and scoring during the trip' },
                 ].map(item => (
-                  <div key={item.icon} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 8, background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
-                    <Ic n={item.icon} size={18} />
-                    <span style={{ fontSize: 13, color: 'var(--bt-text-2)' }}>{item.text}</span>
+                  <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Ic n={item.icon} size={14} color="var(--bt-text-3)" />
+                    <span style={{ fontSize: 12, color: 'var(--bt-text-2)' }}>{item.text}</span>
                   </div>
                 ))}
               </div>
-              <button onClick={() => { setHasComp(true); setShowCompExplainer(false); setTab('competition'); showToast('Competition enabled — build it out in the Competition tab') }}
-                style={{ width: '100%', fontSize: 15, fontWeight: 700, padding: '13px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117', boxShadow: '0 0 24px var(--bt-accent)30', marginBottom: 10 }}>
-                <span style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}><Ic n="Swords" size={15} color="#0d1117" /> Enable Competition</span>
-              </button>
-              <button onClick={() => setShowCompExplainer(false)}
-                style={{ width: '100%', fontSize: 14, padding: '10px', borderRadius: 10, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>
-                Not yet
-              </button>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setShowCompExplainer(false)}
+                  style={{ flex: 1, fontSize: 13, fontWeight: 600, padding: '10px', borderRadius: 10, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-2)', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={() => { setHasComp(true); setShowCompExplainer(false); setTab('competition'); showToast(`Competition created — ${selectedCompType === 'RYDER_CUP' ? 'Ryder Cup' : 'Normal'} format`) }}
+                  style={{ flex: 1, fontSize: 14, fontWeight: 700, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <Ic n="Swords" size={14} color="#0d1117" /> Create Competition →
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -2392,9 +2442,21 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
             onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--bt-accent)80'}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--bt-accent)40'}>
             <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--bt-accent)20', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 {isLive && <LiveDot />}
                 <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--bt-accent)' }}>{isLive ? 'Competition Live · Day 3 of 4' : 'Competition Active'}</span>
+                {(() => {
+                  const ev = getEventForTrip(trip._id, null)
+                  const ct = ev?.competitionType || selectedCompType
+                  return (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 999,
+                      color: ct === 'RYDER_CUP' ? '#a78bfa' : 'var(--bt-text-3)',
+                      background: ct === 'RYDER_CUP' ? '#1e1333' : 'var(--bt-base)',
+                      border: `1px solid ${ct === 'RYDER_CUP' ? '#a78bfa40' : 'var(--bt-border)'}` }}>
+                      {ct === 'RYDER_CUP' ? 'Ryder Cup' : 'Normal'}
+                    </span>
+                  )
+                })()}
               </div>
               <span style={{ fontSize: 12, color: 'var(--bt-accent)' }}>Leaderboard →</span>
             </div>
@@ -3182,11 +3244,23 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
 
           {/* Header strip */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, background: 'var(--bt-tag-bg)', border: '1px solid var(--bt-accent)30' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {trip.eventId && <LiveDot />}
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bt-accent)' }}>
                 {trip.eventId ? 'Competition Active' : 'Competition — In Progress'}
               </span>
+              {(() => {
+                const ev = getEventForTrip(trip._id, null)
+                const ct = ev?.competitionType || selectedCompType
+                return (
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 999,
+                    color: ct === 'RYDER_CUP' ? '#a78bfa' : 'var(--bt-text-3)',
+                    background: ct === 'RYDER_CUP' ? '#1e1333' : 'var(--bt-base)',
+                    border: `1px solid ${ct === 'RYDER_CUP' ? '#a78bfa40' : 'var(--bt-border)'}` }}>
+                    {ct === 'RYDER_CUP' ? 'Ryder Cup' : 'Normal'}
+                  </span>
+                )
+              })()}
             </div>
             {trip.eventId ? (
               <button onClick={() => navigate('live-leaderboard', { tripId: trip._id })}
@@ -3312,6 +3386,19 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                       <input type="number" min="1" max="20" value={roundDraft.pts} onChange={e => setRoundDraft(d => ({...d, pts: +e.target.value}))}
                         style={{ width: 52, fontSize: 13, padding: '7px 8px', borderRadius: 7, background: 'var(--bt-input)', border: '1px solid var(--bt-border-input)', color: 'var(--bt-text-1)', outline: 'none', textAlign: 'center' }} />
                     </div>
+                    {/* Validation — block Scramble + RYDER_CUP combination */}
+                    {(() => {
+                      const ev = getEventForTrip(trip._id, null)
+                      const ct = ev?.competitionType || selectedCompType
+                      const err = validateCompetitionConstraints(roundDraft.format, ct)
+                      return err ? (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '9px 12px', borderRadius: 8,
+                          background: 'var(--bt-danger-bg)', border: '1px solid var(--bt-danger-border)', fontSize: 12, color: 'var(--bt-danger)' }}>
+                          <Ic n="AlertCircle" size={14} color="var(--bt-danger)" style={{ marginTop: 1, flexShrink: 0 }} />
+                          {err}
+                        </div>
+                      ) : null
+                    })()}
                     {/* Moving Tees modifier toggle */}
                     <div style={{ borderRadius: 8, padding: '10px 12px', background: 'var(--bt-base)', border: '1px solid var(--bt-border)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: roundDraft.movingTees ? 10 : 0 }}>
@@ -3365,12 +3452,21 @@ function TripDetail({ navigate, showToast, tripId, viewerRole = 'planner', trips
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => { if (!roundDraft.name.trim()) return; setRounds(rs => [...rs, { id: `r${Date.now()}`, ...roundDraft }]); setRoundDraft({ name: '', format: 'Scramble', course: '', pts: 4, movingTees: false, startBox: 'white', eagleShift: -2, birdieShift: -1, parShift: 0, bogeyShift: 1 }); setAddingRound(false); showToast('Round added') }}
-                        style={{ fontSize: 13, fontWeight: 700, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--bt-accent)', color: '#0d1117' }}>Save</button>
-                      <button onClick={() => setAddingRound(false)}
-                        style={{ fontSize: 13, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>Cancel</button>
-                    </div>
+                    {(() => {
+                      const ev = getEventForTrip(trip._id, null)
+                      const ct = ev?.competitionType || selectedCompType
+                      const hasErr = !!validateCompetitionConstraints(roundDraft.format, ct)
+                      return (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            disabled={hasErr || !roundDraft.name.trim()}
+                            onClick={() => { setRounds(rs => [...rs, { id: `r${Date.now()}`, ...roundDraft }]); setRoundDraft({ name: '', format: 'Scramble', course: '', pts: 4, movingTees: false, startBox: 'white', eagleShift: -2, birdieShift: -1, parShift: 0, bogeyShift: 1 }); setAddingRound(false); showToast('Round added') }}
+                            style={{ fontSize: 13, fontWeight: 700, padding: '7px 18px', borderRadius: 8, border: 'none', cursor: hasErr ? 'not-allowed' : 'pointer', background: hasErr ? 'var(--bt-border)' : 'var(--bt-accent)', color: hasErr ? 'var(--bt-text-3)' : '#0d1117', opacity: hasErr ? 0.6 : 1 }}>Save</button>
+                          <button onClick={() => setAddingRound(false)}
+                            style={{ fontSize: 13, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--bt-border)', background: 'transparent', color: 'var(--bt-text-3)', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
               </>
