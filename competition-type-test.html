@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BuddyTrip — competitionType test</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bt-base:#0d1117;--bt-card:#161b22;
+  --bt-border:#21262d;--bt-border-input:#30363d;
+  --bt-accent:#00d4aa;--bt-tag-bg:#0d2a22;
+  --bt-text-1:#e6edf3;--bt-text-2:#8b949e;--bt-text-3:#6e7681;
+  --bt-danger:#f85149;--bt-danger-bg:#2d1517;--bt-danger-border:#6e2020;
+}
+html{font-size:16px}
+body{background:var(--bt-base);color:var(--bt-text-1);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;padding:24px}
+button,input,select{font-family:inherit}
+/* ── Layout helpers ── */
+.stack{display:flex;flex-direction:column}
+.row{display:flex;align-items:center}
+.gap-1{gap:4px}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}
+.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
+.flex-1{flex:1}.ml-auto{margin-left:auto}
+/* ── Cards ── */
+.card{background:var(--bt-card);border:1px solid var(--bt-border);border-radius:12px;padding:16px}
+.label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--bt-text-3);margin-bottom:8px}
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:999px}
+/* ── Buttons ── */
+.btn{border-radius:8px;font-size:13px;font-weight:600;padding:8px 16px;cursor:pointer;border:none;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--bt-accent);color:#0d1117}
+.btn-ghost{background:transparent;border:1px solid var(--bt-border);color:var(--bt-text-2)}
+/* ── Modal overlay ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);
+  display:flex;align-items:flex-end;justify-content:center;z-index:50}
+@media(min-width:480px){.overlay{align-items:center}}
+.modal{background:var(--bt-card);border:1px solid var(--bt-border);
+  border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:440px}
+@media(min-width:480px){.modal{border-radius:16px}}
+/* ── Type option card ── */
+.type-option{text-align:left;padding:12px 14px;border-radius:12px;cursor:pointer;
+  transition:border-color .15s,background .15s;width:100%}
+/* ── Validation banner ── */
+.error-banner{background:var(--bt-danger-bg);border:1px solid var(--bt-danger-border);
+  border-radius:8px;padding:10px 14px;font-size:12px;color:var(--bt-danger)}
+/* ── Format selector ── */
+.format-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+  border:1px solid var(--bt-border);background:var(--bt-base);color:var(--bt-text-2);transition:all .15s}
+.format-btn.active{border-color:var(--bt-accent);color:var(--bt-accent);background:var(--bt-tag-bg)}
+/* ── Dot ── */
+.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:2px solid var(--bt-border)}
+/* ── Section divider ── */
+.divider{border:none;border-top:1px solid var(--bt-border);margin:20px 0}
+/* ── Tag ── */
+.tag{font-size:11px;padding:2px 8px;border-radius:999px}
+/* ── Pulse dot ── */
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bt-accent);animation:pulse-dot 2s ease-in-out infinite}
+</style>
+</head>
+<body>
+<script type="text/babel">
+const { useState } = React
+
+// ─── Data ────────────────────────────────────────────────────────
+
+const COMPETITION_TYPES = [
+  { id: 'RYDER_CUP', label: 'Ryder Cup',
+    desc: 'Team vs. team match play — groups earn points for wins and halves.' },
+  { id: 'NORMAL',    label: 'Normal',
+    desc: 'Standard competition — stroke play, stableford, skins, or custom format.' },
+]
+
+const FORMATS = [
+  { id: 'scramble',   label: 'Scramble'   },
+  { id: 'stableford', label: 'Stableford' },
+  { id: 'sabotage',   label: 'Sabotage'   },
+  { id: 'skins',      label: 'Skins'      },
+]
+
+const BBMI_EVENT = {
+  _id: 'bbmi-2025',
+  title: 'BBMI 2025',
+  subtitle: 'Buddy Banks Memorial Invitational',
+  status: 'active',
+  competitionType: 'RYDER_CUP',
+  teams: [
+    { _id: 'team-a', shortName: 'Hammer', color: '#00d4aa' },
+    { _id: 'team-b', shortName: 'Anvil',  color: '#f97316' },
+  ],
+}
+
+// ─── Validation ───────────────────────────────────────────────────
+
+function validateCompetitionConstraints(format, competitionType) {
+  if (format === 'scramble' && competitionType === 'RYDER_CUP') {
+    return 'Scramble format is not compatible with Ryder Cup competition type.'
+  }
+  return null
+}
+
+// ─── AddCompetitionModal ─────────────────────────────────────────
+
+function AddCompetitionModal({ onClose, onDone }) {
+  const [competitionType, setCompetitionType] = useState('RYDER_CUP')
+
+  return (
+    <div className="overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="modal">
+
+        {/* Header */}
+        <div className="row gap-3 mb-4">
+          <div className="flex-1">
+            <div style={{ fontSize:15, fontWeight:700, color:'var(--bt-text-1)' }}>Add a Competition</div>
+            <div style={{ fontSize:12, marginTop:2, color:'var(--bt-text-3)' }}>
+              Choose the competition type to get started.
+            </div>
+          </div>
+          <button onClick={onClose}
+            style={{ background:'none', border:'none', cursor:'pointer',
+              color:'var(--bt-text-3)', fontSize:18, lineHeight:1, padding:4 }}>✕</button>
+        </div>
+
+        {/* Selector */}
+        <div className="stack gap-2 mb-4">
+          {COMPETITION_TYPES.map(ct => (
+            <button key={ct.id} onClick={() => setCompetitionType(ct.id)}
+              className="type-option"
+              style={{
+                background: competitionType === ct.id ? 'var(--bt-tag-bg)' : 'var(--bt-base)',
+                border: `1px solid ${competitionType === ct.id ? 'var(--bt-accent)' : 'var(--bt-border)'}`,
+              }}>
+              <div className="row gap-2 mb-1">
+                <div className="dot" style={{
+                  borderColor: competitionType === ct.id ? 'var(--bt-accent)' : 'var(--bt-border)',
+                  background:  competitionType === ct.id ? 'var(--bt-accent)' : 'transparent',
+                }} />
+                <span style={{ fontSize:13, fontWeight:600,
+                  color: competitionType === ct.id ? 'var(--bt-accent)' : 'var(--bt-text-1)' }}>
+                  {ct.label}
+                </span>
+              </div>
+              <p style={{ fontSize:11, color:'var(--bt-text-3)', paddingLeft:20 }}>{ct.desc}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="row gap-2">
+          <button className="btn btn-ghost flex-1" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary flex-1"
+            onClick={() => onDone(competitionType)}>
+            Create Competition →
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Validation demo panel ────────────────────────────────────────
+
+function ValidationPanel() {
+  const [competitionType, setCompetitionType] = useState('RYDER_CUP')
+  const [format, setFormat] = useState('scramble')
+  const error = validateCompetitionConstraints(format, competitionType)
+
+  return (
+    <div className="card">
+      <div className="label">validateCompetitionConstraints()</div>
+
+      <div className="stack gap-3">
+        {/* Competition type toggle */}
+        <div>
+          <div style={{ fontSize:11, color:'var(--bt-text-3)', marginBottom:6 }}>
+            competitionType
+          </div>
+          <div className="row gap-2">
+            {COMPETITION_TYPES.map(ct => (
+              <button key={ct.id} className={`format-btn${competitionType === ct.id ? ' active' : ''}`}
+                onClick={() => setCompetitionType(ct.id)}>
+                {ct.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Format toggle */}
+        <div>
+          <div style={{ fontSize:11, color:'var(--bt-text-3)', marginBottom:6 }}>format</div>
+          <div className="row gap-2" style={{ flexWrap:'wrap' }}>
+            {FORMATS.map(f => (
+              <button key={f.id} className={`format-btn${format === f.id ? ' active' : ''}`}
+                onClick={() => setFormat(f.id)}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Result */}
+        {error ? (
+          <div className="error-banner">
+            <strong>Error:</strong> {error}
+          </div>
+        ) : (
+          <div style={{ background:'#0d2a22', border:'1px solid #00d4aa30', borderRadius:8,
+            padding:'10px 14px', fontSize:12, color:'var(--bt-accent)' }}>
+            ✓ Valid combination — no constraint violations.
+          </div>
+        )}
+
+        {/* State readout */}
+        <pre style={{ fontSize:11, color:'var(--bt-text-3)', background:'var(--bt-base)',
+          padding:'10px 12px', borderRadius:8, border:'1px solid var(--bt-border)',
+          whiteSpace:'pre-wrap' }}>{JSON.stringify({ competitionType, format, error }, null, 2)}</pre>
+      </div>
+    </div>
+  )
+}
+
+// ─── Mock event card ──────────────────────────────────────────────
+
+function EventCard({ event }) {
+  const typeLabel = event.competitionType === 'RYDER_CUP' ? 'Ryder Cup' : 'Normal'
+  const typeColor = event.competitionType === 'RYDER_CUP' ? '#a78bfa' : '#8b949e'
+  const typeBg    = event.competitionType === 'RYDER_CUP' ? '#1e1333' : 'var(--bt-base)'
+
+  return (
+    <div className="card stack gap-3">
+      <div className="label">BBMI_EVENT (mock seed data)</div>
+
+      {/* Event header */}
+      <div className="row gap-3">
+        <div className="flex-1">
+          <div className="row gap-2 mb-1">
+            <span style={{ fontSize:15, fontWeight:700, color:'var(--bt-text-1)' }}>
+              {event.title}
+            </span>
+            {event.status === 'active' && (
+              <span className="row gap-1" style={{ fontSize:11, fontWeight:700, padding:'2px 8px',
+                borderRadius:999, background:'var(--bt-tag-bg)', color:'var(--bt-accent)',
+                border:'1px solid rgba(0,212,170,.25)' }}>
+                <span className="live-dot" /> LIVE
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize:12, color:'var(--bt-text-3)' }}>{event.subtitle}</div>
+        </div>
+      </div>
+
+      {/* Fields */}
+      <div className="stack gap-0">
+        {[
+          { label: '_id',             val: event._id },
+          { label: 'status',          val: event.status },
+          { label: 'competitionType', val: event.competitionType, highlight: true },
+        ].map(row => (
+          <div key={row.label} className="row" style={{
+            padding:'8px 0', borderBottom:'1px solid var(--bt-border)',
+            fontSize:13, gap:8 }}>
+            <span style={{ color:'var(--bt-text-3)', fontFamily:'monospace', flex:'0 0 160px' }}>
+              {row.label}
+            </span>
+            {row.highlight ? (
+              <span style={{ fontWeight:700, color: typeColor,
+                background: typeBg, padding:'2px 10px',
+                borderRadius:999, fontSize:12,
+                border:`1px solid ${typeColor}30` }}>
+                {row.val}
+              </span>
+            ) : (
+              <span style={{ color:'var(--bt-text-1)', fontFamily:'monospace' }}>{row.val}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Teams */}
+      <div>
+        <div style={{ fontSize:11, color:'var(--bt-text-3)', marginBottom:8 }}>teams</div>
+        <div className="row gap-2">
+          {event.teams.map(t => (
+            <span key={t._id} style={{ fontSize:12, fontWeight:700, padding:'3px 10px',
+              borderRadius:999, color: t.color,
+              background: t.color + '18', border:`1px solid ${t.color}40` }}>
+              {t.shortName}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main app ─────────────────────────────────────────────────────
+
+function App() {
+  const [showModal, setShowModal] = useState(false)
+  const [lastCreated, setLastCreated] = useState(null)
+
+  const handleDone = (competitionType) => {
+    setLastCreated(competitionType)
+    setShowModal(false)
+  }
+
+  return (
+    <div style={{ maxWidth:480, margin:'0 auto' }}>
+
+      {/* Page title */}
+      <div className="row gap-3 mb-4">
+        <div>
+          <h1 style={{ fontSize:18, fontWeight:700, color:'var(--bt-text-1)' }}>
+            competitionType — test harness
+          </h1>
+          <p style={{ fontSize:12, color:'var(--bt-text-3)', marginTop:4 }}>
+            Tests: enum definition · Event field · validation · modal UI · mock data
+          </p>
+        </div>
+      </div>
+
+      {/* ① AddCompetitionModal trigger */}
+      <div className="card mb-4">
+        <div className="label">① AddCompetitionModal</div>
+        <p style={{ fontSize:12, color:'var(--bt-text-2)', marginBottom:12 }}>
+          The competition creation modal with a two-option selector.
+          Mirrors <code style={{ fontFamily:'monospace', color:'var(--bt-accent)' }}>TripDetail.tsx</code>.
+        </p>
+        <div className="row gap-3">
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            Open Modal
+          </button>
+          {lastCreated && (
+            <span style={{ fontSize:12, color:'var(--bt-accent)' }}>
+              ✓ Created with <strong>
+                {lastCreated === 'RYDER_CUP' ? 'Ryder Cup' : 'Normal'}
+              </strong>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ② Validation */}
+      <div className="mb-4">
+        <div className="label">② Validation — format × competitionType</div>
+        <ValidationPanel />
+      </div>
+
+      {/* ③ Mock seed data */}
+      <div>
+        <div className="label">③ Mock seed data — BBMI_EVENT</div>
+        <EventCard event={BBMI_EVENT} />
+      </div>
+
+      {showModal && (
+        <AddCompetitionModal
+          onClose={() => setShowModal(false)}
+          onDone={handleDone}
+        />
+      )}
+    </div>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+</script>
+<div id="root"></div>
+</body>
+</html>
