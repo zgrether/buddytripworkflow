@@ -13,6 +13,7 @@ export const BBMI_EVENT = {
   location: 'Bandon Dunes, OR',
   dates: 'March 11–14, 2025',
   status: 'active' as const,
+  competitionType: 'RYDER_CUP' as const,
 
   teams: [
     { _id: 'team-a', name: 'Team Hammer', shortName: 'Hammer', color: '#00d4aa', colorDim: '#0d2a22' },

@@ -168,6 +168,90 @@ function QuickInfoTiles({ isOwner, tripId }: { isOwner: boolean; tripId: string 
   )
 }
 
+// ── Add Competition Modal ─────────────────────────────────────────
+
+const COMPETITION_TYPES: { id: 'RYDER_CUP' | 'NORMAL'; label: string; desc: string }[] = [
+  { id: 'RYDER_CUP', label: 'Ryder Cup', desc: 'Team vs. team match play — groups earn points for wins and halves.' },
+  { id: 'NORMAL',    label: 'Normal',    desc: 'Standard competition — stroke play, stableford, skins, or custom format.' },
+]
+
+function AddCompetitionModal({ trip, onClose, onDone, showToast }: {
+  trip: any
+  onClose: () => void
+  onDone: () => void
+  showToast: (m: string) => void
+}) {
+  const [competitionType, setCompetitionType] = useState<'RYDER_CUP' | 'NORMAL'>('RYDER_CUP')
+
+  const handleCreate = () => {
+    showToast(`Competition created (${competitionType === 'RYDER_CUP' ? 'Ryder Cup' : 'Normal'})`)
+    onDone()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.7)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5"
+        style={{ background: 'var(--bt-card)', border: '1px solid var(--bt-border)' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold" style={{ color: 'var(--bt-text-1)' }}>Add a Competition</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--bt-text-3)' }}>Choose the competition type to get started.</p>
+          </div>
+          <button onClick={onClose}
+            className="p-1.5 rounded-lg"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--bt-text-3)' }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Competition type selector */}
+        <div className="flex flex-col gap-2 mb-5">
+          {COMPETITION_TYPES.map(ct => (
+            <button key={ct.id} onClick={() => setCompetitionType(ct.id)}
+              className="text-left p-3 rounded-xl transition-colors"
+              style={{
+                background: competitionType === ct.id ? 'var(--bt-tag-bg)' : 'var(--bt-base)',
+                border: `1px solid ${competitionType === ct.id ? 'var(--bt-accent)' : 'var(--bt-border)'}`,
+                cursor: 'pointer',
+              }}>
+              <div className="flex items-center gap-2 mb-0.5">
+                <div className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                  style={{
+                    border: `2px solid ${competitionType === ct.id ? 'var(--bt-accent)' : 'var(--bt-border)'}`,
+                    background: competitionType === ct.id ? 'var(--bt-accent)' : 'transparent',
+                  }} />
+                <span className="text-sm font-semibold"
+                  style={{ color: competitionType === ct.id ? 'var(--bt-accent)' : 'var(--bt-text-1)' }}>
+                  {ct.label}
+                </span>
+              </div>
+              <p className="text-xs ml-5.5" style={{ color: 'var(--bt-text-3)' }}>{ct.desc}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+            style={{ background: 'transparent', border: '1px solid var(--bt-border)', color: 'var(--bt-text-2)', cursor: 'pointer' }}>
+            Cancel
+          </button>
+          <button onClick={handleCreate}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+            style={{ background: 'var(--bt-accent)', color: '#0d1117', border: 'none', cursor: 'pointer' }}>
+            Create Competition →
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Home tab ──────────────────────────────────────────────────────
 
 function HomeTab({ trip, navigate, showToast, viewerRole }: {
